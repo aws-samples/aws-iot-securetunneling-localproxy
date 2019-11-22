@@ -1,0 +1,48 @@
+jobs:
+  include:
+    - os: linux
+      dist: xenial
+    - os: linux
+      dist: bionic
+language: cpp
+cache: ccache
+compiler:
+  - gcc
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc
+      - cmake
+      - zlibc
+      - libssl-dev
+install:
+  - wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.tar.gz -O /tmp/protobuf-all-3.6.1.tar.gz
+  - tar xzf /tmp/protobuf-all-3.6.1.tar.gz
+  - cd "protobuf-3.6.1"
+  - mkdir -p build
+  - cd build
+  - cmake ../cmake
+  - make
+  - sudo make install
+  - cd $TRAVIS_BUILD_DIR
+  - git clone https://github.com/catchorg/Catch2.git
+  - cd Catch2
+  - mkdir -p build
+  - cd build
+  - cmake ../
+  - make
+  - sudo make install
+  - wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
+  - tar xzf /tmp/boost.tar.gz
+  - cd boost_1_69_0
+  - ./bootstrap.sh
+  - sudo ./b2 install
+  - cd $TRAVIS_BUILD_DIR
+script:
+  - mkdir build
+  - cd build
+  - cmake ../
+  - make
+

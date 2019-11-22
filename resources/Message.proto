@@ -1,0 +1,23 @@
+// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package com.amazonaws.iot.securedtunneling;
+
+option java_outer_classname = "Protobuf";
+option optimize_for = LITE_RUNTIME;
+
+message Message {
+    Type    type         = 1;
+    int32   streamId     = 2;
+    bool    ignorable    = 3;
+    bytes   payload      = 4;
+
+    enum Type {
+        UNKNOWN = 0;
+        DATA = 1;
+        STREAM_START = 2;
+        STREAM_RESET = 3;
+        SESSION_RESET = 4;
+    }
+}
