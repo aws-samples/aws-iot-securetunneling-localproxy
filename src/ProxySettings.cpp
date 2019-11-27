@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <stdlib.h>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/format.hpp>
 #include "ProxySettings.h"
 
 namespace aws { namespace iot { namespace securedtunneling { namespace settings {
@@ -12,6 +13,8 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
 
     char const * const KEY_PROXY_ENDPOINT_HOST_FORMAT = "tunneling.proxy.endpoint_format";
     std::string DEFAULT_PROXY_ENDPOINT_HOST_FORMAT = "data.tunneling.iot.%s.amazonaws.com";
+
+    char const * const KEY_PROXY_ENDPOINT_REGION_MAP = "tunneling.proxy.region_endpoint_overrides";
 
     char const * const KEY_DATA_LENGTH_SIZE = "tunneling.proxy.message.data_length_size";
     std::size_t const DEFAULT_DATA_LENGTH_SIZE = 2;
@@ -88,5 +91,15 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
         ADD_SETTING_DEFAULT(settings, WEB_SOCKET_MAX_FRAME_SIZE);
         ADD_SETTING_DEFAULT(settings, WEB_SOCKET_WRITE_BUFFER_SIZE);
         ADD_SETTING_DEFAULT(settings, WEB_SOCKET_READ_BUFFER_SIZE);
+
+        apply_region_overrides(settings);
+    }
+
+    void apply_region_overrides(ptree & settings)
+    {
+        settings.put<std::string>((boost::format("%1%.%2%") % KEY_PROXY_ENDPOINT_REGION_MAP % "cn-north-1").str().c_str(),
+                "data.tunneling.iot.cn-north-1.amazonaws.com.cn");
+        settings.put<std::string>((boost::format("%1%.%2%") % KEY_PROXY_ENDPOINT_REGION_MAP % "cn-northwest-1").str().c_str(),
+                "data.tunneling.iot.cn-northwest-1.amazonaws.com.cn");
     }
 }}}}

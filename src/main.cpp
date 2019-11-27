@@ -39,6 +39,8 @@ using boost::program_options::options_description;
 using aws::iot::securedtunneling::adapter_proxy_config;
 using aws::iot::securedtunneling::tcp_adapter_proxy;
 using aws::iot::securedtunneling::proxy_mode;
+using aws::iot::securedtunneling::get_region_endpoint;
+using aws::iot::securedtunneling::settings::apply_region_overrides;
 
 char const * const TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_ACCESS_TOKEN";
 char const * const ENDPOINT_ENV_VARIABLE = "AWSIOT_TUNNEL_ENDPOINT";
@@ -135,7 +137,6 @@ void set_logging_filter(std::uint16_t level_numeric)
         boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::fatal);
         break;
     case 0:
-        //turning off is more efficient than having a filter that is 'basically off'
         boost::log::core::get()->set_logging_enabled(false);
         break;
     }
@@ -145,7 +146,7 @@ void init_logging()
 {
     boost::log::add_common_attributes();
     boost::log::add_console_log(std::cout, boost::log::keywords::format = boost::phoenix::bind(&log_formatter, boost::log::expressions::stream, boost::log::expressions::record));
-    set_logging_filter(4);  //default to info level until later overridden
+    set_logging_filter(4);
 }
 
 bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &settings, std::uint16_t &logging_level)
@@ -206,8 +207,9 @@ bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &setti
             return "";
         }), vm);
 
+    apply_region_overrides(settings);
     if (vm.count("settings-json"))
-    {   //can throw json_parser_error
+    {
         BOOST_LOG_TRIVIAL(info) << "Using settings specified in file: " << vm["settings-json"].as<string>();
         boost::property_tree::json_parser::read_json(vm["settings-json"].as<string>(), settings);
     }
@@ -232,9 +234,8 @@ bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &setti
     }
     cfg.access_token = vm["access-token"].as<string>();
 
-    //below endpoint need to be finalized
     string proxy_endpoint = vm.count("proxy-endpoint") == 1 ? vm["proxy-endpoint"].as<string>() :
-        (boost::format(GET_SETTING(settings, PROXY_ENDPOINT_HOST_FORMAT))%vm["region"].as<string>()).str();
+        get_region_endpoint(vm["region"].as<string>(), settings);
 
     transform(proxy_endpoint.begin(), proxy_endpoint.end(), proxy_endpoint.begin(), ::tolower);
     tuple<string, uint16_t> proxy_host_and_port = get_host_and_port(proxy_endpoint, aws::iot::securedtunneling::DEFAULT_PROXY_SERVER_PORT);
@@ -256,8 +257,6 @@ bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &setti
         cfg.data_port = vm["source-listen-port"].as<std::uint16_t>();
         cfg.on_listen_port_assigned = [](std::uint16_t listen_port)
         {
-            //this is an opportunity to use actual empheral port if it was assigned because
-            //the specified port was 0
             BOOST_LOG_TRIVIAL(info) << "Listen port assigned: " << listen_port;
         };
     }

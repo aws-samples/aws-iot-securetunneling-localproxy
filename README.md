@@ -64,7 +64,7 @@ Fedora example:
     cmake ../cmake
     make
     sudo make install
-    
+
 #### 4. Download and install OpenSSL development libraries
 
 We strongly recommend installing OpenSSL development libraries using your native platform package manager so the local proxy's integration with OpenSSL can use the platform's globally configured root CAs.

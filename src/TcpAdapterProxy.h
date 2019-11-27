@@ -28,6 +28,8 @@ namespace aws { namespace iot { namespace securedtunneling {
     
     extern std::uint16_t const DEFAULT_PROXY_SERVER_PORT;
 
+    extern std::string get_region_endpoint(std::string const &region, boost::property_tree::ptree const &settings);
+
     struct adapter_proxy_config
     {
         std::string                             proxy_host { };

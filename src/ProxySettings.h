@@ -9,6 +9,8 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
     extern char const * const KEY_PROXY_ENDPOINT_HOST_FORMAT;
     extern std::string DEFAULT_PROXY_ENDPOINT_HOST_FORMAT;
 
+    extern char const * const KEY_PROXY_ENDPOINT_REGION_MAP;
+
     extern char const * const KEY_DEFAULT_BIND_ADDRESS;
     extern std::string DEFAULT_DEFAULT_BIND_ADDRESS;
 
@@ -68,4 +70,5 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
         ::aws::iot::securedtunneling::settings::DEFAULT_##key))
 
     void apply_default_settings(ptree & settings);
+    void apply_region_overrides(ptree & settings);
 }}}}

@@ -34,6 +34,8 @@ class TestWebsocketServer
 
         void run();
 
+        void deliver_message(message const &message);
+
         boost::beast::http::request<boost::beast::http::string_body> const & get_handshake_request() { return handshake_request; }
 
     protected:

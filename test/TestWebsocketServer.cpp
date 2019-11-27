@@ -142,6 +142,11 @@ void TestWebsocketServer::process_input_buffer(web_socket_stream &ws_stream, boo
     }
 }
 
+void TestWebsocketServer::deliver_message(message const &message)
+{
+    send_message(ws_stream.get(), message);
+}
+
 void TestWebsocketServer::send_message(web_socket_stream &ws, message const &message)
 {
     using namespace com::amazonaws::iot::securedtunneling;
