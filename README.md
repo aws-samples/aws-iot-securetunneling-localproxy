@@ -56,9 +56,9 @@ Fedora example:
 
 #### 3. Download and install Protobuf dependency
 
-    wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.tar.gz -0 /tmp/protobuf-all-3.6.1.tar.gz
+    wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.tar.gz -O /tmp/protobuf-all-3.6.1.tar.gz
     tar xzvf /tmp/protobuf-all-3.6.1.tar.gz
-    cd protobuf-all-3.6.1.tar.gz
+    cd protobuf-3.6.1
     mkdir build
     cd build
     cmake ../cmake
