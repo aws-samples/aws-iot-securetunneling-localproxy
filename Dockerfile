@@ -1,4 +1,5 @@
-FROM ubuntu:18.04
+# FROM ubuntu:18.04
+FROM ubuntu:18.04 as builder
 
 # Install Prerequisites
 
@@ -60,4 +61,33 @@ RUN git clone https://github.com/aws-samples/aws-iot-securetunneling-localproxy 
 	cmake ../ && \
 	make
 
-WORKDIR aws-iot-securetunneling-localproxy/build/bin/
+
+RUN mkdir -p /home/aws-iot-securetunneling-localproxy && \
+	cd /home/aws-iot-securetunneling-localproxy && \
+	cp /home/dependencies/aws-iot-securetunneling-localproxy/build/bin/* /home/aws-iot-securetunneling-localproxy/
+
+RUN rm -rf /home/dependencies
+
+WORKDIR /home/aws-iot-securetunneling-localproxy/
+
+## Actual docker image
+
+FROM ubuntu:18.04
+
+# Install openssl for libssl dependency.
+
+RUN apt update && apt upgrade -y && \
+    apt install -y openssl wget && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get clean
+
+RUN mkdir -p /home/aws-iot-securetunneling-localproxy/certs && \
+    cd /home/aws-iot-securetunneling-localproxy/certs && \
+    wget https://www.amazontrust.com/repository/AmazonRootCA1.pem && \
+	openssl rehash ./
+
+# # Copy the binaries from builder stage.
+
+COPY --from=builder /home/aws-iot-securetunneling-localproxy /home/aws-iot-securetunneling-localproxy
+
+WORKDIR /home/aws-iot-securetunneling-localproxy
