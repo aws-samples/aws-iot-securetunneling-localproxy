@@ -1,4 +1,8 @@
 ## 2019-12-07
+### Changed
+- CMakeLists.txt to always link libatomic, not only whe cross-compiling
+
+## 2019-12-07
 ### Added
 - Predictive region endpoint for cn-north-1 and cn-northwest-1
 - Allow settings-json file to create region endpoint overrides as needed
