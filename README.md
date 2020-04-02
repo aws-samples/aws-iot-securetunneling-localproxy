@@ -351,3 +351,5 @@ Flag indicating whether or not to try to restablish connection to the service if
 **tunneling.proxy.message.may_payload_size**
 Defines the maximum data size allowed to be carried via a single tunnel message. The current protocol has a maximum value of 63kb (64512 bytes). Any two active peers communicating over the same tunnel must set this to the same value.
 
+### Building local proxy on a windows
+Follow instructions in [here](windows-localproxy-build.md) to build a local proxy on a windows environment.
