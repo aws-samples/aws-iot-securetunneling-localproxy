@@ -37,7 +37,7 @@
 		* mkdir build & cd build
 		* cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -Dprotobuf_MSVC_STATIC_RUNTIME=OFF ../
 		* nmake & nmake install ( install protobuf inside C:\Program Files (x86)\ )
-	*Download and install boost
+	* Download and install boost
 		* Download from https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz
 		* Extract boost_1_69_0.tar.gz
 		* Use Visual Studio native tool command prompt
