@@ -293,7 +293,7 @@ There are a few environment variables that can set configuration options used by
 
 There are additional fine-grained settings to control the behavior of the local proxy. These settings are unlikely to need to be changed, and unless necessary should be kept at their default values.
 
-Running `./localproxy --export-settings-json lpsettings.json` will produce a file named `lpsettings.json` containing the default values for all settings. Example contents:
+Running `./localproxy --export-default-settings lpsettings.json` will produce a file named `lpsettings.json` containing the default values for all settings. Example contents:
 
 ```
 {
