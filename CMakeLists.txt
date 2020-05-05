@@ -87,9 +87,11 @@ set(TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/AdapterTests.cpp ${CORE_SOURCES} ${P
 add_executable(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${MAIN_SOURCES})
 add_executable(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${TEST_SOURCES})
 
-#libatomic ensured for all platforms
-target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} atomic)
-target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} atomic)
+#libatomic ensured for all platforms except OSX
+if(NOT APPLE)
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} atomic)
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} atomic)
+endif()
 
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} OpenSSL::SSL)

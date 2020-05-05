@@ -231,7 +231,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         on_data_message = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
         on_control_message = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
         on_web_socket_write_buffer_drain_complete = 
-            [this, web_socket_write_buffer_drain_complete, tcp_write_buffer_drain_complete, then_what, &tac]()
+            [this, web_socket_write_buffer_drain_complete, tcp_write_buffer_drain_complete, then_what]()
             {
                 BOOST_LOG_SEV(this->log, trace) << "Post-reset web socket drain complete";
                 *web_socket_write_buffer_drain_complete = true;
@@ -1139,7 +1139,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         {
             BOOST_LOG_SEV(log, error) << (boost::format("Could not resolve ip/host {%1}: %2%") % tac.adapter_config.data_host % ec.message()).str();
             basic_retry_execute(log, retry_config,
-                [this, &tac, &ec]()
+                [this, &tac]()
                 {
                     this->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac));
                     async_send_stream_reset(tac, tac.stream_id);
@@ -1155,7 +1155,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                     {
                         BOOST_LOG_SEV(log, error) << (boost::format("Could not connect to destination %1%:%2% -- %3%") % tac.adapter_config.data_host % tac.adapter_config.data_port % ec.message()).str();
                         basic_retry_execute(log, retry_config,
-                            [this, &tac, &ec]()
+                            [this, &tac]()
                             {
                                 this->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac));
                                 async_send_stream_reset(tac, tac.stream_id);
@@ -1198,7 +1198,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                     {
                         BOOST_LOG_SEV(log, error) << (boost::format("Could not resolve bind address: %1% -- %2%") % tac.adapter_config.bind_address.get() % ec.message()).str();
                         basic_retry_execute(log, retry_config,
-                            [this, &tac, &ec]()
+                            [this, &tac]()
                             {
                                 this->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac));
                                 async_send_stream_reset(tac, tac.stream_id);
@@ -1215,7 +1215,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                         {
                             BOOST_LOG_SEV(log, error) << (boost::format("Could not bind to address: %1% -- %2%") % results->endpoint().address().to_string() % bind_ec.message()).str();
                             basic_retry_execute(log, retry_config,
-                                [this, &tac, &ec]()
+                                [this, &tac]()
                                 {
                                     this->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac));
                                     async_send_stream_reset(tac, tac.stream_id);
