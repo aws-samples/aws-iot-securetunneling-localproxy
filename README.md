@@ -17,7 +17,7 @@ This code enables tunneling of a single threaded TCP client / server socket inte
 ### Prerequisites
 
 * C++ 14 compiler
-* CMake 3.2+
+* CMake 3.6+
 * Development libraries required:
     * Boost 1.68 or 1.69
     * Protobuf 3.6.x
