@@ -66,10 +66,13 @@ namespace aws { namespace iot { namespace securedtunneling {
             explicit proxy_exception(std::string const & message) : message(message) {}
             proxy_exception(std::string const & message, boost::system::error_code const & ec)
                 : message{ (boost::format("%1%; Underlying boost::system error: [%2%]") % message%ec.message()).str() }, boost_error_code(boost::make_optional(ec)) {}
+            proxy_exception(std::string const & message, boost::system::error_code const & ec, bool const & bind_failure)
+                : proxy_exception(message, ec) { local_port_bind_failure = bind_failure; }
             proxy_exception(boost::system::error_code const & ec)
                 : message{ (boost::format("Boost::System error: [%1%]") % ec.message()).str() }, boost_error_code(boost::make_optional(ec)) {}
             virtual char const * what() const noexcept { return message.c_str(); }
             boost::optional<boost::system::error_code const> error_code() const { return boost_error_code; }
+            bool is_local_port_bind_failure() const { return local_port_bind_failure; }
 
             proxy_exception(proxy_exception const &) = default;
             ~proxy_exception() = default;
@@ -77,6 +80,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         protected:
             std::string                                             message;
             boost::optional<boost::system::error_code const>        boost_error_code;   //boost system error code if the cause
+            bool                                                    local_port_bind_failure;
         };
 
         //this structure is pretty much *the* program visibility of all

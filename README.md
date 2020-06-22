@@ -12,7 +12,22 @@ This code enables tunneling of a single threaded TCP client / server socket inte
 
 ---
 
-## Building the local proxy
+## Building the local proxy via Docker
+
+### Prerequisites
+
+* Docker 18+
+
+### Running the Docker Build
+
+`./docker-build.sh`
+
+After the Docker build completes, run `./docker-run.sh` to open a shell inside the container created in the
+previous step. Here you can find both the `localproxy` and `localproxytest` binaries.
+
+---
+
+## Building the local proxy from source
 
 ### Prerequisites
 

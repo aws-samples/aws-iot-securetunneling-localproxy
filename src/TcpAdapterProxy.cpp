@@ -171,6 +171,11 @@ namespace aws { namespace iot { namespace securedtunneling {
                 if (GET_SETTING(settings, WEB_SOCKET_DATA_ERROR_RETRY))
                 {
                     BOOST_LOG_SEV(log, error) << "Error from io_ctx::run(): " << e.what();
+                    if(e.is_local_port_bind_failure() && adapter_config.mode == proxy_mode::SOURCE) {
+                        BOOST_LOG_SEV(log, error) << "Local proxy failed to bind to port " << tac.adapter_config.data_port
+                            << " in source mode. Verify the selected port is not already in use and try again.";
+                        return;
+                    }
                 }
                 else
                 {
@@ -1101,7 +1106,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                             BOOST_LOG_SEV(log, error) << (boost::format("Could not listen on bind address: %1% -- %2%")
                                 % results->endpoint().address().to_string() % listen_ec.message()).str();
                             basic_retry_execute(log, retry_config,
-                                [&tac, &ec]() { throw proxy_exception((boost::format("Failed to listen on bind address %1%:%2%") % tac.bind_address_actual % tac.adapter_config.data_port).str(), ec); });
+                                [&tac, &ec]() { throw proxy_exception((boost::format("Failed to listen on bind address %1%:%2%") % tac.bind_address_actual % tac.adapter_config.data_port).str(), ec, true); });
                         }
                         else
                         {
