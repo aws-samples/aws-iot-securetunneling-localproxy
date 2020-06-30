@@ -167,7 +167,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         tcp_adapter_proxy(tcp_adapter_proxy const &) = delete;
         tcp_adapter_proxy(tcp_adapter_proxy &&) = default;
 
-        void run_proxy();
+        int run_proxy();
 
     private:
         void setup_tcp_socket(tcp_adapter_context &tac);

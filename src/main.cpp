@@ -276,7 +276,7 @@ int main(int argc, char ** argv)
         {
             set_logging_filter(logging_level);
             tcp_adapter_proxy proxy{ settings, cfg };
-            proxy.run_proxy();
+            return proxy.run_proxy();
         }
     }
     catch (exception &e)

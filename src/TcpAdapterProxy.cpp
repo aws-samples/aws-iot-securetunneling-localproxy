@@ -154,7 +154,7 @@ namespace aws { namespace iot { namespace securedtunneling {
     tcp_adapter_proxy::~tcp_adapter_proxy()
     { }
 
-    void tcp_adapter_proxy::run_proxy()
+    int tcp_adapter_proxy::run_proxy()
     {
         BOOST_LOG_SEV(log, info) << "Starting proxy in " << get_proxy_mode_string(adapter_config.mode) << " mode";
         while (true)
@@ -164,7 +164,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             {
                 setup_web_socket(tac);
                 tac.io_ctx.run();
-                return;
+                return EXIT_SUCCESS;
             }
             catch (proxy_exception &e)
             {
@@ -174,7 +174,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                     if(e.is_local_port_bind_failure() && adapter_config.mode == proxy_mode::SOURCE) {
                         BOOST_LOG_SEV(log, error) << "Local proxy failed to bind to port " << tac.adapter_config.data_port
                             << " in source mode. Verify the selected port is not already in use and try again.";
-                        return;
+                        return EXIT_FAILURE;
                     }
                 }
                 else
@@ -1106,7 +1106,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                             BOOST_LOG_SEV(log, error) << (boost::format("Could not listen on bind address: %1% -- %2%")
                                 % results->endpoint().address().to_string() % listen_ec.message()).str();
                             basic_retry_execute(log, retry_config,
-                                [&tac, &ec]() { throw proxy_exception((boost::format("Failed to listen on bind address %1%:%2%") % tac.bind_address_actual % tac.adapter_config.data_port).str(), ec, true); });
+                                [&tac, &listen_ec]() { throw proxy_exception((boost::format("Failed to listen on bind address %1%:%2%") % tac.bind_address_actual % tac.adapter_config.data_port).str(), listen_ec, true); });
                         }
                         else
                         {
