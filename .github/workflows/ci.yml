@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '*'
+
+env:
+  PACKAGE_NAME: aws-iot-securetunneling-localproxy
+
+jobs:
+  osx:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+      name: 'Checkout'
+    - name: Install brew dependencies
+      run: |
+        brew install openssl zlib cmake wget git
+    - name: Install boost
+      working-directory: ${{ github.workspace }}
+      run: |
+        wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
+        tar xzvf /tmp/boost.tar.gz
+        cd boost_1_69_0
+        ./bootstrap.sh --with-toolset=clang
+        ./b2 install toolset=clang
+    - name: Install protobuf
+      working-directory: ${{ github.workspace }}
+      run: |
+        wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.tar.gz -O /tmp/protobuf-all-3.6.1.tar.gz
+        tar xzvf /tmp/protobuf-all-3.6.1.tar.gz
+        cd protobuf-3.6.1
+        mkdir build_make
+        cd build_make
+        cmake ../cmake
+        make
+        make install
+    - name: Install Catch2
+      working-directory: ${{ github.workspace }}
+      run: |
+        git clone https://github.com/catchorg/Catch2.git
+        cd Catch2
+        mkdir build
+        cd build
+        cmake ../
+        make
+        make install
+    - name: Building localproxy
+      working-directory: ${{ github.workspace }}
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1/1.1.1g/ -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl@1.1/1.1.1g/lib/
+        make
+  ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 'Checkout'
+      uses: actions/checkout@v2
+    - name: Install apt-get dependencies
+      run: |
+        sudo apt-get install -y build-essential git python3-dev
+        sudo apt-get install -y wget tar zlibc libssl-dev openssl cmake python-dev
+        sudo apt-get clean -y
+    - name: Install boost
+      working-directory: ${{ github.workspace }}
+      run: |
+        wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
+        tar xzvf /tmp/boost.tar.gz
+        cd boost_1_69_0
+        ./bootstrap.sh
+        sudo ./b2 install
+    - name: Install protobuf
+      working-directory: ${{ github.workspace }}
+      run: |
+        wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.tar.gz -O /tmp/protobuf-all-3.6.1.tar.gz
+        tar xzvf /tmp/protobuf-all-3.6.1.tar.gz
+        cd protobuf-3.6.1
+        mkdir build_make
+        cd build_make
+        cmake ../cmake
+        make
+        sudo make install
+    - name: install Catch2
+      working-directory: ${{ github.workspace }}
+      run: |
+        git clone https://github.com/catchorg/Catch2.git
+        cd Catch2
+        mkdir build
+        cd build
+        cmake ../
+        make
+        sudo make install
+    - name: Building localproxy
+      working-directory: ${{ github.workspace }}
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1/1.1.1g/ -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl@1.1/1.1.1g/lib/
+        make
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Setup developer command prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          toolset: 14.1
+          arch: x64
+      - name: Install OpenSSL
+        run: |
+          Invoke-WebRequest "https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/win64/nasm-2.15.05-win64.zip" -OutFile "nasm-2.15.05-win64.zip"
+          Expand-Archive "nasm-2.15.05-win64.zip" -Force -DestinationPath "C:\NASM"
+          $env:Path += ";C:\NASM\nasm-2.15.05\"
+          git clone https://github.com/openssl/openssl.git
+          cd openssl
+          git checkout OpenSSL_1_1_1-stable
+          perl Configure VC-WIN64A
+          nmake
+          nmake install
+          $env:Path += ";C:\Program Files\OpenSSL\bin"
+      - name: Install Catch2
+        run: |
+          git clone https://github.com/catchorg/Catch2.git
+          cd Catch2
+          mkdir build
+          cd build
+          cmake -DBUILD_TESTING=OFF -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release ../
+          nmake
+          nmake install
+      - name: Install zlib
+        run: |
+          git clone -b v1.2.8 https://github.com/madler/zlib.git
+          cd zlib
+          mkdir build
+          cd build
+          cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release ../
+          nmake
+          nmake install
+          $env:Path += ";C:\Program Files (x86)\zlib\bin"
+      - name: Install boost
+        run: |
+          Invoke-WebRequest "https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.zip" -OutFile "boost_1_69_0.zip"
+          Expand-Archive "boost_1_69_0.zip" -Force
+          cd .\boost_1_69_0\boost_1_69_0\
+          .\bootstrap.bat
+          .\b2 toolset=msvc-14.1 address-model=64 install define=BOOST_WINAPI_VERSION_WIN10
+      - name: Install protobuf
+        run: |
+          Invoke-WebRequest "https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.zip" -OutFile "protobuf-all-3.6.1.zip"
+          Expand-Archive protobuf-all-3.6.1.zip
+          cd .\protobuf-all-3.6.1\protobuf-3.6.1\cmake\
+          mkdir build
+          cd build
+          cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -Dprotobuf_MSVC_STATIC_RUNTIME=OFF ../
+          nmake
+          nmake install
+          $env:Path += ";C:\Program Files (x86)\protobuf\bin"
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+      - name: Build localproxy 
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir build
+          cd build
+          cmake -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 16 2019" -A x64 ..\
+          msbuild localproxy.vcxproj -p:Configuration=Release

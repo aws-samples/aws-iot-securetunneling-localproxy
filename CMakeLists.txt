@@ -29,9 +29,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 if (UNIX OR APPLE)
     set(CUSTOM_COMPILER_FLAGS "-O2 -D_FORTIFY_SOURCE=2 -fPIE -Wall -Werror")
     set(TEST_COMPILER_FLAGS "${CUSTOM_COMPILER_FLAGS} -D_AWSIOT_TUNNELING_NO_SSL")
-elseif (WIN32)
+elseif (WIN32 OR MSVC)
     set(CUSTOM_COMPILER_FLAGS "/W4 /DYNAMICBASE /NXCOMPAT /analyze")
     set(TEST_COMPILER_FLAGS "${CUSTOM_COMPILER_FLAGS} /D_AWSIOT_TUNNELING_NO_SSL")
+    add_definitions(-D_WIN32_WINNT=${WIN32_WINNT})
 endif ()
 
 
@@ -87,8 +88,8 @@ set(TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/AdapterTests.cpp ${CORE_SOURCES} ${P
 add_executable(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${MAIN_SOURCES})
 add_executable(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${TEST_SOURCES})
 
-#libatomic ensured for all platforms except OSX
-if(NOT APPLE)
+#libatomic ensured for all platforms except OSX and WINDOWS
+if(NOT APPLE AND NOT MSVC)
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} atomic)
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} atomic)
 endif()
