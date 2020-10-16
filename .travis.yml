@@ -27,7 +27,7 @@ install:
   - make
   - sudo make install
   - cd $TRAVIS_BUILD_DIR
-  - git clone https://github.com/catchorg/Catch2.git
+  - git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git
   - cd Catch2
   - mkdir -p build
   - cd build

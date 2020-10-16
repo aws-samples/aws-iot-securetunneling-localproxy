@@ -103,7 +103,7 @@ Run the ./Configure command without any arguments to check the available platfor
 
 #### 5. Download and install Catch2 test framework
 
-    git clone https://github.com/catchorg/Catch2.git
+    git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git
     cd Catch2
     mkdir build
     cd build
