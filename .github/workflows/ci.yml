@@ -39,7 +39,7 @@ jobs:
     - name: Install Catch2
       working-directory: ${{ github.workspace }}
       run: |
-        git clone https://github.com/catchorg/Catch2.git
+        git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git
         cd Catch2
         mkdir build
         cd build
@@ -85,7 +85,7 @@ jobs:
     - name: install Catch2
       working-directory: ${{ github.workspace }}
       run: |
-        git clone https://github.com/catchorg/Catch2.git
+        git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git
         cd Catch2
         mkdir build
         cd build
@@ -97,7 +97,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1/1.1.1g/ -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl@1.1/1.1.1g/lib/
+        cmake ..
         make
   windows:
     runs-on: windows-latest
@@ -121,7 +121,7 @@ jobs:
           $env:Path += ";C:\Program Files\OpenSSL\bin"
       - name: Install Catch2
         run: |
-          git clone https://github.com/catchorg/Catch2.git
+          git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git
           cd Catch2
           mkdir build
           cd build

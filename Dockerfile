@@ -45,7 +45,7 @@ RUN git clone https://github.com/openssl/openssl.git && \
 	make all && \
 	cd /home/dependencies
 
-RUN git clone https://github.com/catchorg/Catch2.git && \
+RUN git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git && \
 	cd Catch2 && \
 	mkdir build && \
 	cd build && \

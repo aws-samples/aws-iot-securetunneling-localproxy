@@ -26,7 +26,7 @@
 		* Update PATH environment variable to add the dll for openssl which is inside C:\Program Files\OpenSSL\bin
 		* Download and install catch2
 		* Use Visual Studio native tool command prompt in admin mode.
-		* `git clone https://github.com/catchorg/Catch2.git`
+		* `git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git`
 		* `cd Catch2`
 		* `mkdir build`
 		* `cd build`
