@@ -51,7 +51,7 @@ void TestWebsocketServer::run()
         [](boost::beast::websocket::response_type& response)
         {
             response.set("channel-id", boost::uuids::to_string({}));    //default init for uuid is all 0s
-            response.set("Sec-WebSocket-Protocol", "aws.iot.securetunneling-1.0");
+            response.set("Sec-WebSocket-Protocol", "aws.iot.securetunneling-2.0");
         },
         ec);
     if(ec)
@@ -199,5 +199,6 @@ void TestWebsocketServer::expect_next_message(std::function<bool(message const &
 {
     expect_messages.push(predicate);
 }
+
 
 }}}}
