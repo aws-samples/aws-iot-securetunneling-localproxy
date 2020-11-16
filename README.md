@@ -167,32 +167,107 @@ Helpful links:
 
 The response of OpenTunnel via the AWS IoT Secure Tunneling management API is acquisition of a pair of client access tokens to use to connect two local proxy clients to the ends of the tunnel. One token is designated for the source local proxy, and the other is for the destination. They must be supplied with the matching local proxy run mode argument, otherwise connecting to the service will fail. Additionally, the region parameter supplied to the local proxy must match the AWS region the tunnel was opened in. In a production configuration, delivery of one or both tokens and launching the local proxy process may be automated. The following sections describe how to run the local proxy on both ends of a tunnel.
 
-### Destination service and destination mode local proxy
+### Terms 
 
-Running the local proxy in destination mode makes it behave like a single TCP client with respect to a listening application that is reachable from the local device. In addition to the client access token, destination mode requires specifying the address and port that must be connected to when an incoming connection request is received over the tunnel. This is an example command to run the local proxy in destination mode, on a tunnel created in us-east-1, and forward incoming requests to a locally running application or service on port 3389.
+V1 local proxy: local proxy uses Sec-WebSocket-Protocol _aws.iot.securetunneling-1.0_ when communicates with AWS IoT Tunneling Service.
+
+V2 local proxy: local proxy uses Sec-WebSocket-Protocol _aws.iot.securetunneling-2.0_ when communicates with AWS IoT Tunneling Service.
+
+Source local proxy: local proxy that runs in source mode.
+
+Destination local proxy:  local proxy that runs in destination mode.
+
+
+### Multi-port tunneling feature support
+Multi-port tunneling feature allows more than one stream multiplexed on same tunnel. 
+This feature is only supported with V2 local proxy. If you have some devices that on V1 local proxy, some on V2 local proxy, simply upgrade the local proxy on the source device to V2 local proxy. When V2 local proxy talks to V1 local proxy, the backward compatibility is maintained. For more details, please refer to section [backward compatibility](#backward-compatibility)
+
+### Service identifier (Service ID)
+If you need to use multi-port tunneling feature, service ID is needed to start local proxy. A service identifier will be used as the new format to specify the source listening port or destination service when start local proxy. The identifier is like an alias for the source listening port or destination service. For the format requirement of service ID, please refer to AWS public doc [services in DestinationConfig ](https://docs.aws.amazon.com/iot/latest/apireference/API_iot-secure-tunneling_DestinationConfig.html). There is no restriction on how this service ID should be named, as long as it can help uniquely identifying a connection or stream. 
+
+Example 1: _SSH1_
+
+You can use the following format: protocol name + connection number. 
+For example, if two SSH connections needed to be multiplexed over a tunnel , you can choose SSH1 and SSH2 as the service IDs.
+
+Example 2: _ae5957ef-d6e3-42a5-ba0c-edc667d2b3fb_
+
+You can use a UUID to uniquely identify a connection/stream.
+
+Example 3: _ip-172-31-6-23.us-west-2.compute.internal_
+
+You can use remote host name to uniquely identify a stream.
+
+### Destination service and destination mode local proxy
+Destination local proxy is responsible for forwarding application data received from tunnel to destination service. For V1 local proxy, only 1 stream is allowed over the tunnel. With V2 local proxy, more than one streams can be transferred at the same time. For more details, please read section [**Multi-port tunneling feature support**](#multi-port-tunneling-feature-support). 
+
+Example 1:
 
     ./localproxy -r us-east-1 -d localhost:3389 -t <destination_client_access_token>
+This is an example command to run the local proxy in destination mode, on a tunnel created in us-east-1, and forward data packets received from the tunnel to a locally running application/service on port 3389.
 
-We recommend starting the destination application or server before starting the destination local proxy to ensure that when the local proxy attempts to connect to the destination port, it will succeed. When the local proxy starts in destination mode, it will first connect to the service, and then begin listening for a new connection request over the tunnel. Upon receiving a request, it will attempt to connect to the configured destination address and port. If successful, it will transmit data between the TCP connection and tunnel bi-directionally. Destination mode can only manage one connection at a time, so if a new connection request is received over the tunnel while a connection is already established, it will close the current TCP connection and establishes a new one.
+Example 2:
+
+    ./localproxy -r us-east-1 -d HTTP1=80,SSH1=22 -t <destination_client_access_token>
+This is an example command to run the local proxy in destination mode, on a tunnel created in us-east-1, and forward:
+- data packets belongs to service ID HTTP1 to a locally running application/service on port 80.
+- data packets belongs to service ID SSH1 to a locally running application/service on port 22.
+
+We recommend starting the destination application or server before starting the destination local proxy to ensure that when the local proxy attempts to connect to the destination port, it will succeed. When the local proxy starts in destination mode, it will first connect to the service, and then begin listening for a new connection request over the tunnel. Upon receiving a request, it will attempt to connect to the configured destination address and port. If successful, it will transmit data between the TCP connection and tunnel bi-directionally. 
+
+If a new instance of destination local proxy starts,  using the same client access token as a existing local proxy that is already connected, the old local proxy will be disconnected. Tunnel connection will be reset and the new tunnel connection will be established with the new instance of the destination local proxy. 
+
+For a multiplexed tunnel, one connection drop or connect will not affect the other connections that share the same tunnel. All connections/streams in a multiplexed tunnel is independent.   
+
 
 ### Client application and source mode local proxy
+Source local proxy is responsible for relaying application data to the tunnel. For V1 local proxy, only 1 stream is allowed over the tunnel. With V2 local proxy, more than one streams can be transferred at the same time. For more details, please read section [**Multi-port tunneling feature support**](#multi-port-tunneling-feature-support). 
 
-Running the local proxy in source mode makes it behave like a single connection TCP server, waiting for a TCP client to connect and then relaying data over that connection through the tunnel. In addition to the client access token, source mode requires choosing an available port for the local proxy to listen to.
-
-This is an example command to run the local proxy in source mode, on a tunnel created in us-east-1, waiting for a connection on port 3389:
+Example 1:
 
     ./localproxy -r us-east-1 -s 3389 -t <source_client_access_token>
+    
+This is an example command to run the local proxy in source mode, on a tunnel created in us-east-1, waiting for a connection on port 3389.
 
-When the local proxy starts in source mode, it will first connect to the service, and then begin listening for a new connection on the specified local port and bind address. While the local proxy is running, use the client application (e.g. RemoteDesktopClient, ssh client) to connect to the source local proxy's listening port. After accepting the TCP connection, the local proxy will forward the connection request over the tunnel and immediately transmit data the TCP connection data through the tunnel bidirectionally. Source mode will only accept and manage one connection at a time. If the established TCP connection is terminated for any reason, it will send a disconnect message over the tunnel so the service or server running on the other side can react appropriately. Similarly, if a notification that a disconnect happened on the other side is received by the source local proxy it will close the local TCP connection. Regardless of a local I/O failures, or if a notification of a disconnect comes from the tunnel, after the local TCP connection closes, it will begin listening again on the specified listen port and bind address.
+Example 2:
+
+    ./localproxy -r us-east-1 -s HTTP1=5555,SSH1=3333 -t <source_client_access_token>
+  
+This is an example command to run the local proxy in source mode, on a tunnel created in us-east-1,
+ - waiting for a connection on port 5555, for service ID HTTP1.
+ - waiting for a connection on port 3333, for service ID SSH1. 
+
+When the local proxy starts in source mode, it will first connect to the service, and then begin listening for a new connection on the specified port and bind address. While the local proxy is running, use the client application (e.g. RemoteDesktopClient, ssh client) to connect to the source local proxy's listening port. After accepting the TCP connection, the local proxy will forward the connection request over the tunnel and immediately transmit data the TCP connection data through the tunnel bidirectionally. Source mode can manage more than one connection/stream at a time, if V2 local proxy is used. If the established TCP connection is terminated for any reason, it will send a disconnect message over the tunnel so the service or server running on the other side can react appropriately. Similarly, if a notification that a disconnect happened on the other side is received by the source local proxy it will close the local TCP connection. Regardless of a local I/O failures, or if a notification of a disconnect comes from the tunnel, after the local TCP connection closes, it will begin listening again on the specified listen port and bind address.
 
 * If a new connection request sent over the tunnel results in the remote (destination) side being unable to connect to a destination service, it will send a disconnect message back through the tunnel. The exact timing behavior of this depends on the TCP retry settings of the destination local proxy.
+* For a multiplexed tunnel, one connection drop or connect will not affect the other connections that share the same tunnel. All connections/streams in a multiplexed tunnel is independent. 
 
 ### Stopping the local proxy process
 
-The local proxy process can be stopped using various methods:
+The local proxy process can be stopped using various methods: 
 * Sending a SIGTERM signal to the process
 * Closing a tunnel explicitly via CloseTunnel API. This will result in the local proxy dropping the connection to the service and existing the process successfully.
 * A tunnel expires after its lifetime expiry. This will result in the local proxy dropping the connection to the service and exiting the process successfully. 
+
+### Backward compatibility
+V2 local proxy is able to communicate with V1 local proxy if only one connection needs to be established over the tunnel. This means when you open a tunnel,  no more than one service should be passed in the **services** list.
+
+Example 1: 
+
+     aws iotsecuretunneling open-tunnel --destination-config thingName=foo,services=SSH1,SSH2
+In this example, two service IDs are used (SSH1 and SSH2). Backward compatibility is NOT supported.
+
+Example 2:  
+   
+    aws iotsecuretunneling open-tunnel --destination-config thingName=foo,services=SSH2
+
+In this example, one service ID is used (SSH2). Backward compatibility is supported.
+
+Example 3: 
+
+    aws iotsecuretunneling open-tunnel 
+
+In this example, no service ID is used. Backward compatibility is supported.
 
 ### Security Considerations
 
@@ -251,10 +326,27 @@ Specifies an explicit endpoint to use to connect to the tunneling service. For s
 Endpoint region where tunnel exists. You cannot specify this option and **-e/--process-endpoint** together. Either this or **--proxy-endpoint** is required
 
 **-s/--source-listen-port [argvalue]**
-Directs the local proxy to run in source mode, and listen on the specified port for incoming connections. Either this or **--destination-app** is required
+Start local proxy in source mode and sets the mappings between service identifier and listening port. For example: SSH1=5555 or 5555. 
+* It follows format serviceId1=port1, serviceId2=port2, ...
+* If only one port is needed to start local proxy, service identifier is not needed. You can simply pass the port to be used, for example, 5555.
+* SSH1=5555 means that local proxy will start listening requests on port 5555 for service ID SSH1.
+* The value of service ID and how many service IDs are used needs to match with **services** in open tunnel call. For example:
+    ```shell script
+    aws iotsecuretunneling open-tunnel --destination-config thingName=foo,services=SSH1,SSH2
+    ```
+    Then to start local proxy in source mode, need to use: ```-s SSH1=$port1,SSH2=$port2```
 
 **-d/--destination-app [argvalue]**
-Directs the local proxy to run in destination mode, and connect to the specified address which may be specified as _address:port_ or just _port_. Address may be specified an IPv4 address or hostname. Either this or **--source-listen-port** is required.
+Start local proxy in destination mode and sets the mappings between port and service identifier. For example: SSH1=5555 or 5555. 
+* It follows format serviceId1=endpoint1, serviceId2=endpoint2, ...
+* Endpoint can be IP address:port , port or hostname:port. 
+* If only one port is needed to start local proxy, service ID is not needed. You can simply pass the port used, for example, 5555.
+* An item of the mapping SSH1=5555 means that local proxy will forward data received from the tunnel to TCP port 5555 for service ID SSH1. 
+* The value of service ID and how many service IDs are used needs to match with **services** in open tunnel call. For example:
+    ```shell script
+    aws iotsecuretunneling open-tunnel --destination-config thingName=foo,services=SSH1,SSH2
+    ```
+    Then to start local proxy in destination mode, need to use: ```-d SSH1=$port1,SSH2=$port2```
 
 **-b/--local-bind-address [argvalue]**
 Specifies the local bind address (network interface) to use for listening for new connections when running the local proxy in source mode, or the local bind address to use when reaching out to the destination service when running in destination mode
@@ -277,6 +369,12 @@ Specifies a file to read command line arguments from. Actual command line argume
 **-v/--verbose [argvalue]**
 Specifies the verbosity of the output. Value must be between 0-255, however meaningful values are between 0-6 where 0 = output off, 1 = fatal, 2 = error, 3 = warning, 4 = info [default], 5 = debug, 6 = trace. Any values greater than 6 will be treated the same trace level output.
 
+**-m/--mode [argvalue]**
+Specifies the mode local proxy will run. Accepted values are: src, source, dst, destination.
+
+**--config-dir [argvalue]**
+Specifies the configuration directory where service identifier mappings are configured. If this parameter is not specified, local proxy will read configuration files from default directory _./config_, under the file path where `localproxy` binary are located. 
+
 ### Options set via --config
 
 A configuration file can be used to specify any or all of the CLI arguments. If an option is set via a config file and CLI argument, the CLI argument value overrides. Here is an example file named `config.ini`:
@@ -295,6 +393,42 @@ To illustrate composition between using a configuration file and actual CLI argu
     source-listen-port = 6000
 
 and a local proxy launch command `./localproxy --config config.ini -t foobar` is equivalent to running the local proxy command `./localproxy -c /opt/rootca -r us-west-2 -b ::1 -s 6000 -t foobar`
+
+**NOTE**: Service ID mappings should be configured by using parameter --config-dir, not --config. 
+
+### Options set via --config-dir
+
+If you want to start local proxy on fixed ports, you can configure these mappings using configuration files. By default, local proxy will read from directory _./config_, under the file path where `localproxy` binary are located. If you need to direct local proxy reads from specific file path, use parameter `--config-dir` to specify the full path of the configuration directory. 
+You can put multiple files in this directory or organize them into the sub folders. Local proxy will read all the files in this directory and search for the port mapping needed for a tunnel connection. 
+
+**NOTE**: The configuration files will be read once when local proxy starts and will not be read again unless it is restarted.
+
+#### Sample configuration files on source device
+File name: _SSHSource.ini_
+
+Content example:
+
+    SSH1=3333
+    SSH2=5555
+
+This example means:
+* Service ID SSH1 is mapped to port 3333.
+* Service ID SSH2 is mapped to port 5555.
+
+#### Sample configuration files on  destination device
+
+Example configuration file on destination device:
+File name: _SSHDestination.ini_
+
+Content example:
+
+    SSH1=22
+    SSH2=10.0.0.1:80
+    
+This example means:    
+* Service ID SSH1 is mapped to port 22.
+* Service ID SSH2 is mapped to host with IP address 10.0.0.1, port 80.
+
 
 ### Options set via environment variables
 
@@ -368,3 +502,13 @@ Defines the maximum data size allowed to be carried via a single tunnel message.
 
 ### Building local proxy on a windows
 Follow instructions in [here](windows-localproxy-build.md) to build a local proxy on a windows environment.
+
+### Limits for multiplexed tunnels
+#### Bandwidth limits
+If the tunnel multi-port feature is enabled, multiplexed tunnels have the same bandwidth limit as non-multiplexed tunnels. This limit is mentioned in [AWS public doc](https://docs.aws.amazon.com/general/latest/gr/iot_device_management.html) section **AWS IoT Secure Tunneling**, row _Maximum bandwidth per tunnel_. The bandwidth for a multiplexed tunnel is the bandwidth consumed by all active streams that transfer data over the tunnel connection. If you need this limit increased, please reach out to AWS support and ask for a limit increase. 
+
+#### Service ID limits 
+There are limits on the maximum streams that can be multiplexed on a tunnel connection. This limit is mentioned in [AWS public doc](https://docs.aws.amazon.com/general/latest/gr/iot_device_management.html) section **AWS IoT Secure Tunneling**, row _Maximum services per tunnel_. If you need this limit increased, please reach out to AWS support and ask for a limit increase.	
+
+#### Load balancing in multiplexed streams  
+If more than one stream is transferred at the same time, local proxy will not load balance between these streams. If you have one stream that is dominating the bandwidth, the other streams sharing the same tunnel connection may see latency of data packet delivery. 

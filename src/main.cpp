@@ -1,13 +1,16 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+
 #include <cstdlib>
-#include <chrono>
 #include <algorithm>
 #include <functional>
 #include <iostream>
 #include <string>
 #include <utility>
 #include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+
 #include <boost/phoenix.hpp>
 #include <boost/program_options.hpp>
 #include <boost/program_options/parsers.hpp>
@@ -19,10 +22,10 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/expressions.hpp>
-#include <boost/asio.hpp>
 
 #include "ProxySettings.h"
 #include "TcpAdapterProxy.h"
+#include "config/ConfigFile.h"
 
 using std::uint16_t;
 using std::endl;
@@ -30,6 +33,9 @@ using std::exception;
 using std::get;
 using std::string;
 using std::tuple;
+using std::unordered_set;
+using std::vector;
+using std::unordered_map;
 
 using boost::property_tree::ptree;
 using boost::program_options::value;
@@ -66,31 +72,6 @@ tuple<string, uint16_t> get_host_and_port(string const & endpoint, uint16_t defa
         }
     }
     catch (std::invalid_argument &)
-    {
-        throw std::invalid_argument((boost::format("Invalid endpoint specified: %1%") % endpoint).str());
-    }
-}
-
-tuple<string, uint16_t> get_host_and_port(string const & endpoint, std::string default_host)
-{
-    try
-    {
-        size_t position = endpoint.find(':');
-        if (position != string::npos && position != endpoint.length() - 1)
-        {
-            const string host = endpoint.substr(0, position);
-            const string port = endpoint.substr(position + 1, endpoint.length() - (position + 1));
-            const uint16_t portnum = static_cast<uint16_t>(stoi(port, &position));
-            if (port.length() == 0 || position != port.length()) throw std::invalid_argument("");
-            return std::make_tuple(host, portnum);
-        }
-        else
-        {
-            if (position == endpoint.length() - 1) throw std::invalid_argument("");
-            return std::make_tuple(default_host, stoi(endpoint));
-        }
-    }
-    catch(std::invalid_argument &)
     {
         throw std::invalid_argument((boost::format("Invalid endpoint specified: %1%") % endpoint).str());
     }
@@ -142,16 +123,16 @@ void set_logging_filter(std::uint16_t level_numeric)
     }
 }
 
-void init_logging()
+void init_logging(std::uint16_t &logging_level)
 {
     boost::log::add_common_attributes();
     boost::log::add_console_log(std::cout, boost::log::keywords::format = boost::phoenix::bind(&log_formatter, boost::log::expressions::stream, boost::log::expressions::record));
-    set_logging_filter(4);
+    set_logging_filter(logging_level);
 }
 
 bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &settings, std::uint16_t &logging_level)
 {
-    init_logging();
+    using namespace aws::iot::securedtunneling::config_file;
 #ifdef _AWSIOT_TUNNELING_NO_SSL
     std::cerr << "SSL is disabled" << std::endl;
 #endif
@@ -163,8 +144,8 @@ bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &setti
         ("access-token,t", value<string>()->required(), "Client access token")
         ("proxy-endpoint,e", value<string>(), "Endpoint of proxy server with port (if not default 443). Example: data.tunneling.iot.us-east-1.amazonaws.com:443")
         ("region,r", value<string>(), "Endpoint region where tunnel exists. Mutually exclusive flag with --proxy-endpoint")
-        ("source-listen-port,s", value<std::uint16_t>(), "Assigns source mode and sets the port to listen to.")
-        ("destination-app,d", value<string>(), "Assigns destination mode and sets the endpoint with the arg in [host]:<port> or just <port> (default localhost) format.")
+        ("source-listen-port,s", value<string>(), "Sets the mappings between source listening ports and service identifier. Example: SSH1=5555 or 5555")
+        ("destination-app,d", value<string>(), "Sets the mappings between the endpoint(address:port/port) and service identifier. Example: SSH1=127.0.0.1:22 or 22")
         ("local-bind-address,b", value(&cfg.bind_address), "Assigns a specific local address to bind to for listening in source mode or a local socket address for destination mode.")
         ("capath,c", value(&cfg.additional_ssl_verify_path), "Adds the directory containing certificate authority files to be used for performing verification")
         ("no-ssl-host-verify,k", boost::program_options::bool_switch(&cfg.no_ssl_host_verify), "Turn off SSL host verification")
@@ -172,6 +153,8 @@ bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &setti
         ("settings-json", value<string>(), "Use the input JSON file to apply fine grained settings.")
         ("config", value<string>(), "Use the supplied configuration file to apply CLI args. Actual CLI args override the contents of this file")
         ("verbose,v", value<std::uint16_t>()->default_value(4), "Logging level to standard out. [0, 255] (0=off, 1=fatal, 2=error, 3=warning, 4=info, 5=debug, >=6=trace)")
+        ("mode,m", value<string>(), "The mode local proxy will run: src(source) or dst(destination)")
+        ("config-dir", value<string>(), "Set the configuration directory where service identifier mappings are stored. If not specified, will read mappings from default directory ./config (same directory where local proxy binary is running)")
         ;
     store(parse_command_line(argc, argv, cliargs_desc), vm);
 
@@ -186,6 +169,10 @@ bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &setti
         boost::property_tree::json_parser::write_json(vm["export-default-settings"].as<string>(), settings, std::locale(), true);
         return false;
     }
+
+    //collect and normalize CLI args to usable inputs
+    logging_level = vm["verbose"].as<std::uint16_t>();
+    init_logging(logging_level);
 
     bool token_cli_warning = vm.count("access-token") != 0;
 
@@ -214,10 +201,6 @@ bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &setti
         boost::property_tree::json_parser::read_json(vm["settings-json"].as<string>(), settings);
     }
 
-    if (vm.count("source-listen-port") + vm.count("destination-app") > 1 || vm.count("source-listen-port") + vm.count("destination-app") == 0)
-    {
-        throw std::runtime_error("Must specify one and only one of --source-listen-port/-s or --destination-app/-d options");
-    }
 
     if (vm.count("region") + vm.count("proxy-endpoint") > 1 || vm.count("region") + vm.count("proxy-endpoint") == 0)
     {
@@ -226,8 +209,6 @@ bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &setti
 
     //trigger validation of required options
     notify(vm);
-    //collect and normalize CLI args to usable inputs
-    logging_level = vm["verbose"].as<std::uint16_t>();
     if (token_cli_warning)
     {
         BOOST_LOG_TRIVIAL(warning) << "Found access token supplied via CLI arg. Consider using environment variable " << TOKEN_ENV_VARIABLE << " instead";
@@ -243,26 +224,124 @@ bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &setti
     cfg.proxy_port = std::get<1>(proxy_host_and_port);
 
     cfg.mode = vm.count("destination-app") == 1 ? proxy_mode::DESTINATION : proxy_mode::SOURCE;
-    if (cfg.mode == proxy_mode::DESTINATION)
+
+    if (vm.count("mode"))
     {
-        string data_endpoint = vm["destination-app"].as<string>();
-        transform(data_endpoint.begin(), data_endpoint.end(), data_endpoint.begin(), ::tolower);
-        tuple<string, uint16_t> data_endpoint_and_point = get_host_and_port(data_endpoint, "");
-        cfg.data_host = std::get<0>(data_endpoint_and_point);
-        cfg.data_port = std::get<1>(data_endpoint_and_point);
-    }
-    else
-    {
-        //data host remains unused in source mode
-        cfg.data_port = vm["source-listen-port"].as<std::uint16_t>();
-        cfg.on_listen_port_assigned = [](std::uint16_t listen_port)
+        string mode = vm["mode"].as<string>();
+        if (mode != "src" && mode != "dst" && mode != "source" && mode != "destination")
         {
-            BOOST_LOG_TRIVIAL(info) << "Listen port assigned: " << listen_port;
-        };
+            throw std::runtime_error("Mode value is wrong! Allowed values are: src, dst, source, destination");
+        }
+        // Assign the value to the right mode
+        if (mode == "src" || mode == "source")
+        {
+            cfg.mode = proxy_mode::SOURCE;
+        }
+        else if (mode == "dst" || mode == "destination")
+        {
+            cfg.mode = proxy_mode::DESTINATION;
+        }
+        else
+        {
+            throw std::runtime_error("Internal error. Mode value is wrong!");
+        }
     }
 
+    /** Invalid input combination for: -s, -d and --mode
+     * 1. -s and -d should NOT used together
+     * 2. -s and mode value is dst/destination should NOT used together
+     * 3. -d and mode value is src/source should NOT used together.
+     * 4. At least one of the parameter should be provided to start local proxy in either source or destination mode:
+     * -s, -d or -m
+     */
+    if (vm.count("source-listen-port") + vm.count("destination-app") > 1)
+    {
+        throw std::runtime_error("Must specify one and only one of --source-listen-port/-s or --destination-app/-d");
+    }
+    else if (vm.count("source-listen-port") + vm.count("destination-app") + vm.count("mode")== 0)
+    {
+        throw std::runtime_error("Must specify one of --source-listen-port/-s or --destination-app/-d or --mode");
+    }
+    else if (vm.count("source-listen-port") && vm.count("mode") && cfg.mode == proxy_mode::DESTINATION )
+    {
+        throw std::runtime_error("-s and --mode have mismatched mode. Mode is set to destination!");
+    }
+    else if (vm.count("destination-app") && vm.count("mode") && cfg.mode == proxy_mode::SOURCE )
+    {
+        throw std::runtime_error("-s and --mode have mismatched mode. Mode is set to source!");
+    }
+
+    /**
+     * 1. Generate from the CLI parsing
+     * 2. Have a reserve mapping for port_mappings
+     */
+     if (vm.count("destination-app"))
+     {
+         cfg.mode = proxy_mode::DESTINATION;
+         update_port_mapping(vm["destination-app"].as<string>(), cfg.serviceId_to_endpoint_map);
+         // Support v1 local proxy format
+         if (cfg.serviceId_to_endpoint_map.size() == 1 && cfg.serviceId_to_endpoint_map.begin()->first.empty())
+         {
+             BOOST_LOG_TRIVIAL(debug) << "v2 local proxy starts with v1 local proxy format";
+         }
+         else
+         {
+             BOOST_LOG_TRIVIAL(debug) << "Detect port mapping configuration provided through CLI in destination mode:";
+             BOOST_LOG_TRIVIAL(debug) << "----------------------------------------------------------";
+             for (auto m: cfg.serviceId_to_endpoint_map)
+             {
+                 BOOST_LOG_TRIVIAL(debug) << m.first << " = " << m.second;
+             }
+             BOOST_LOG_TRIVIAL(debug) << "----------------------------------------------------------";
+         }
+     }
+
+
+     if (vm.count("source-listen-port"))
+     {
+         cfg.mode = proxy_mode::SOURCE;
+         update_port_mapping(vm["source-listen-port"].as<string>(), cfg.serviceId_to_endpoint_map);
+         // Support v1 local proxy format
+         if (cfg.serviceId_to_endpoint_map.size() == 1 && cfg.serviceId_to_endpoint_map.begin()->first.empty())
+         {
+             BOOST_LOG_TRIVIAL(debug) << "v2 local proxy starts with v1 local proxy format";
+         }
+         else
+         {
+             BOOST_LOG_TRIVIAL(debug) << "Detect port mapping configuration provided through CLI in source mode:";
+             BOOST_LOG_TRIVIAL(debug) << "----------------------------------------------------------";
+             for (auto m: cfg.serviceId_to_endpoint_map)
+             {
+                 BOOST_LOG_TRIVIAL(debug) << m.first << " = " << m.second;
+             }
+             BOOST_LOG_TRIVIAL(debug) << "----------------------------------------------------------";
+         }
+     }
+
+    if (vm.count("config-dir"))
+    {
+        string config_dir = vm["config-dir"].as<string>();
+        BOOST_LOG_TRIVIAL(debug) << "Detect port mapping configuration provided through configuration directory :" << config_dir;
+        // Run validation against the input
+        if (!is_valid_directory(config_dir)) {
+            std::string error_message = std::string("Invalid configuration directory: ") + config_dir;
+            throw std::runtime_error(error_message);
+        }
+        cfg.config_files = get_all_files(config_dir);
+    }
+    else if (is_valid_directory(get_default_port_mapping_dir()))
+    {
+        // read default directory, if no configuration directory is provided.
+        cfg.config_files = get_all_files(get_default_port_mapping_dir());
+    }
+
+    if (cfg.mode == proxy_mode::SOURCE && cfg.config_files.empty() && cfg.serviceId_to_endpoint_map.empty())
+    {
+        BOOST_LOG_TRIVIAL(debug) << "Local proxy does not detect any port mapping configuration. Will pick up random ports to run in source mode.";
+    }
     return true;
 }
+
 
 int main(int argc, char ** argv)
 {
@@ -287,3 +366,4 @@ int main(int argc, char ** argv)
 
     return EXIT_SUCCESS;
 }
+

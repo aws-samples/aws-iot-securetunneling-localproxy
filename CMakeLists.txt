@@ -66,10 +66,10 @@ find_package(Catch2 REQUIRED)
 #########################################
 # Boost dependencies                    #
 #########################################
-set_property(GLOBAL PROPERTY Boost_USE_STATIC_LIBS ON) 
+set_property(GLOBAL PROPERTY Boost_USE_STATIC_LIBS ON)
 set_property(GLOBAL PROPERTY Boost_USE_DEBUG_RUNTIME OFF)
 #set_property(GLOBAL PROPERTY Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.68.0 REQUIRED COMPONENTS system log log_setup thread program_options date_time)
+find_package(Boost 1.68.0 REQUIRED COMPONENTS system log log_setup thread program_options date_time filesystem)
 include_directories(${Boost_INCLUDE_DIRS})
 foreach(BOOST_LIB ${Boost_LIBRARIES})
     string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} BOOST_STATIC_LIB ${BOOST_LIB})
@@ -81,9 +81,10 @@ endforeach()
 #########################################
 file(GLOB ALL_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
+set(UTIL_SOURCE ${PROJECT_SOURCE_DIR}/src/config/ConfigFile.cpp)
 set(CORE_SOURCES ${PROJECT_SOURCE_DIR}/src/TcpAdapterProxy.cpp ${PROJECT_SOURCE_DIR}/src/ProxySettings.cpp ${PROTO_HDRS} ${PROTO_SRCS})
-set(MAIN_SOURCES ${PROJECT_SOURCE_DIR}/src/main.cpp ${CORE_SOURCES})
-set(TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/AdapterTests.cpp ${CORE_SOURCES} ${PROJECT_SOURCE_DIR}/test/TestWebsocketServer.cpp)
+set(MAIN_SOURCES ${PROJECT_SOURCE_DIR}/src/main.cpp ${CORE_SOURCES} ${UTIL_SOURCE})
+set(TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/AdapterTests.cpp ${CORE_SOURCES} ${UTIL_SOURCE} ${PROJECT_SOURCE_DIR}/test/TestWebsocketServer.cpp)
 
 add_executable(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${MAIN_SOURCES})
 add_executable(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${TEST_SOURCES})

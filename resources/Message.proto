@@ -12,6 +12,8 @@ message Message {
     int32   streamId     = 2;
     bool    ignorable    = 3;
     bytes   payload      = 4;
+    string  serviceId = 5;
+    repeated string availableServiceIds = 6;
 
     enum Type {
         UNKNOWN = 0;
@@ -19,5 +21,6 @@ message Message {
         STREAM_START = 2;
         STREAM_RESET = 3;
         SESSION_RESET = 4;
+        SERVICE_IDS = 5;
     }
 }
