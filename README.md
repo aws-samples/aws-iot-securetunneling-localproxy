@@ -63,7 +63,7 @@ Fedora example:
 
 #### 2. Download and install Boost dependency
 
-    wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
+    wget https://boostorg.jfrog.io/artifactory/main/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
     tar xzvf /tmp/boost.tar.gz
     cd boost_1_69_0
     ./bootstrap.sh

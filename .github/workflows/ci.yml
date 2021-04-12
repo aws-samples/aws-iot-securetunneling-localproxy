@@ -20,7 +20,7 @@ jobs:
     - name: Install boost
       working-directory: ${{ github.workspace }}
       run: |
-        wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
+        wget https://boostorg.jfrog.io/artifactory/main/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
         tar xzvf /tmp/boost.tar.gz
         cd boost_1_69_0
         ./bootstrap.sh --with-toolset=clang
@@ -66,7 +66,7 @@ jobs:
     - name: Install boost
       working-directory: ${{ github.workspace }}
       run: |
-        wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
+        wget https://boostorg.jfrog.io/artifactory/main/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
         tar xzvf /tmp/boost.tar.gz
         cd boost_1_69_0
         ./bootstrap.sh
@@ -140,7 +140,7 @@ jobs:
           $env:Path += ";C:\Program Files (x86)\zlib\bin"
       - name: Install boost
         run: |
-          Invoke-WebRequest "https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.zip" -OutFile "boost_1_69_0.zip"
+          Invoke-WebRequest "https://boostorg.jfrog.io/artifactory/main/release/1.69.0/source/boost_1_69_0.zip" -OutFile "boost_1_69_0.zip"
           Expand-Archive "boost_1_69_0.zip" -Force
           cd .\boost_1_69_0\boost_1_69_0\
           .\bootstrap.bat
