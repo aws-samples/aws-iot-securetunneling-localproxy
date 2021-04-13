@@ -20,7 +20,7 @@ RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz -O /tmp/zlib-1.2.11.tar.gz && \
 	make install && \
 	cd /home/dependencies
 
-RUN wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz && \
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz && \
 	tar xzvf /tmp/boost.tar.gz && \
 	cd boost_1_69_0 && \
 	./bootstrap.sh && \

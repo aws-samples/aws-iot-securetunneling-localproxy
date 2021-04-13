@@ -45,8 +45,8 @@
 		* `nmake`
 		* `nmake install` ( install protobuf inside C:\Program Files (x86)\ )
 	* Download and install boost
-		* Download from https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz
-		* Extract boost_1_69_0.tar.gz
+		* Download from https://boostorg.jfrog.io/artifactory/main/release/1.69.0/source/boost_1_69_0.zip
+		* Extract boost_1_69_0.zip
 		* Use Visual Studio native tool command prompt
 		* `cd path/to/boost_1_69_0`
 		* `bootstrap.bat`
