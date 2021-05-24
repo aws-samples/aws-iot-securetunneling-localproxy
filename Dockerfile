@@ -1,5 +1,6 @@
 # FROM ubuntu:18.04
 FROM ubuntu:18.04 as builder
+ARG OPENSSL_CONFIG
 
 # Install Prerequisites
 
@@ -37,10 +38,11 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/pr
 	make install && \
 	cd /home/dependencies
 
+
 RUN git clone https://github.com/openssl/openssl.git && \
 	cd openssl && \
 	git checkout OpenSSL_1_1_1-stable && \
-	./Configure linux-generic64 && \
+	./Configure $OPENSSL_CONFIG && \
 	make depend && \
 	make all && \
 	cd /home/dependencies

@@ -23,7 +23,7 @@ This code enables tunneling of a single threaded TCP client / server socket inte
 `./docker-build.sh`
 
 After the Docker build completes, run `./docker-run.sh` to open a shell inside the container created in the
-previous step. Here you can find both the `localproxy` and `localproxytest` binaries.
+previous step, or you can run `./docker-run.sh -p <port_number>` to expose a port from the docker container. Here you can find both the `localproxy` and `localproxytest` binaries. Note that when the localproxy runs in source mode, it binds by default to `localhost`, If you want to access the localproxy from outside the container, make sure to use the option `-b 0.0.0.0` when you run the localproxy from the container so that it binds to `0.0.0.0` since `localhost` can not be access from outside the container.
 
 ---
 
