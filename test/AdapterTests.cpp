@@ -8,17 +8,15 @@
 #include <config/ConfigFile.h>
 #include <iostream>
 #include <unordered_set>
-#include <cstdlib>
-#include <cstdio>
 #include <string>
-#include <stdio.h>
-#include <fstream>
+#include <cstdio>
 #include <boost/filesystem.hpp>
 #include <thread>
 #include <chrono>
 #include "Message.pb.h"
 
 #include "TestWebsocketServer.h"
+#include "LocalproxyConfig.h"
 
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
@@ -28,7 +26,7 @@
 
 using boost::property_tree::ptree;
 using boost::system::errc::errc_t;
-using aws::iot::securedtunneling::adapter_proxy_config;
+using aws::iot::securedtunneling::LocalproxyConfig;
 using aws::iot::securedtunneling::tcp_adapter_proxy;
 using aws::iot::securedtunneling::proxy_mode;
 
@@ -39,7 +37,7 @@ errc_t const            BOOST_EC_SOCKET_CLOSED = boost::system::errc::no_such_fi
 
 namespace aws { namespace iot { namespace securedtunneling { namespace test
 {
-    void apply_test_config(adapter_proxy_config &cfg, tcp::endpoint const& ws_endpoint) 
+    void apply_test_config(LocalproxyConfig &cfg, tcp::endpoint const& ws_endpoint)
     {
         cfg.proxy_host = ws_endpoint.address().to_string();
         cfg.proxy_port = ws_endpoint.port();
@@ -200,7 +198,7 @@ TEST_CASE( "Test source mode", "[source]") {
     tcp::endpoint ws_address{ws_server.get_endpoint()};
     std::cout << "Test server is listening on address: " << ws_address.address() << " and port: " << ws_address.port() << endl;
 
-    adapter_proxy_config adapter_cfg;
+    LocalproxyConfig adapter_cfg;
     apply_test_config(adapter_cfg, ws_address);
     adapter_cfg.mode = proxy_mode::SOURCE;
     adapter_cfg.bind_address = LOCALHOST;
@@ -311,7 +309,7 @@ TEST_CASE( "Test destination mode", "[destination]") {
     std::cout << "Test server listening on address: " << ws_address.address() << " and port: " << ws_address.port() << endl;
     this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
 
-    adapter_proxy_config adapter_cfg;
+    LocalproxyConfig adapter_cfg;
     apply_test_config(adapter_cfg, ws_address);
     adapter_cfg.mode = proxy_mode::DESTINATION;
     adapter_cfg.bind_address = LOCALHOST;

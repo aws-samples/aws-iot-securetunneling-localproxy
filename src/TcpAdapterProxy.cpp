@@ -1,17 +1,14 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 #include <functional>
-#include <limits.h>
 #include <set>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl/rfc2818_verification.hpp>
-#include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
-#include <boost/beast/core/flat_static_buffer.hpp>
 #include <boost/endian/conversion.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/log/trivial.hpp>
@@ -25,6 +22,7 @@
 #include "TcpAdapterProxy.h"
 #include "ProxySettings.h"
 #include "config/ConfigFile.h"
+#include "WebProxyAdapter.h"
 
 namespace aws { namespace iot { namespace securedtunneling {
     using boost::asio::io_context;
@@ -49,6 +47,7 @@ namespace aws { namespace iot { namespace securedtunneling {
     char const * const LOCALHOST_IP = "127.0.0.1";
     std::string const SOURCE_LOCAL_PROXY_PORT_BIND_EXCEPTION = "Source local proxy fails to bind address";
     std::uint16_t const DEFAULT_PROXY_SERVER_PORT = 443;
+    std::uint16_t const DEFAULT_WEB_PROXY_SERVER_PORT = 3128;
 
     std::set<std::uint32_t> MESSAGE_TYPES_VALIDATING_STREAM_ID {
         com::amazonaws::iot::securedtunneling::Message_Type_DATA,
@@ -148,11 +147,12 @@ namespace aws { namespace iot { namespace securedtunneling {
         }
     }
 
-    tcp_adapter_proxy::tcp_adapter_proxy(ptree const &settings, adapter_proxy_config const &config) :
-        settings{ settings },
-        adapter_config{ config },
-        incoming_message_buffer{ GET_SETTING(settings, WEB_SOCKET_READ_BUFFER_SIZE) },
-        message_parse_buffer{ GET_SETTING(settings, MESSAGE_MAX_SIZE) }
+    tcp_adapter_proxy::tcp_adapter_proxy(ptree const &settings, LocalproxyConfig const &config) :
+            settings{ settings },
+            localproxy_config{config },
+            web_proxy_adapter{&log, config },
+            incoming_message_buffer{ GET_SETTING(settings, WEB_SOCKET_READ_BUFFER_SIZE) },
+            message_parse_buffer{ GET_SETTING(settings, MESSAGE_MAX_SIZE) }
     { }
 
     tcp_adapter_proxy::~tcp_adapter_proxy()
@@ -160,10 +160,10 @@ namespace aws { namespace iot { namespace securedtunneling {
 
     int tcp_adapter_proxy::run_proxy()
     {
-        BOOST_LOG_SEV(log, info) << "Starting proxy in " << get_proxy_mode_string(adapter_config.mode) << " mode";
+        BOOST_LOG_SEV(log, info) << "Starting proxy in " << get_proxy_mode_string(localproxy_config.mode) << " mode";
         while (true)
         {
-            tcp_adapter_context tac{ adapter_config, settings };
+            tcp_adapter_context tac{localproxy_config, settings };
             try
             {
                 setup_web_socket(tac);
@@ -227,7 +227,7 @@ namespace aws { namespace iot { namespace securedtunneling {
     {
         BOOST_LOG_SEV(log, trace) << "Setting up tcp sockets ";
         clear_ws_buffers(tac);
-        if (adapter_config.mode == proxy_mode::DESTINATION)
+        if (localproxy_config.mode == proxy_mode::DESTINATION)
         {
             initialize_tcp_clients(tac);
             async_setup_destination_tcp_sockets(tac);
@@ -243,7 +243,7 @@ namespace aws { namespace iot { namespace securedtunneling {
     {
         BOOST_LOG_SEV(log, trace) << "Setting up tcp socket for service id: " << service_id;
         tcp_connection::pointer connection = get_tcp_connection(tac, service_id);
-        if (adapter_config.mode == proxy_mode::DESTINATION)
+        if (localproxy_config.mode == proxy_mode::DESTINATION)
         {
             tcp_client::pointer client = tac.serviceId_to_tcp_client_map[service_id];
             client->on_receive_stream_start = std::bind(&tcp_adapter_proxy::async_setup_dest_tcp_socket, this, std::ref(tac), service_id);
@@ -371,7 +371,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         {
             if (tac.wss->is_open())
             {
-                boost::beast::websocket::async_teardown(boost::beast::websocket::role_type::client, tac.wss->next_layer(), [&tac, this](boost::system::error_code const &ec)
+                tac.wss->async_teardown(boost::beast::websocket::role_type::client, [&tac, this](boost::system::error_code const &ec)
                 {
                     if (ec)
                     {
@@ -616,29 +616,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         {
             tac.wss->lowest_layer().close();
         }
-#ifdef _AWSIOT_TUNNELING_NO_SSL
-        tac.wss = std::make_shared<web_socket_stream>(tac.io_ctx);
-#else
-        boost::system::error_code ec;
-        tac.ssl_ctx.set_default_verify_paths(ec);
-        if (ec)
-        {
-            BOOST_LOG_SEV(log, warning) << "Could not set system default OpenSSL verification path: " << ec.message();
-        }
-        if (tac.adapter_config.additional_ssl_verify_path.has_value())
-        {
-            tac.ssl_ctx.add_verify_path(tac.adapter_config.additional_ssl_verify_path.get(), ec);
-            if (ec)
-            {
-                BOOST_LOG_SEV(log, fatal) << "Could not set additional OpenSSL verification path ("
-                    << tac.adapter_config.additional_ssl_verify_path.get() << "): " << ec.message();
-                throw std::runtime_error((boost::format("Could not set additional OpenSSL verification path(%1%) - %2%")
-                        % tac.adapter_config.additional_ssl_verify_path.get()
-                        % ec.message()).str());
-            }
-        }
-        tac.wss = std::make_shared<web_socket_stream>(tac.io_ctx, tac.ssl_ctx);
-#endif
+        tac.wss = std::make_shared<WebSocketStream>(tac.adapter_config, &log, tac.io_ctx);
         tac.wss->control_callback(std::bind(&tcp_adapter_proxy::handle_web_socket_control_message, this, std::ref(tac), std::placeholders::_1, std::placeholders::_2));
         
         static std::string user_agent_string = (boost::format("localproxy %1% %2%-bit/boost-%3%.%4%.%5%/openssl-%6%.%7%.%8%/protobuf-%9%")
@@ -649,10 +627,112 @@ namespace aws { namespace iot { namespace securedtunneling {
         
         //the actual work of this function starts here
         BOOST_LOG_SEV(log, info) << "Attempting to establish web socket connection with endpoint wss://" << tac.adapter_config.proxy_host << ":" << tac.adapter_config.proxy_port;
-        //start first async handler which chains into adding the rest
-        BOOST_LOG_SEV(log, trace) << "Resolving proxy host: " << tac.adapter_config.proxy_host;
 
-        tac.wss_resolver.async_resolve(tac.adapter_config.proxy_host, boost::lexical_cast<std::string>(tac.adapter_config.proxy_port), [=, &tac](boost::system::error_code const &ec, tcp::resolver::results_type results)
+        auto on_websocket_handshake = [=, &tac](boost::system::error_code const &ec)
+        {
+            BOOST_LOG_SEV(log, trace) << "Web socket upgrade response:\n" << tac.wss_response;
+            if (ec)
+            {
+                BOOST_LOG_SEV(log, error) << (boost::format("Proxy server rejected web socket upgrade request: (HTTP/%4%.%5% %1% %2%) \"%3%\"")
+                                              % tac.wss_response.result_int() % tac.wss_response.reason() % boost::trim_copy(tac.wss_response.body())
+                                              % (tac.wss_response.version() / 10) % (tac.wss_response.version() % 10)).str();    //form HTTP version
+                auto is_server_error = [](const int http_response_code) { return http_response_code >= 500 && http_response_code < 600;};
+                if (is_server_error(tac.wss_response.result_int()))
+                {   //retry these, otherwise fail and close
+                    basic_retry_execute(log, retry_config, [&]() { std::bind(&tcp_adapter_proxy::web_socket_close_and_stop, this, std::ref(tac)); });
+                }
+                else
+                {
+                    web_socket_close_and_stop(tac);
+                }
+            }
+            else
+            {   //put web socket in binary mode
+                tac.wss->binary(true);
+                tac.wss->auto_fragment(true);
+                //output this first because it'll be necessary to have this if any further errors need support/debugging
+                BOOST_LOG_SEV(log, info) << "Web socket session ID: " << tac.wss_response["channel-id"].to_string();
+                if (!tac.wss_response.count(boost::beast::http::field::sec_websocket_protocol))
+                {
+                    throw proxy_exception("No websocket subprotocol returned from proxy server!");
+                }
+                BOOST_LOG_SEV(log, debug) << "Web socket subprotocol selected: " << tac.wss_response[boost::beast::http::field::sec_websocket_protocol].to_string();
+                BOOST_LOG_SEV(log, info) << "Successfully established websocket connection with proxy server: wss://" << tac.adapter_config.proxy_host << ":" << tac.adapter_config.proxy_port;
+                std::shared_ptr<boost::beast::websocket::ping_data> ping_data = std::make_shared<boost::beast::websocket::ping_data>();
+                do_ping_data(tac, *ping_data);
+                std::shared_ptr<std::chrono::milliseconds> ping_period =
+                        std::make_shared<std::chrono::milliseconds>(GET_SETTING(settings, WEB_SOCKET_PING_PERIOD_MS));
+                std::shared_ptr<boost::asio::steady_timer> ping_timer = std::make_shared<boost::asio::steady_timer>(tac.io_ctx);
+
+                BOOST_LOG_SEV(log, debug) << "Seting up web socket pings for every " << ping_period->count() << " milliseconds";
+
+                tac.wss->async_ping(*ping_data, std::bind(&tcp_adapter_proxy::async_ping_handler_loop, this, std::ref(tac), ping_data, ping_period, ping_timer, std::placeholders::_1));
+
+                if (after_setup_web_socket)
+                {
+                    after_setup_web_socket();
+                }
+            }
+        };
+        auto on_tcp_connect = [=, &tac](boost::system::error_code const &ec)
+        {
+            if (ec)
+            {
+                BOOST_LOG_SEV(log, error) << (boost::format("Could not connect to proxy server: %1%") % ec.message()).str();
+                basic_retry_execute(log, retry_config, [&]() { std::bind(&tcp_adapter_proxy::web_socket_close_and_stop, this, std::ref(tac)); });
+            }
+            else
+            {
+                BOOST_LOG_SEV(log, debug) << "Connected successfully with proxy server";
+                boost::asio::socket_base::receive_buffer_size const recv_buffer_size(static_cast<int>(GET_SETTING(settings, WEB_SOCKET_MAX_FRAME_SIZE)));
+                boost::asio::socket_base::send_buffer_size const send_buffer_size_option(static_cast<int>(GET_SETTING(settings, WEB_SOCKET_MAX_FRAME_SIZE)));
+                tac.wss->lowest_layer().set_option(recv_buffer_size);
+                tac.wss->lowest_layer().set_option(send_buffer_size_option);
+
+#ifndef _AWSIOT_TUNNELING_NO_SSL
+                BOOST_LOG_SEV(log, trace) << "Performing SSL handshake with proxy server";
+                if (!localproxy_config.no_ssl_host_verify)
+                {
+                    tac.wss->set_ssl_verify_mode(boost::asio::ssl::verify_peer | boost::asio::ssl::verify_fail_if_no_peer_cert);
+                    tac.wss->set_verify_callback(boost::asio::ssl::rfc2818_verification(tac.adapter_config.proxy_host));
+                }
+                else
+                {
+                    BOOST_LOG_SEV(log, debug) << "SSL host verification is off";
+                }
+                //next ssl handshake
+                tac.wss->async_ssl_handshake(boost::asio::ssl::stream_base::client, [=, &tac](boost::system::error_code const &ec)
+                {
+                    if (ec)
+                    {
+                        BOOST_LOG_SEV(log, error) << (boost::format("Could not perform SSL handshake with proxy server: %1%") % ec.message()).str();
+                        basic_retry_execute(log, retry_config, [&]() { std::bind(&tcp_adapter_proxy::web_socket_close_and_stop, this, std::ref(tac)); });
+                    }
+                    else
+                    {
+                        BOOST_LOG_SEV(log, debug) << "Successfully completed SSL handshake with proxy server";
+#endif
+                        BOOST_LOG_SEV(log, trace) << "Performing websocket handshake with proxy server";
+                        //next do web socket upgrade - add two custom headers
+
+                        tac.wss->async_handshake_ex(tac.wss_response, tac.adapter_config.proxy_host.c_str(),
+                                                    (boost::format("/tunnel?%1%=%2%")%PROXY_MODE_QUERY_PARAM % get_proxy_mode_string(tac.adapter_config.mode)).str(),
+                                                    [&](boost::beast::websocket::request_type &request)
+                                                    {
+                                                        request.set(boost::beast::http::field::sec_websocket_protocol, GET_SETTING(settings, WEB_SOCKET_SUBPROTOCOL));
+                                                        request.set(ACCESS_TOKEN_HEADER, tac.adapter_config.access_token.c_str());
+                                                        request.set(boost::beast::http::field::user_agent, user_agent_string);
+                                                        BOOST_LOG_SEV(log, trace) << "Web socket ugprade request(*not entirely final):\n" << get_token_filtered_request(request);
+                                                    },
+                                                    on_websocket_handshake
+                        );
+#ifndef _AWSIOT_TUNNELING_NO_SSL
+                    }
+                });
+#endif
+            }
+        };
+        auto on_proxy_server_dns_resolve = [=, &tac](boost::system::error_code const &ec, tcp::resolver::results_type results)
         {
             if (ec)
             {
@@ -663,110 +743,30 @@ namespace aws { namespace iot { namespace securedtunneling {
             {
                 BOOST_LOG_SEV(log, debug) << "Resolved proxy server IP: " << results->endpoint().address();
                 //next connect tcp
-                tac.wss->lowest_layer().async_connect(*results.begin(), [=, &tac](boost::system::error_code const &ec)
-                {
-                    if (ec)
-                    {
-                        BOOST_LOG_SEV(log, error) << (boost::format("Could not connect to proxy server: %1%") % ec.message()).str();
-                        basic_retry_execute(log, retry_config, [&]() { std::bind(&tcp_adapter_proxy::web_socket_close_and_stop, this, std::ref(tac)); });
-                    }
-                    else
-                    {
-                        BOOST_LOG_SEV(log, debug) << "Connected successfully with proxy server";
-                        boost::asio::socket_base::receive_buffer_size const recv_buffer_size(static_cast<int>(GET_SETTING(settings, WEB_SOCKET_MAX_FRAME_SIZE)));
-                        boost::asio::socket_base::send_buffer_size const send_buffer_size_option(static_cast<int>(GET_SETTING(settings, WEB_SOCKET_MAX_FRAME_SIZE)));
-                        tac.wss->lowest_layer().set_option(recv_buffer_size);
-                        tac.wss->lowest_layer().set_option(send_buffer_size_option);
-
-#ifndef _AWSIOT_TUNNELING_NO_SSL
-                        BOOST_LOG_SEV(log, trace) << "Performing SSL handshake with proxy server";
-                        if (!adapter_config.no_ssl_host_verify)
-                        {
-                            tac.wss->next_layer().set_verify_mode(boost::asio::ssl::verify_peer | boost::asio::ssl::verify_fail_if_no_peer_cert);
-                            tac.wss->next_layer().set_verify_callback(boost::asio::ssl::rfc2818_verification(tac.adapter_config.proxy_host));
-                        }
-                        else
-                        {
-                            BOOST_LOG_SEV(log, debug) << "SSL host verification is off";
-                        }
-                        //next ssl handshake
-                        tac.wss->next_layer().async_handshake(boost::asio::ssl::stream_base::client, [=, &tac](boost::system::error_code const &ec)
-                        {
-                            if (ec)
-                            {
-                                BOOST_LOG_SEV(log, error) << (boost::format("Could not perform SSL handshake with proxy server: %1%") % ec.message()).str();
-                                basic_retry_execute(log, retry_config, [&]() { std::bind(&tcp_adapter_proxy::web_socket_close_and_stop, this, std::ref(tac)); });
-                            }
-                            else
-                            {
-                                BOOST_LOG_SEV(log, debug) << "Successfully completed SSL handshake with proxy server";
-#endif
-                                BOOST_LOG_SEV(log, trace) << "Performing websocket handshake with proxy server";
-                                //next do web socket upgrade - add two custom headers
-
-                                tac.wss->async_handshake_ex(tac.wss_response, tac.adapter_config.proxy_host.c_str(),
-                                    (boost::format("/tunnel?%1%=%2%")%PROXY_MODE_QUERY_PARAM % get_proxy_mode_string(tac.adapter_config.mode)).str(),
-                                    [&](boost::beast::websocket::request_type &request)
-                                    {
-                                        request.set(boost::beast::http::field::sec_websocket_protocol, GET_SETTING(settings, WEB_SOCKET_SUBPROTOCOL));
-                                        request.set(ACCESS_TOKEN_HEADER, tac.adapter_config.access_token.c_str());
-                                        request.set(boost::beast::http::field::user_agent, user_agent_string);
-                                        BOOST_LOG_SEV(log, trace) << "Web socket ugprade request(*not entirely final):\n" << get_token_filtered_request(request);
-                                    },
-                                    [=, &tac](boost::system::error_code const &ec)
-                                    {
-                                        BOOST_LOG_SEV(log, trace) << "Web socket upgrade response:\n" << tac.wss_response;
-                                        if (ec)
-                                        {
-                                            BOOST_LOG_SEV(log, error) << (boost::format("Proxy server rejected web socket upgrade request: (HTTP/%4%.%5% %1% %2%) \"%3%\"")
-                                                % tac.wss_response.result_int() % tac.wss_response.reason() % boost::trim_copy(tac.wss_response.body())
-                                                % (tac.wss_response.version() / 10) % (tac.wss_response.version() % 10)).str();    //form HTTP version
-                                            if (tac.wss_response.result_int() >= 500 && tac.wss_response.result_int() < 600)
-                                            {   //retry these, otherwise fail and close
-                                                basic_retry_execute(log, retry_config, [&]() { std::bind(&tcp_adapter_proxy::web_socket_close_and_stop, this, std::ref(tac)); });
-                                            }
-                                            else
-                                            {
-                                                web_socket_close_and_stop(tac);
-                                            }
-                                        }
-                                        else
-                                        {   //put web socket in binary mode
-                                            tac.wss->binary(true);
-                                            tac.wss->auto_fragment(true);
-                                            //output this first because it'll be necessary to have this if any further errors need support/debugging
-                                            BOOST_LOG_SEV(log, info) << "Web socket session ID: " << tac.wss_response["channel-id"].to_string();
-                                            if (!tac.wss_response.count(boost::beast::http::field::sec_websocket_protocol))
-                                            {
-                                                throw proxy_exception("No websocket subprotocol returned from proxy server!");
-                                            }
-                                            BOOST_LOG_SEV(log, debug) << "Web socket subprotocol selected: " << tac.wss_response[boost::beast::http::field::sec_websocket_protocol].to_string();
-                                            BOOST_LOG_SEV(log, info) << "Successfully established websocket connection with proxy server: wss://" << tac.adapter_config.proxy_host << ":" << tac.adapter_config.proxy_port;
-                                            std::shared_ptr<boost::beast::websocket::ping_data> ping_data = std::make_shared<boost::beast::websocket::ping_data>();
-                                            do_ping_data(tac, *ping_data);
-                                            std::shared_ptr<std::chrono::milliseconds> ping_period =
-                                                std::make_shared<std::chrono::milliseconds>(GET_SETTING(settings, WEB_SOCKET_PING_PERIOD_MS));
-                                            std::shared_ptr<boost::asio::steady_timer> ping_timer = std::make_shared<boost::asio::steady_timer>(tac.io_ctx);
-
-                                            BOOST_LOG_SEV(log, debug) << "Seting up web socket pings for every " << ping_period->count() << " milliseconds";
-
-                                            tac.wss->async_ping(*ping_data, std::bind(&tcp_adapter_proxy::async_ping_handler_loop, this, std::ref(tac), ping_data, ping_period, ping_timer, std::placeholders::_1));
-
-                                            if (after_setup_web_socket)
-                                            {
-                                                after_setup_web_socket();
-                                            }
-                                        }
-                                    }
-                                );
-#ifndef _AWSIOT_TUNNELING_NO_SSL
-                            }
-                        });
-#endif
-                    }
-                });
+                tac.wss->lowest_layer().async_connect(*results.begin(), on_tcp_connect);
             }
-        });
+        };
+        auto on_web_proxy_dns_resolve = [=, &tac](boost::system::error_code const &ec, tcp::resolver::results_type results)
+        {
+            if (ec)
+            {
+                BOOST_LOG_SEV(log, error) << (boost::format("Could not resolve DNS hostname of Web proxy: %1% - %2%") % tac.adapter_config.web_proxy_host % ec.message()).str();
+                basic_retry_execute(log, retry_config, [&]() { std::bind(&tcp_adapter_proxy::web_socket_close_and_stop, this, std::ref(tac)); });
+            } else {
+                BOOST_LOG_SEV(log, debug) << "Resolved Web proxy IP: " << results->endpoint().address();
+                web_proxy_adapter.async_connect(on_tcp_connect, tac.wss, results->endpoint());
+            }
+        };
+
+
+        //start first async handler which chains into adding the rest
+        if (tac.adapter_config.web_proxy_host.empty()) {
+            BOOST_LOG_SEV(log, trace) << "Resolving proxy server host: " << tac.adapter_config.proxy_host;
+            tac.wss_resolver.async_resolve(tac.adapter_config.proxy_host, boost::lexical_cast<std::string>(tac.adapter_config.proxy_port), on_proxy_server_dns_resolve);
+        } else {
+            BOOST_LOG_SEV(log, trace) << "Resolving Web proxy host: " << tac.adapter_config.web_proxy_host;
+            tac.wss_resolver.async_resolve(tac.adapter_config.web_proxy_host, boost::lexical_cast<std::string>(tac.adapter_config.web_proxy_port), on_web_proxy_dns_resolve);
+        }
     }
 
     void tcp_adapter_proxy::async_tcp_socket_read_loop(tcp_adapter_context & tac, string const & service_id)

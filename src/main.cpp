@@ -8,8 +8,6 @@
 #include <string>
 #include <utility>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 
 #include <boost/phoenix.hpp>
 #include <boost/program_options.hpp>
@@ -26,6 +24,7 @@
 #include "ProxySettings.h"
 #include "TcpAdapterProxy.h"
 #include "config/ConfigFile.h"
+#include "LocalproxyConfig.h"
 
 using std::uint16_t;
 using std::endl;
@@ -42,7 +41,7 @@ using boost::program_options::value;
 using boost::program_options::variables_map;
 using boost::program_options::options_description;
 
-using aws::iot::securedtunneling::adapter_proxy_config;
+using aws::iot::securedtunneling::LocalproxyConfig;
 using aws::iot::securedtunneling::tcp_adapter_proxy;
 using aws::iot::securedtunneling::proxy_mode;
 using aws::iot::securedtunneling::get_region_endpoint;
@@ -51,6 +50,8 @@ using aws::iot::securedtunneling::settings::apply_region_overrides;
 char const * const TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_ACCESS_TOKEN";
 char const * const ENDPOINT_ENV_VARIABLE = "AWSIOT_TUNNEL_ENDPOINT";
 char const * const REGION_ENV_VARIABLE = "AWSIOT_TUNNEL_REGION";
+char const * const WEB_PROXY_ENV_VARIABLE = "HTTPS_PROXY";
+char const * const web_proxy_env_variable = "https_proxy";
 
 tuple<string, uint16_t> get_host_and_port(string const & endpoint, uint16_t default_port)
 {
@@ -61,7 +62,7 @@ tuple<string, uint16_t> get_host_and_port(string const & endpoint, uint16_t defa
         {
             const string host = endpoint.substr(0, position);
             const string port = endpoint.substr(position + 1, endpoint.length() - (position + 1));
-            const uint16_t portnum = static_cast<uint16_t>(stoi(port, &position));
+            const auto portnum = static_cast<uint16_t>(stoi(port, &position));
             if (port.length() == 0 || position != port.length()) throw std::invalid_argument("");
             return std::make_tuple(host, portnum);
         }
@@ -130,7 +131,7 @@ void init_logging(std::uint16_t &logging_level)
     set_logging_filter(logging_level);
 }
 
-bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &settings, std::uint16_t &logging_level)
+bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings, std::uint16_t &logging_level)
 {
     using namespace aws::iot::securedtunneling::config_file;
 #ifdef _AWSIOT_TUNNELING_NO_SSL
@@ -222,6 +223,39 @@ bool process_cli(int argc, char ** argv, adapter_proxy_config &cfg, ptree &setti
     tuple<string, uint16_t> proxy_host_and_port = get_host_and_port(proxy_endpoint, aws::iot::securedtunneling::DEFAULT_PROXY_SERVER_PORT);
     cfg.proxy_host = std::get<0>(proxy_host_and_port);
     cfg.proxy_port = std::get<1>(proxy_host_and_port);
+
+    // https_proxy environment variable takes precedence over HTTPS_PROXY environment variable
+    const char * lowercase_web_proxy_endpoint = std::getenv(web_proxy_env_variable);
+    const char * upper_web_proxy_endpoint = std::getenv(WEB_PROXY_ENV_VARIABLE);
+    const string web_proxy_endpoint = lowercase_web_proxy_endpoint != nullptr ? std::string(lowercase_web_proxy_endpoint)
+                                                                              : upper_web_proxy_endpoint != nullptr ? std::string(upper_web_proxy_endpoint)
+                                                                                                                      : "";
+    if (!web_proxy_endpoint.empty()) {
+        std::shared_ptr<aws::iot::securedtunneling::url> url = nullptr;
+        try {
+            url = std::make_shared<aws::iot::securedtunneling::url>(web_proxy_endpoint);
+        } catch (exception &e) {
+            BOOST_LOG_TRIVIAL(fatal) << "Failed to parse the value of environment variable "
+                << (lowercase_web_proxy_endpoint != nullptr ? web_proxy_env_variable : WEB_PROXY_ENV_VARIABLE);
+            throw e;
+        }
+        cfg.web_proxy_host = url->host;
+        if (url->port == 0) {
+            cfg.web_proxy_port = aws::iot::securedtunneling::DEFAULT_WEB_PROXY_SERVER_PORT;
+            BOOST_LOG_TRIVIAL(warning) << "No port was was provided for the web proxy, using default: " << cfg.web_proxy_port;
+        } else {
+            cfg.web_proxy_port = url->port;
+        }
+        cfg.web_proxy_auth = url->authentication;
+        if (url->protocol == "https") {
+            cfg.is_web_proxy_using_tls = true;
+        } else if (url->protocol == "http") {
+            cfg.is_web_proxy_using_tls = false;
+        } else {
+            throw std::invalid_argument("Unsupported protocol");
+        }
+        BOOST_LOG_TRIVIAL(info) << "Found Web proxy information in the environment variables, will use it to connect via the proxy.";
+    }
 
     cfg.mode = vm.count("destination-app") == 1 ? proxy_mode::DESTINATION : proxy_mode::SOURCE;
 
@@ -347,7 +381,7 @@ int main(int argc, char ** argv)
 {
     try
     {
-        adapter_proxy_config cfg;
+        LocalproxyConfig cfg;
         ptree settings;
         std::uint16_t logging_level;
 
