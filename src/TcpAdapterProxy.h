@@ -24,43 +24,19 @@
 #include "TcpServer.h"
 #include "TcpClient.h"
 #include "Message.pb.h"
+#include "Url.h"
+#include "LocalproxyConfig.h"
+#include "WebProxyAdapter.h"
+#include "WebSocketStream.h"
 
 namespace aws { namespace iot { namespace securedtunneling {
     using namespace aws::iot::securedtunneling::connection;
-    enum proxy_mode {
-        UNKNOWN = 0,
-        SOURCE = 1,
-        DESTINATION = 2
-    };
 
     typedef std::pair<std::shared_ptr<boost::beast::flat_buffer const>, std::function<void()>> data_message;
     extern std::uint16_t const DEFAULT_PROXY_SERVER_PORT;
+    extern std::uint16_t const DEFAULT_WEB_PROXY_SERVER_PORT;
 
     extern std::string get_region_endpoint(std::string const &region, boost::property_tree::ptree const &settings);
-
-    struct adapter_proxy_config
-    {
-        std::string                             proxy_host { };
-        std::uint16_t                           proxy_port{ 0 };
-        std::string                             access_token { };
-        proxy_mode                              mode{ proxy_mode::UNKNOWN };
-        boost::optional<std::string>            bind_address;
-        boost::optional<std::string>            additional_ssl_verify_path;
-        bool                                    no_ssl_host_verify;
-        std::function<void(const std::uint16_t &, const std::string &)> on_listen_port_assigned;
-        std::vector<std::string>                config_files;
-        /**
-         * Store mapping serviceId -> address:port
-         * The end point will store either source listening or destination service depends on the mode of local proxy.
-         */
-        std::unordered_map<std::string, std::string>     serviceId_to_endpoint_map;
-        /**
-         * A flag to judge if v2 local proxy needs to fallback to communicate using v1 local proxy message format.
-         * v1 local proxy format fallback will be enabled when a tunnel is opened with no or 1 service id.
-         * If this is set to true, it means that v2 local proxy won't validate service id field.
-         */
-        bool                                             is_v1_message_format {false};
-    };
 
     namespace
     {
@@ -68,12 +44,6 @@ namespace aws { namespace iot { namespace securedtunneling {
         using boost::asio::ip::tcp;
         using boost::property_tree::ptree;
         using std::shared_ptr;
-
-#ifdef _AWSIOT_TUNNELING_NO_SSL
-        using web_socket_stream = boost::beast::websocket::stream<boost::asio::ip::tcp::socket>;
-#else
-        using web_socket_stream = boost::beast::websocket::stream<boost::asio::ssl::stream<boost::asio::ip::tcp::socket>>;
-#endif
 
         using message = com::amazonaws::iot::securedtunneling::Message;
         using logger = boost::log::sources::severity_logger<boost::log::trivial::severity_level>;
@@ -102,11 +72,10 @@ namespace aws { namespace iot { namespace securedtunneling {
         //async function handlers so it's likely to get a bit disorganized
         struct tcp_adapter_context
         {
-            tcp_adapter_context(adapter_proxy_config const & cfg, ptree const &settings) :
+            tcp_adapter_context(LocalproxyConfig const & cfg, ptree const &settings) :
                 io_ctx{ },
                 ec{ },
                 adapter_config{ cfg },
-                ssl_ctx{ boost::asio::ssl::context::sslv23 },
                 wss{ nullptr },
                 wss_resolver{ io_ctx },
                 wss_response{ },
@@ -123,10 +92,9 @@ namespace aws { namespace iot { namespace securedtunneling {
 
             boost::asio::io_context                                 io_ctx;
             boost::system::error_code                               ec;
-            adapter_proxy_config                                    adapter_config;
-            boost::asio::ssl::context                               ssl_ctx;
+            LocalproxyConfig                                        adapter_config;
 
-            shared_ptr<web_socket_stream>                           wss;
+            shared_ptr<WebSocketStream>                             wss;
             tcp::resolver                                           wss_resolver;
             //response of current wss connection upgrade request
             //we need this somewhere because it can(should) contain
@@ -173,7 +141,7 @@ namespace aws { namespace iot { namespace securedtunneling {
     {
     public:
         tcp_adapter_proxy() = delete;
-        tcp_adapter_proxy(ptree const &settings, adapter_proxy_config const &config);
+        tcp_adapter_proxy(ptree const &settings, LocalproxyConfig const &config);
 
         ~tcp_adapter_proxy();
         tcp_adapter_proxy(tcp_adapter_proxy const &) = delete;
@@ -300,7 +268,8 @@ namespace aws { namespace iot { namespace securedtunneling {
     private:
         logger                                      log;
         ptree const &                               settings;
-        adapter_proxy_config                        adapter_config;
+        LocalproxyConfig                            localproxy_config;
+        WebProxyAdapter                             web_proxy_adapter;
         //below messages are re-used by local functions/callbacks as necessary to put the data in the
         //right object (protobuf) then serialize to a Boost Asio buffer to actually send/recv
         message                                     outgoing_message;
