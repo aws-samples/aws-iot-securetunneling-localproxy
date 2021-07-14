@@ -269,6 +269,10 @@ Example 3:
 
 In this example, no service ID is used. Backward compatibility is supported.
 
+### HTTP proxy Support
+
+The local proxy relies on the HTTP tunneling mechanism described by the [HTTP/1.1 specification](https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6). To comply with the specifications, your web proxy must allow devices to use the CONNECT method. For more details on how that works and how configure it properly, Please refer to "[Configure local proxy for devices that use web proxy](https://docs.aws.amazon.com/iot/latest/developerguide/configure-local-proxy-web-proxy.html)"
+
 ### Security Considerations
 
 #### Certificate setup
