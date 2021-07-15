@@ -18,9 +18,9 @@ addons:
       - zlibc
       - libssl-dev
 install:
-  - wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf-all-3.17.3.tar.gz
-  - tar xzf /tmp/protobuf-all-3.17.3.tar.gz
-  - cd "protobuf-3.17.3"
+  - wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.2/protobuf-all-3.17.2.tar.gz -O /tmp/protobuf-all-3.17.2.tar.gz
+  - tar xzf /tmp/protobuf-all-3.17.2.tar.gz
+  - cd "protobuf-3.17.2"
   - mkdir -p build
   - cd build
   - cmake ../cmake

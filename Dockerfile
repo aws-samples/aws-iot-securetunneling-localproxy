@@ -28,9 +28,9 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_
 	./b2 install && \
 	cd /home/dependencies
 
-RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf-all-3.17.3.tar.gz && \
-	tar xzvf /tmp/protobuf-all-3.17.3.tar.gz && \
-	cd protobuf-3.17.3 && \
+RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.2/protobuf-all-3.17.2.tar.gz -O /tmp/protobuf-all-3.17.2.tar.gz && \
+	tar xzvf /tmp/protobuf-all-3.17.2.tar.gz && \
+	cd protobuf-3.17.2 && \
 	mkdir build && \
 	cd build && \
 	cmake ../cmake && \

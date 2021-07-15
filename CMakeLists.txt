@@ -45,7 +45,7 @@ find_package(Threads)
 # Generate protobuf files               #
 #########################################
 set_property(GLOBAL PROPERTY PROTOBUF_USE_STATIC_LIBS ON)  #this flag doesn't actually seem to work yet but it's documented
-find_package(Protobuf 3.17.3 REQUIRED)
+find_package(Protobuf 3.17.2 REQUIRED)
 string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} Protobuf_LITE_STATIC_LIBRARY ${Protobuf_LITE_LIBRARY})
 include_directories(${Protobuf_INCLUDE_DIRS})
 

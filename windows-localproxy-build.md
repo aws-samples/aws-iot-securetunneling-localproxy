@@ -34,10 +34,10 @@
 		* `nmake`
 		* `nmake install` ( install catch2 inside C:\Program Files (x86)\ )
 	* Download and install protobuf
-		* Download from https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz
-		* Extract protobuf-all-3.17.3.tar.gz
+		* Download from https://github.com/protocolbuffers/protobuf/releases/download/v3.17.2/protobuf-all-3.17.2.tar.gz
+		* Extract protobuf-all-3.17.2.tar.gz
 		* Use Visual Studio native tool command prompt
-		* `cd path/to/protobuf-3.17.3`
+		* `cd path/to/protobuf-3.17.2`
 		* `cd cmake`
 		* `mkdir build`
 		* `cd build`
