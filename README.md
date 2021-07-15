@@ -34,8 +34,8 @@ previous step, or you can run `./docker-run.sh -p <port_number>` to expose a por
 * C++ 14 compiler
 * CMake 3.6+
 * Development libraries required:
-    * Boost 1.68 or 1.69
-    * Protobuf 3.6.x
+    * Boost 1.76
+    * Protobuf 3.17.x
     * zlib
     * OpenSSL 1.0+
     * Catch2 test framework
@@ -63,17 +63,17 @@ Fedora example:
 
 #### 2. Download and install Boost dependency
 
-    wget https://boostorg.jfrog.io/artifactory/main/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
+    wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz -O /tmp/boost.tar.gz
     tar xzvf /tmp/boost.tar.gz
-    cd boost_1_69_0
+    cd boost_1_76_0
     ./bootstrap.sh
     sudo ./b2 install
 
 #### 3. Download and install Protobuf dependency
 
-    wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.tar.gz -O /tmp/protobuf-all-3.6.1.tar.gz
-    tar xzvf /tmp/protobuf-all-3.6.1.tar.gz
-    cd protobuf-3.6.1
+    wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf-all-3.17.3.tar.gz
+    tar xzvf /tmp/protobuf-all-3.17.3.tar.gz
+    cd protobuf-3.17.3
     mkdir build
     cd build
     cmake ../cmake
@@ -103,7 +103,7 @@ Run the ./Configure command without any arguments to check the available platfor
 
 #### 5. Download and install Catch2 test framework
 
-    git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git
+    git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git
     cd Catch2
     mkdir build
     cd build

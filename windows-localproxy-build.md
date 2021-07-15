@@ -26,7 +26,7 @@
 		* Update PATH environment variable to add the dll for openssl which is inside C:\Program Files\OpenSSL\bin
 		* Download and install catch2
 		* Use Visual Studio native tool command prompt in admin mode.
-		* `git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git`
+		* `git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git`
 		* `cd Catch2`
 		* `mkdir build`
 		* `cd build`
@@ -34,10 +34,10 @@
 		* `nmake`
 		* `nmake install` ( install catch2 inside C:\Program Files (x86)\ )
 	* Download and install protobuf
-		* Download from https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.tar.gz
-		* Extract protobuf-all-3.6.1.tar.gz
+		* Download from https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz
+		* Extract protobuf-all-3.17.3.tar.gz
 		* Use Visual Studio native tool command prompt
-		* `cd path/to/protobuf-3.6.1`
+		* `cd path/to/protobuf-3.17.3`
 		* `cd cmake`
 		* `mkdir build`
 		* `cd build`
@@ -45,10 +45,10 @@
 		* `nmake`
 		* `nmake install` ( install protobuf inside C:\Program Files (x86)\ )
 	* Download and install boost
-		* Download from https://boostorg.jfrog.io/artifactory/main/release/1.69.0/source/boost_1_69_0.zip
-		* Extract boost_1_69_0.zip
+		* Download from https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz
+		* Extract boost_1_76_0.tar.gz
 		* Use Visual Studio native tool command prompt
-		* `cd path/to/boost_1_69_0`
+		* `cd path/to/boost_1_76_0`
 		* `bootstrap.bat`
 		* `.\b2 toolset=msvc address-model={32 | 64} install define=BOOST_WINAPI_VERSION_WIN10` ( installs boost inside C:\)
 			* Replace `BOOST_WINAPI_VERSION_WIN10` with the appropriate macro from [here](https://www.boost.org/doc/libs/develop/libs/winapi/doc/html/winapi/config.html)

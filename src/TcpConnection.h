@@ -5,6 +5,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/beast/core/multi_buffer.hpp>
 #include "Message.pb.h"
 
 namespace aws { namespace iot { namespace securedtunneling { namespace connection {

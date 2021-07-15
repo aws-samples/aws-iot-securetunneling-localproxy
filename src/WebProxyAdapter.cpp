@@ -9,7 +9,7 @@
 #include <boost/log/sources/severity_feature.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 
-using boost::beast::detail::base64_encode;
+namespace base64 = boost::beast::detail::base64;
 using boost::log::trivial::trace;
 using boost::log::trivial::debug;
 using boost::log::trivial::info;
@@ -75,8 +75,12 @@ namespace aws {
                 if (!localproxy_config.web_proxy_auth.empty()) {
                     BOOST_LOG_SEV(*log, trace) << "Web proxy AuthN found, adding them to the request";
                     request.set(http::field::host, host);
-                    request.set(http::field::proxy_authorization,
-                            "basic " + base64_encode(localproxy_config.web_proxy_auth));
+                    std::string credentials;
+                    credentials.resize(base64::encoded_size(localproxy_config.web_proxy_auth.size()));
+                    credentials.resize(base64::encode(&credentials[0],
+                                                      localproxy_config.web_proxy_auth.data(),
+                                                      localproxy_config.web_proxy_auth.size()));
+                    request.set(http::field::proxy_authorization, "basic " + credentials);
                 }
                 BOOST_LOG_SEV(*log, trace) << "Sending HTTP CONNECT";
                 auto on_async_write = [this](error_code const &ec,

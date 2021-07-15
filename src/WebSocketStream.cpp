@@ -105,16 +105,18 @@ namespace aws {
                                                      const function<void(websocket::request_type &)> &decorator,
                                                      const BoostCallbackFunc& handler) {
                 if (localproxyConfig.is_web_proxy_using_tls) {
-                    BOOST_LOG_SEV(*log, trace) << "Calling async_handshake_ex with type: "
+                    BOOST_LOG_SEV(*log, trace) << "Calling async_handshake with type: "
                                                << WEB_PROXY_WITH_TLS_TYPE_NAME;
-                    return boost::get<unique_ptr<WEB_PROXY_WITH_TLS_TYPE>>(wss)->async_handshake_ex(
-                            res_type, host, target, decorator, handler
+                    boost::get<unique_ptr<WEB_PROXY_WITH_TLS_TYPE>>(wss)->set_option(websocket::stream_base::decorator(decorator));
+                    return boost::get<unique_ptr<WEB_PROXY_WITH_TLS_TYPE>>(wss)->async_handshake(
+                            res_type, host, target, handler
                     );
                 } else {
-                    BOOST_LOG_SEV(*log, trace) << "Calling async_handshake_ex with type: "
+                    BOOST_LOG_SEV(*log, trace) << "Calling async_handshake with type: "
                                                << WEB_PROXY_NO_TLS_TYPE_NAME;
-                    return boost::get<unique_ptr<WEB_PROXY_NO_TLS_TYPE>>(wss)->async_handshake_ex(
-                            res_type, host, target, decorator, handler
+                    boost::get<unique_ptr<WEB_PROXY_NO_TLS_TYPE>>(wss)->set_option(websocket::stream_base::decorator(decorator));
+                    return boost::get<unique_ptr<WEB_PROXY_NO_TLS_TYPE>>(wss)->async_handshake(
+                            res_type, host, target, handler
                     );
                 }
             }
@@ -201,11 +203,11 @@ namespace aws {
                 if (localproxyConfig.is_web_proxy_using_tls) {
                     BOOST_LOG_SEV(*log, trace) << "Calling lowest_layer with type: "
                                                << WEB_PROXY_WITH_TLS_TYPE_NAME;
-                    return boost::get<unique_ptr<WEB_PROXY_WITH_TLS_TYPE>>(wss)->lowest_layer();
+                    return boost::beast::get_lowest_layer(*boost::get<unique_ptr<WEB_PROXY_WITH_TLS_TYPE>>(wss));
                 } else {
                     BOOST_LOG_SEV(*log, trace) << "Calling lowest_layer with type: "
                                                << WEB_PROXY_NO_TLS_TYPE_NAME;
-                    return boost::get<unique_ptr<WEB_PROXY_NO_TLS_TYPE>>(wss)->lowest_layer();
+                    return boost::beast::get_lowest_layer(*boost::get<unique_ptr<WEB_PROXY_NO_TLS_TYPE>>(wss));
                 }
             }
 
@@ -249,18 +251,22 @@ namespace aws {
                 }
             }
 
-            void WebSocketStream::async_teardown(const websocket::role_type &role, const BoostCallbackFunc &handler) {
+            void WebSocketStream::async_teardown(const boost::beast::role_type &role, const BoostCallbackFunc &handler) {
                 if (localproxyConfig.is_web_proxy_using_tls) {
                     BOOST_LOG_SEV(*log, trace) << "Calling async_teardown for type: "
                                                << WEB_PROXY_NO_TLS_TYPE_NAME;
-                    return boost::beast::websocket::async_teardown(
+                    return boost::beast::async_teardown(
                             role,
                             boost::get<unique_ptr<WEB_PROXY_WITH_TLS_TYPE>>(wss)->next_layer(),
                             handler);
                 } else {
                     BOOST_LOG_SEV(*log, trace) << "Calling async_teardown for type: "
                                                << WEB_PROXY_NO_TLS_TYPE_NAME;
+#ifdef _AWSIOT_TUNNELING_NO_SSL
                     return boost::beast::websocket::async_teardown(
+#else
+                    return boost::beast::async_teardown(
+#endif
                             role,
                             boost::get<unique_ptr<WEB_PROXY_NO_TLS_TYPE>>(wss)->next_layer(),
                             handler);

@@ -11,8 +11,7 @@
 
 
 using boost::beast::string_view;
-using boost::beast::detail::base64_encode;
-using boost::beast::detail::base64_decode;
+namespace base64 = boost::beast::detail::base64;
 
 /**
  * This Async server implementation is based on the following boost example
@@ -54,7 +53,10 @@ void handle_request(http::request<Body, http::basic_fields<Allocator>>&& req, Se
     // the HTTPS Proxy adapter will handle different scenarios
     std::string encoded_auth{req[http::field::proxy_authorization]};
     if (!encoded_auth.empty()) {
-        std::string incoming_auth = base64_decode(encoded_auth.substr(6));
+        std::string incoming_auth;
+        incoming_auth.resize(base64::decoded_size(encoded_auth.size()));
+        auto const result = base64::decode(&incoming_auth[0], encoded_auth.substr(6).data(), encoded_auth.length() - 6);
+        incoming_auth.resize(result.first);
         string allowed_auth = aws::iot::securedtunneling::test::username + ":" + aws::iot::securedtunneling::test::password;
         if (!incoming_auth.empty() && incoming_auth == "500")
             return send(server_error("Server failure"));
