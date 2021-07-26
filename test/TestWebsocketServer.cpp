@@ -46,13 +46,13 @@ void TestWebsocketServer::run()
     http::read(socket, buffer, handshake_request, ec);
     web_socket_stream ws{std::move(socket)};
     ws_stream = ws;
-    ws.accept_ex(
+    ws.set_option(websocket::stream_base::decorator([](boost::beast::websocket::response_type& response)
+                                                    {
+                                                        response.set("channel-id", boost::uuids::to_string({}));    //default init for uuid is all 0s
+                                                        response.set("Sec-WebSocket-Protocol", "aws.iot.securetunneling-2.0");
+                                                    }));
+    ws.accept(
         handshake_request,
-        [](boost::beast::websocket::response_type& response)
-        {
-            response.set("channel-id", boost::uuids::to_string({}));    //default init for uuid is all 0s
-            response.set("Sec-WebSocket-Protocol", "aws.iot.securetunneling-2.0");
-        },
         ec);
     if(ec)
     {
@@ -187,7 +187,7 @@ void TestWebsocketServer::close_client(std::string const& close_reason, boost::b
     ws_stream.get().async_close({code, close_reason}, 
         [this](boost::system::error_code const &ec)
         {
-            websocket::async_teardown(websocket::role_type::server, ws_stream.get().next_layer(),
+            websocket::async_teardown(boost::beast::role_type::server, ws_stream.get().next_layer(),
                 [this](boost::system::error_code const &ec)
                 {
                     this->io_ctx.stop();

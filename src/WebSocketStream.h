@@ -194,7 +194,7 @@ namespace aws {
                  * @param role The role of the local endpoint
                  * @param handler The handler to be called when the request completes.
                  */
-                void async_teardown(const websocket::role_type &role, const BoostCallbackFunc &handler);
+                void async_teardown(const boost::beast::role_type &role, const BoostCallbackFunc &handler);
                 /**
                  * A getter for the socket.
                  * @return Returns a reference to the underlying TCP socket

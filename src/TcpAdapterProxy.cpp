@@ -371,7 +371,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         {
             if (tac.wss->is_open())
             {
-                tac.wss->async_teardown(boost::beast::websocket::role_type::client, [&tac, this](boost::system::error_code const &ec)
+                tac.wss->async_teardown(boost::beast::role_type::client, [&tac, this](boost::system::error_code const &ec)
                 {
                     if (ec)
                     {

@@ -20,17 +20,17 @@ jobs:
     - name: Install boost
       working-directory: ${{ github.workspace }}
       run: |
-        wget https://boostorg.jfrog.io/artifactory/main/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
+        wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz -O /tmp/boost.tar.gz
         tar xzvf /tmp/boost.tar.gz
-        cd boost_1_69_0
+        cd boost_1_76_0
         ./bootstrap.sh --with-toolset=clang
         ./b2 install toolset=clang
     - name: Install protobuf
       working-directory: ${{ github.workspace }}
       run: |
-        wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.tar.gz -O /tmp/protobuf-all-3.6.1.tar.gz
-        tar xzvf /tmp/protobuf-all-3.6.1.tar.gz
-        cd protobuf-3.6.1
+        wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf-all-3.17.3.tar.gz
+        tar xzvf /tmp/protobuf-all-3.17.3.tar.gz
+        cd protobuf-3.17.3
         mkdir build_make
         cd build_make
         cmake ../cmake
@@ -39,7 +39,7 @@ jobs:
     - name: Install Catch2
       working-directory: ${{ github.workspace }}
       run: |
-        git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git
+        git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git
         cd Catch2
         mkdir build
         cd build
@@ -66,17 +66,17 @@ jobs:
     - name: Install boost
       working-directory: ${{ github.workspace }}
       run: |
-        wget https://boostorg.jfrog.io/artifactory/main/release/1.69.0/source/boost_1_69_0.tar.gz -O /tmp/boost.tar.gz
+        wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz -O /tmp/boost.tar.gz
         tar xzvf /tmp/boost.tar.gz
-        cd boost_1_69_0
+        cd boost_1_76_0
         ./bootstrap.sh
         sudo ./b2 install
     - name: Install protobuf
       working-directory: ${{ github.workspace }}
       run: |
-        wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.tar.gz -O /tmp/protobuf-all-3.6.1.tar.gz
-        tar xzvf /tmp/protobuf-all-3.6.1.tar.gz
-        cd protobuf-3.6.1
+        wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf-all-3.17.3.tar.gz
+        tar xzvf /tmp/protobuf-all-3.17.3.tar.gz
+        cd protobuf-3.17.3
         mkdir build_make
         cd build_make
         cmake ../cmake
@@ -85,7 +85,7 @@ jobs:
     - name: install Catch2
       working-directory: ${{ github.workspace }}
       run: |
-        git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git
+        git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git
         cd Catch2
         mkdir build
         cd build
@@ -105,7 +105,7 @@ jobs:
       - name: Setup developer command prompt
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          toolset: 14.1
+          toolset: 14.2
           arch: x64
       - name: Install OpenSSL
         run: |
@@ -121,7 +121,7 @@ jobs:
           $env:Path += ";C:\Program Files\OpenSSL\bin"
       - name: Install Catch2
         run: |
-          git clone --branch v2.13.2 https://github.com/catchorg/Catch2.git
+          git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git
           cd Catch2
           mkdir build
           cd build
@@ -140,16 +140,17 @@ jobs:
           $env:Path += ";C:\Program Files (x86)\zlib\bin"
       - name: Install boost
         run: |
-          Invoke-WebRequest "https://boostorg.jfrog.io/artifactory/main/release/1.69.0/source/boost_1_69_0.zip" -OutFile "boost_1_69_0.zip"
-          Expand-Archive "boost_1_69_0.zip" -Force
-          cd .\boost_1_69_0\boost_1_69_0\
+          Invoke-WebRequest "https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.zip" -OutFile "boost_1_76_0.zip"
+          Expand-Archive "boost_1_76_0.zip" -Force
+          cd .\boost_1_76_0\boost_1_76_0\
           .\bootstrap.bat
-          .\b2 toolset=msvc-14.1 address-model=64 install define=BOOST_WINAPI_VERSION_WIN10
+          .\b2 toolset=msvc-14.2 address-model=64 install define=BOOST_WINAPI_VERSION_WIN10
       - name: Install protobuf
         run: |
-          Invoke-WebRequest "https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.zip" -OutFile "protobuf-all-3.6.1.zip"
-          Expand-Archive protobuf-all-3.6.1.zip
-          cd .\protobuf-all-3.6.1\protobuf-3.6.1\cmake\
+          cd \
+          Invoke-WebRequest "https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.zip" -OutFile "protobuf-all-3.17.3.zip"
+          Expand-Archive protobuf-all-3.17.3.zip
+          cd .\protobuf-all-3.17.3\protobuf-3.17.3\cmake\
           mkdir build
           cd build
           cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -Dprotobuf_MSVC_STATIC_RUNTIME=OFF ../
