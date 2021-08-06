@@ -25,7 +25,7 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_
 	tar xzvf /tmp/boost.tar.gz && \
 	cd boost_1_76_0 && \
 	./bootstrap.sh && \
-	./b2 install && \
+	./b2 install link=static && \
 	cd /home/dependencies
 
 RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf-all-3.17.3.tar.gz && \

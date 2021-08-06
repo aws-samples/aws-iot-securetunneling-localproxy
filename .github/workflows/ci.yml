@@ -24,7 +24,7 @@ jobs:
         tar xzvf /tmp/boost.tar.gz
         cd boost_1_76_0
         ./bootstrap.sh --with-toolset=clang
-        ./b2 install toolset=clang
+        ./b2 install toolset=clang link=static
     - name: Install protobuf
       working-directory: ${{ github.workspace }}
       run: |
@@ -70,7 +70,7 @@ jobs:
         tar xzvf /tmp/boost.tar.gz
         cd boost_1_76_0
         ./bootstrap.sh
-        sudo ./b2 install
+        sudo ./b2 install link=static
     - name: Install protobuf
       working-directory: ${{ github.workspace }}
       run: |
@@ -144,7 +144,7 @@ jobs:
           Expand-Archive "boost_1_76_0.zip" -Force
           cd .\boost_1_76_0\boost_1_76_0\
           .\bootstrap.bat
-          .\b2 toolset=msvc-14.2 address-model=64 install define=BOOST_WINAPI_VERSION_WIN10
+          .\b2 toolset=msvc-14.2 address-model=64 install define=BOOST_WINAPI_VERSION_WIN10 link=static
       - name: Install protobuf
         run: |
           cd \
