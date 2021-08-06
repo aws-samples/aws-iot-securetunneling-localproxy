@@ -67,7 +67,7 @@ Fedora example:
     tar xzvf /tmp/boost.tar.gz
     cd boost_1_76_0
     ./bootstrap.sh
-    sudo ./b2 install
+    sudo ./b2 install link=static
 
 #### 3. Download and install Protobuf dependency
 
