@@ -1,12 +1,13 @@
-# FROM ubuntu:18.04
-FROM ubuntu:18.04 as builder
+# FROM amazonlinux:latest
+FROM amazonlinux:latest as builder
 ARG OPENSSL_CONFIG
 
 # Install Prerequisites
 
-RUN apt update && apt upgrade -y && \
-	apt install -y git libboost-all-dev autoconf automake \
-	wget libtool curl make g++ unzip cmake libssl-dev
+RUN yum check-update; yum upgrade -y && \
+	yum install -y git boost-devel autoconf automake \
+	wget libtool curl make gcc-c++ unzip cmake3 openssl11-devel \
+	python-devel which
 
 # Install Dependencies
 
@@ -33,7 +34,7 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/p
 	cd protobuf-3.17.3 && \
 	mkdir build && \
 	cd build && \
-	cmake ../cmake && \
+	cmake3 ../cmake && \
 	make && \
 	make install && \
 	cd /home/dependencies
@@ -50,7 +51,7 @@ RUN git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git && \
 	cd Catch2 && \
 	mkdir build && \
 	cd build && \
-	cmake ../ && \
+	cmake3 ../ && \
 	make && \
 	make install && \
 	cd /home/dependencies
@@ -59,7 +60,7 @@ RUN git clone https://github.com/aws-samples/aws-iot-securetunneling-localproxy 
 	cd aws-iot-securetunneling-localproxy && \
 	mkdir build && \
 	cd build && \
-	cmake ../ && \
+	cmake3 ../ && \
 	make
 
 # If you'd like to use this Dockerfile to build your LOCAL revisions to the
@@ -88,19 +89,19 @@ WORKDIR /home/aws-iot-securetunneling-localproxy/
 
 ## Actual docker image
 
-FROM ubuntu:18.04
+FROM amazonlinux:latest
 
 # Install openssl for libssl dependency.
 
-RUN apt update && apt upgrade -y && \
-    apt install -y openssl wget && \
-    rm -rf /var/lib/apt/lists/* && \
-    apt-get clean
+RUN yum check-update; yum upgrade -y && \
+    yum install -y openssl11 wget libatomic && \
+    rm -rf /var/cache/yum && \
+    yum clean all
 
 RUN mkdir -p /home/aws-iot-securetunneling-localproxy/certs && \
     cd /home/aws-iot-securetunneling-localproxy/certs && \
     wget https://www.amazontrust.com/repository/AmazonRootCA1.pem && \
-	openssl rehash ./
+	openssl11 rehash ./
 
 # # Copy the binaries from builder stage.
 
