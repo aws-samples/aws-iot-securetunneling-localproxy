@@ -103,7 +103,7 @@ jobs:
         cmake ..
         make
   windows:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Setup developer command prompt
         uses: ilammy/msvc-dev-cmd@v1
