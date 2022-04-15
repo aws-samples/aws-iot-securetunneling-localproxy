@@ -54,9 +54,9 @@ Ubuntu example:
 Fedora example:
 `dnf install zlib`
 
-    wget https://www.zlib.net/zlib-1.2.11.tar.gz -O /tmp/zlib-1.2.11.tar.gz
-    tar xzvf /tmp/zlib-1.2.11.tar.gz
-    cd zlib-1.2.11
+    wget https://www.zlib.net/zlib-1.2.12.tar.gz -O /tmp/zlib-1.2.12.tar.gz
+    tar xzvf /tmp/zlib-1.2.12.tar.gz
+    cd zlib-1.2.12
     ./configure
     make
     sudo make install
