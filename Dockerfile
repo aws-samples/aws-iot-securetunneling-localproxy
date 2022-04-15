@@ -14,9 +14,9 @@ RUN yum check-update; yum upgrade -y && \
 RUN mkdir /home/dependencies
 WORKDIR /home/dependencies
 
-RUN wget https://www.zlib.net/zlib-1.2.11.tar.gz -O /tmp/zlib-1.2.11.tar.gz && \
-	tar xzvf /tmp/zlib-1.2.11.tar.gz && \
-	cd zlib-1.2.11 && \
+RUN wget https://www.zlib.net/zlib-1.2.12.tar.gz -O /tmp/zlib-1.2.12.tar.gz && \
+	tar xzvf /tmp/zlib-1.2.12.tar.gz && \
+	cd zlib-1.2.12 && \
 	./configure && \
 	make && \
 	make install && \
