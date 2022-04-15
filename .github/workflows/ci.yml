@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - '*'
+  pull_request:
+    branches:
+      - '*'
 
 env:
   PACKAGE_NAME: aws-iot-securetunneling-localproxy
@@ -159,7 +162,7 @@ jobs:
           $env:Path += ";C:\Program Files (x86)\protobuf\bin"
       - name: 'Checkout'
         uses: actions/checkout@v2
-      - name: Build localproxy 
+      - name: Build localproxy
         working-directory: ${{ github.workspace }}
         run: |
           mkdir build
