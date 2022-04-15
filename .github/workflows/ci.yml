@@ -54,7 +54,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1/1.1.1m/ -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl@1.1/1.1.1m/lib/
+        cmake .. -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1/1.1.1n/ -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl@1.1/1.1.1n/lib/
         make
   ubuntu:
     runs-on: ubuntu-latest
