@@ -25,16 +25,25 @@ The AWS IoT Secure Tunneling's usage of WebSocket is in part a subprotocol as de
 
 The handshake performed to connect to a AWS IoT Secure Tunneling server is a standard WebSocket protocol handshake with additional requirements on the HTTP request. These requirements ensure proper access to a tunnel given a client access token:
 
--   The tunneling service only accepts connections secured with TLS 1.1 or higher
--   The HTTP path of the upgrade request must be `/tunnel`. Requests made to any other path will result in a 400 HTTP response
--   There must be a URL parameter `local-proxy-mode` specifying the tunnel connection (local proxy) mode. The value of this parameter must be `source` or `destination`
--   There must be an access token specified in the request either via cookie, or an HTTP request header
-    -   Set the access token via HTTP request header named 'access-token' or via cookie named 'awsiot-tunnel-token'
-    -   Only one token value may be present in the request. Supplying multiple values for either the access-token header or the cookie, or both combined will cause the handshake to fail.
-    -   Local proxy mode must match the mode of the access token or the handshake will fail.
--   The HTTP request size must not exceed 4k bytes in length. Requests larger than this will be rejected
--   The 'Sec-WebSocket-Protocol' header must contain at least one valid protocol string based on what is supported by the service
-    -   Valid value: 'aws.iot.securetunneling-2.0'
+- The tunneling service only accepts connections secured with TLS 1.1 or higher
+- The HTTP path of the upgrade request must be `/tunnel`. Requests made to any other path will result in a 400 HTTP response
+- There must be a URL parameter `local-proxy-mode` specifying the tunnel connection (local proxy) mode. The value of this parameter must be `source` or `destination`
+- There must be an access token specified in the request either via cookie, or an HTTP request header
+    - Set the access token via HTTP request header named 'access-token' or via cookie named 'awsiot-tunnel-token'
+    - Only one token value may be present in the request. Supplying multiple values for either the access-token header or the cookie, or both combined will cause the handshake to fail.
+    - Local proxy mode must match the mode of the access token or the handshake will fail.
+- The HTTP request size must not exceed 4k bytes in length. Requests larger than this will be rejected
+- The 'Sec-WebSocket-Protocol' header must contain at least one valid protocol string based on what is supported by the service
+    - Valid value: 'aws.iot.securetunneling-2.0'
+- The AWS IoT Secure Tunneling server accepts a `client-token` header for specifying the client token.
+  - The client token is an added security layer to protect the tunnel by ensuring that only the agent that generated the client token can use a particular access token to connect to a tunnel.
+  - Only one client token value may be present in the request. Supplying multiple values will cause the handshake to fail.
+  - The client token is optional.
+  - The client token must be unique per AWS account
+  - It's recommended to use a UUIDv4 to generate the client token.
+  - The client token can be any string that matches the regex `^[a-zA-Z0-9-]{32,128}$`
+  - If a client token is provided, then local proxy needs to pass the same client token for subsequent retries (This is yet to be implemented in the current version of local proxy)
+  - If a client token is not provided, then the access token will become invalid after a successful handshake, and localproxy won't be able to reconnect using the same access token.
 
 An example URI of where to connect is as follows:
 

@@ -215,8 +215,6 @@ This is an example command to run the local proxy in destination mode, on a tunn
 
 We recommend starting the destination application or server before starting the destination local proxy to ensure that when the local proxy attempts to connect to the destination port, it will succeed. When the local proxy starts in destination mode, it will first connect to the service, and then begin listening for a new connection request over the tunnel. Upon receiving a request, it will attempt to connect to the configured destination address and port. If successful, it will transmit data between the TCP connection and tunnel bi-directionally. 
 
-If a new instance of destination local proxy starts,  using the same client access token as a existing local proxy that is already connected, the old local proxy will be disconnected. Tunnel connection will be reset and the new tunnel connection will be established with the new instance of the destination local proxy. 
-
 For a multiplexed tunnel, one connection drop or connect will not affect the other connections that share the same tunnel. All connections/streams in a multiplexed tunnel is independent.   
 
 
@@ -298,12 +296,19 @@ After preparing this directory, point to it when running the local proxy with th
 
 #### Runtime environment 
 
-* Avoid using the **-t** argument to pass in the access token. We recommend setting the **AWSIOT_TUNNEL_ACCESS_TOKEN** environment variable to specify the client access token with least visibility
-* Run the local proxy executable with least privileges in the OS or environment
+* Avoid using the **-t** argument to pass in the access token. We recommend setting the **AWSIOT_TUNNEL_ACCESS_TOKEN** environment variable to specify the client access token with the least visibility
+* Run the local proxy executable with the least privileges in the OS or environment
     * 
     * If your client application normally connects to a port less than 1024, this would normally require running the local proxy with admin privileges to listen on the same port. This can be avoided if the client application allows you to override the port to connect to. Choose any available port greater than 1024 for the source local proxy to listen to without administrator access. Then you may direct the client application to connect to that port. e.g. For connecting to a source local proxy with an SSH client, the local proxy can be run with `-s 5000` and the SSH client should be run with `-p 5000`
 * On devices with multiple network interfaces, use the **-b** argument to bind the TCP socket to a specific network address restricting the local proxy to only proxy connections on an intended network
 * Consider running the local proxy on separate hosts, containers, sandboxes, chroot jail, or a virtualized environment
+
+#### Access tokens
+
+* Access tokens are not meant to be re-used.
+* After localproxy uses an access token, it will no longer be valid.
+* You can revoke an existing token and get a new valid token by calling [RotateTunnelAccessToken](https://docs.aws.amazon.com/iot/latest/apireference/API_iot-secure-tunneling_RotateTunnelAccessToken.html).
+* Refer to the [Developer Guide](https://docs.aws.amazon.com/iot/latest/developerguide/iot-secure-tunneling-troubleshooting.html) for troubleshooting connectivity issues that can be due to an invalid token.
 
 ### IPv6 support
 
