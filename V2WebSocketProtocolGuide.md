@@ -39,7 +39,7 @@ The handshake performed to connect to a AWS IoT Secure Tunneling server is a sta
   - The client token is an added security layer to protect the tunnel by ensuring that only the agent that generated the client token can use a particular access token to connect to a tunnel.
   - Only one client token value may be present in the request. Supplying multiple values will cause the handshake to fail.
   - The client token is optional.
-  - The client token must be unique per AWS account
+  - The client token must be unique across all the open tunnels per AWS account
   - It's recommended to use a UUIDv4 to generate the client token.
   - The client token can be any string that matches the regex `^[a-zA-Z0-9-]{32,128}$`
   - If a client token is provided, then local proxy needs to pass the same client token for subsequent retries (This is yet to be implemented in the current version of local proxy)
