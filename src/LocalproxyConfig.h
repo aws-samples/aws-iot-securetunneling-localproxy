@@ -67,6 +67,10 @@ namespace aws {
                  */
                 bool                                    is_web_proxy_using_tls { };
                 /**
+                 * The tunnel client token which must be provided when they open the tunnel.
+                 */
+                std::string                             client_token { };
+                /**
                  * The tunnel access token which the user gets when they open the tunnel.
                  */
                 std::string                             access_token { };

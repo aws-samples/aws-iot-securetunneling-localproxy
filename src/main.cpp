@@ -48,6 +48,7 @@ using aws::iot::securedtunneling::get_region_endpoint;
 using aws::iot::securedtunneling::settings::apply_region_overrides;
 
 char const * const TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_ACCESS_TOKEN";
+char const * const CLIENT_TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_CLIENT_TOKEN";
 char const * const ENDPOINT_ENV_VARIABLE = "AWSIOT_TUNNEL_ENDPOINT";
 char const * const REGION_ENV_VARIABLE = "AWSIOT_TUNNEL_REGION";
 char const * const WEB_PROXY_ENV_VARIABLE = "HTTPS_PROXY";
@@ -143,6 +144,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     cliargs_desc.add_options()
         ("help,h", "Show help message")
         ("access-token,t", value<string>()->required(), "Client access token")
+        ("client-token,l", value<string>()->required(), "Client token")
         ("proxy-endpoint,e", value<string>(), "Endpoint of proxy server with port (if not default 443). Example: data.tunneling.iot.us-east-1.amazonaws.com:443")
         ("region,r", value<string>(), "Endpoint region where tunnel exists. Mutually exclusive flag with --proxy-endpoint")
         ("source-listen-port,s", value<string>(), "Sets the mappings between source listening ports and service identifier. Example: SSH1=5555 or 5555")
@@ -176,6 +178,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     init_logging(logging_level);
 
     bool token_cli_warning = vm.count("access-token") != 0;
+    bool client_token_cli_warning = vm.count("client-token") != 0;
 
     //dont allow above settings to be impacted by configuration file or environment variable parsers
     if (vm.count("config"))
@@ -188,6 +191,8 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
         {
             if (name == TOKEN_ENV_VARIABLE)
                 return "access-token";
+            if (name == CLIENT_TOKEN_ENV_VARIABLE)
+                return "client-token";
             if (name == ENDPOINT_ENV_VARIABLE)
                 return "proxy-endpoint";
             if (name == REGION_ENV_VARIABLE)
@@ -215,6 +220,12 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
         BOOST_LOG_TRIVIAL(warning) << "Found access token supplied via CLI arg. Consider using environment variable " << TOKEN_ENV_VARIABLE << " instead";
     }
     cfg.access_token = vm["access-token"].as<string>();
+    
+    if (client_token_cli_warning)
+    {
+        BOOST_LOG_TRIVIAL(warning) << "Found client token supplied via CLI arg. Consider using environment variable " << CLIENT_TOKEN_ENV_VARIABLE << " instead";
+    }
+    cfg.client_token = vm["client-token"].as<string>();
 
     string proxy_endpoint = vm.count("proxy-endpoint") == 1 ? vm["proxy-endpoint"].as<string>() :
         get_region_endpoint(vm["region"].as<string>(), settings);
