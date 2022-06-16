@@ -80,11 +80,14 @@ namespace aws { namespace iot { namespace securedtunneling {
                 wss{ nullptr },
                 wss_resolver{ io_ctx },
                 wss_response{ },
+                num_active_connections{ 0 },
                 stream_id{ -1 },
                 service_id{ "" },
                 serviceId_to_streamId_map{},
                 serviceId_to_tcp_server_map{},
                 serviceId_to_tcp_client_map{},
+                serviceId_to_control_message_handler_map{},
+                serviceId_to_data_message_handler_map{},
                 bind_address_actual{ },
                 is_web_socket_reading{ false },
                 is_service_ids_received{ false },
@@ -105,6 +108,8 @@ namespace aws { namespace iot { namespace securedtunneling {
             //debuggability.
             boost::beast::websocket::response_type                  wss_response;
 
+            std::atomic_uint16_t num_active_connections;
+
             //represents the current stream ID to expect data from
             //care should be taken how(if) this is updated directly
             // To be deleted
@@ -113,6 +118,8 @@ namespace aws { namespace iot { namespace securedtunneling {
             std::unordered_map<std::string, std::int32_t>           serviceId_to_streamId_map;
             std::unordered_map<std::string, tcp_server::pointer>    serviceId_to_tcp_server_map;
             std::unordered_map<std::string, tcp_client::pointer>    serviceId_to_tcp_client_map;
+            std::unordered_map<std::string, std::function<bool(message const &)>> serviceId_to_control_message_handler_map;
+            std::unordered_map<std::string, std::function<bool(message const &)>> serviceId_to_data_message_handler_map;
             std::string                                             bind_address_actual;
             //flag set to true while web socket data is being drained
             //necessary for better TCP socket recovery rather than destroying
@@ -152,27 +159,33 @@ namespace aws { namespace iot { namespace securedtunneling {
 
         int run_proxy();
     private:
+        void update_message_handlers(tcp_adapter_context &tac, std::function<bool(message const &)> handler);
         void setup_tcp_socket(tcp_adapter_context &tac, std::string const & service_id);
         void setup_tcp_sockets(tcp_adapter_context &tac);
         //setup async io flow to connect tcp socket to the adapter config's data host/port
-        void async_setup_dest_tcp_socket(tcp_adapter_context &tac, std::string const & service_id);
-        void async_setup_dest_tcp_socket_retry(tcp_adapter_context &tac, std::shared_ptr<basic_retry_config> retry_config, std::string const & service_id);
+        void async_setup_dest_tcp_socket(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id, bool is_first_connection);
+        void async_setup_dest_tcp_socket_retry(tcp_adapter_context &tac, std::shared_ptr<basic_retry_config> retry_config, std::string const & service_id, uint32_t const & connection_id, bool is_first_connection);
         void async_setup_source_tcp_sockets(tcp_adapter_context &tac);
         void async_setup_source_tcp_socket_retry(tcp_adapter_context &tac, std::shared_ptr<basic_retry_config> retry_config, std::string service_id);
-        void initialize_tcp_clients(tcp_adapter_context &tac);
-        void initialize_tcp_servers(tcp_adapter_context &tac);
+        void do_accept_tcp_connection(tcp_adapter_context &tac, std::shared_ptr<basic_retry_config> retry_config, std::string service_id, std::uint16_t local_port, bool is_first_connection);
         void setup_web_socket(tcp_adapter_context &tac);
         //setup async web socket, and as soon as connection is up, setup async ping schedule
         void async_setup_web_socket(tcp_adapter_context &tac);
+        // TODO: may not be needed depending on further testing
+        void do_nothing(tcp_adapter_context &tac);
 
         //Call in order to close and reset the TCP connection. If error code is set
         //then the reset is intentionally reset via web socket, and retries
         //occur definitely (regardless of retry configuration)
         void tcp_socket_reset_all(tcp_adapter_context &tac, std::function<void()> post_reset_operation);
-        void tcp_socket_reset(tcp_adapter_context &tac, std::string service_id, std::function<void()> post_reset_operation);
-        tcp_connection::pointer get_tcp_connection(tcp_adapter_context &tac, std::string service_id);
+        void tcp_socket_reset_init(tcp_adapter_context &tac, std::string service_id, std::function<void()> post_reset_operation);
+        void tcp_socket_reset(tcp_adapter_context &tac, std::string service_id, uint32_t connection_id, std::function<void()> post_reset_operation);
+        void tcp_socket_close(tcp_adapter_context &tac, std::string service_id, uint32_t connection_id);
+        tcp_connection::pointer get_tcp_connection(tcp_adapter_context &tac, std::string service_id); // redundant
+        tcp_connection::pointer get_tcp_connection(tcp_adapter_context &tac, std::string service_id, uint32_t connection_id);
 
-        void tcp_socket_error(tcp_adapter_context &tac, boost::system::error_code const &_ec, std::string const & service_id);
+        void delete_tcp_socket(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
+        void tcp_socket_error(tcp_adapter_context &tac, boost::system::error_code const &_ec, std::string const & service_id, uint32_t const & connection_id);
 
         //sets up a web socket read loop that will read, and ignore most messages until a stream start
         //is read and then do something with it (likely, connect to configured endpoint)
@@ -197,15 +210,15 @@ namespace aws { namespace iot { namespace securedtunneling {
         //invokes after_setup_web_socket_read_until_stream_start() after stream start is encountered
         bool async_wait_for_stream_start(tcp_adapter_context &tac, message const &message);
         bool async_wait_for_service_ids(tcp_adapter_context &tac);
-        void async_tcp_socket_read_loop(tcp_adapter_context &tac, std::string const & service_id);
+        void async_tcp_socket_read_loop(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
 
         //below loop does continuous writes to TCP socket from the TCP adapter
         //context's tcp_write_buffer. After consuming chunks out of the buffer
-        //the behavior will be to check 
-        void async_tcp_write_buffer_drain(tcp_adapter_context &tac, std::string service_id);
+        //the behavior will be to check
+        void async_tcp_write_buffer_drain(tcp_adapter_context &tac, std::string service_id, uint32_t connection_id);
 
-        void async_setup_bidirectional_data_transfers(tcp_adapter_context &tac, std::string const & service_id);
-        void async_setup_web_socket_write_buffer_drain(tcp_adapter_context &tac, std::string const & service_id);
+        void async_setup_bidirectional_data_transfers(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
+        void async_setup_web_socket_write_buffer_drain(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
 
         //returns a boolean that indicates if another web socket data read message can be put
         //onto the tcp write buffer. We have no way of knowing what the next message is and if
@@ -226,8 +239,11 @@ namespace aws { namespace iot { namespace securedtunneling {
         bool is_valid_stream_id(tcp_adapter_context const& tac, message const &message);
 
         void async_send_message(tcp_adapter_context &tac, message const &message);
-        void async_send_stream_start(tcp_adapter_context &tac, std::string const & service_id);
-        void async_send_stream_reset(tcp_adapter_context &tac, std::string const & service_id);
+        void async_send_message(tcp_adapter_context &tac, message const &message, std::string const & service_id, uint32_t const & connection_id);
+        void async_send_stream_start(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
+        void async_send_stream_reset(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
+        void async_send_connection_start(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
+        void async_send_connection_reset(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
 
         //handler for successfully sent ping will delay the next one
         void async_ping_handler_loop(tcp_adapter_context &tac,
@@ -248,7 +264,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         //4 - perform teardown procedure on websocket
         void web_socket_close_and_stop(tcp_adapter_context &tac);
 
-        void async_resolve_destination_for_connect(tcp_adapter_context &tac, std::shared_ptr<basic_retry_config> retry_config, std::string const & service_id, boost::system::error_code const &ec, tcp::resolver::results_type results);
+        void async_resolve_destination_for_connect(tcp_adapter_context &tac, std::shared_ptr<basic_retry_config> retry_config, std::string const & service_id, uint32_t const & connection_id, boost::system::error_code const &ec, tcp::resolver::results_type results);
 
         bool process_incoming_websocket_buffer(tcp_adapter_context &tac, boost::beast::multi_buffer &message_buffer);
 
@@ -264,7 +280,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
         bool fall_back_to_v1_message_format(std::unordered_map<std::string, std::string> const &  serviceId_to_endpoint_map);
 
-        void async_send_message_to_web_socket(tcp_adapter_context &tac, std::shared_ptr<boost::beast::flat_buffer> const& ss, std::string const & service_id);
+        void async_send_message_to_web_socket(tcp_adapter_context &tac, std::shared_ptr<boost::beast::flat_buffer> const& ss, std::string const & service_id, uint32_t const & connection_id);
 
         void async_setup_destination_tcp_sockets(tcp_adapter_context &tac);
 

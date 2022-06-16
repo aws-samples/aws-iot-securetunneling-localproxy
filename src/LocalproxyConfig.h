@@ -57,7 +57,7 @@ namespace aws {
                 /**
                  * The web proxy endpoint port. This will be set only if a web proxy is necessary. defaults to 3128.
                  */
-                std::uint16_t                           web_proxy_port {0 };
+                std::uint16_t                           web_proxy_port { 0 };
                 /**
                  * The web proxy authN. This will be set only if an web proxy is necessary and it requires authN.
                  */

@@ -14,6 +14,7 @@ message Message {
     bytes   payload      = 4;
     string  serviceId = 5;
     repeated string availableServiceIds = 6;
+    uint32 connectionId = 7;
 
     enum Type {
         UNKNOWN = 0;
@@ -22,5 +23,7 @@ message Message {
         STREAM_RESET = 3;
         SESSION_RESET = 4;
         SERVICE_IDS = 5;
+        CONNECTION_START = 6;
+        CONNECTION_RESET = 7;
     }
 }
