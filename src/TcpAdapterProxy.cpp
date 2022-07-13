@@ -1544,7 +1544,7 @@ std::timed_mutex lock;
 
         // We are not currently writing, so send this immediately
         data_message message_to_send = tac.web_socket_outgoing_message_queue.front();
-        while (lock.try_lock_for(std::chrono::milliseconds(200)))
+        while (!lock.try_lock_for(std::chrono::milliseconds(200)))
         {
 
         }
