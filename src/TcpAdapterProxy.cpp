@@ -1525,7 +1525,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             setup_tcp_socket(tac, service_id);
         }
     }
-
+std::mutex lock;
     void tcp_adapter_proxy::async_send_message_to_web_socket(tcp_adapter_context &tac, std::shared_ptr<boost::beast::flat_buffer> const& data_to_send, std::string const & service_id)
     {
         BOOST_LOG_SEV(log, trace) << "Sending messages over web socket for service id: " << service_id;
@@ -1544,8 +1544,10 @@ namespace aws { namespace iot { namespace securedtunneling {
 
         // We are not currently writing, so send this immediately
         data_message message_to_send = tac.web_socket_outgoing_message_queue.front();
+        lock.lock();
         tac.wss->async_write(message_to_send.first->data(), [=, &tac](boost::system::error_code const &ec, std::size_t const bytes_sent)
         {
+            lock.unlock();
             if (ec)
             {
                 throw proxy_exception("Error sending web socket message", ec);
