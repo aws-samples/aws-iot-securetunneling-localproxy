@@ -416,7 +416,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         };
         async_setup_web_socket_write_buffer_drain(tac, service_id);
     }
-//std::mutex lock;
+
     void tcp_adapter_proxy::async_send_message(tcp_adapter_context &tac, message const &message)
     {
         boost::beast::flat_buffer     outgoing_message_buffer;
@@ -430,12 +430,6 @@ namespace aws { namespace iot { namespace securedtunneling {
         message.SerializeToArray(frame_data_msg_offset, static_cast<int>(GET_SETTING(settings, MESSAGE_MAX_SIZE)));
         outgoing_message_buffer.commit(frame_size);
         string service_id = message.serviceid();
-//        while (!lock.try_lock())
-//        {
-//            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-//            BOOST_LOG_SEV(log, trace) << "in wait loop";
-//        }
-        BOOST_LOG_SEV(log, trace) << "calling from async_send_message";
         async_send_message_to_web_socket(tac, std::make_shared<boost::beast::flat_buffer>(outgoing_message_buffer), service_id);
     }
 
@@ -1531,9 +1525,8 @@ namespace aws { namespace iot { namespace securedtunneling {
             setup_tcp_socket(tac, service_id);
         }
     }
-int calls = 0;
-int count = 0;
-std::mutex lock;
+
+static std::mutex web_socket_outgoing_message_queue_mutex;
     void tcp_adapter_proxy::async_send_message_to_web_socket(tcp_adapter_context &tac, std::shared_ptr<boost::beast::flat_buffer> const& data_to_send, std::string const & service_id)
     {
         BOOST_LOG_SEV(log, trace) << "Sending messages over web socket for service id: " << service_id;
@@ -1544,7 +1537,8 @@ std::mutex lock;
             BOOST_LOG_SEV(log, trace) << "Put data " << data_to_send->size() << " bytes into the web_socket_outgoing_message_queue for service id: " << service_id;
             tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id);
             data_message temp = std::make_pair(data_to_send, socket_connection->after_send_message);
-            const std::lock_guard<std::mutex> lg(lock);
+
+            const std::lock_guard<std::mutex> lock(web_socket_outgoing_message_queue_mutex);
             tac.web_socket_outgoing_message_queue.push(temp);
             // Are we already writing?
             if(tac.web_socket_outgoing_message_queue.size() > 1)
@@ -1556,20 +1550,12 @@ std::mutex lock;
         {
             BOOST_LOG_SEV(log, trace) << "data is null";
         }
-        BOOST_LOG_SEV(log, trace) << "calls " << calls;
-        BOOST_LOG_SEV(log, trace) << "count " << count;
 
         // We are not currently writing, so send this immediately
         data_message message_to_send = tac.web_socket_outgoing_message_queue.front();
 
-        calls++;
-        int temp_c = count;
-        count++;
         tac.wss->async_write(message_to_send.first->data(), [=, &tac](boost::system::error_code const &ec, std::size_t const bytes_sent)
         {
-            BOOST_LOG_SEV(log, trace) << "in completion handler " << temp_c;
-            calls--;
-            // lock.unlock();
             if (ec)
             {
                 throw proxy_exception("Error sending web socket message", ec);
@@ -1582,14 +1568,13 @@ std::mutex lock;
                 capture_after_send_message();
             }
 
-            const std::lock_guard<std::mutex> lg(lock);
+            const std::lock_guard<std::mutex> lock(web_socket_outgoing_message_queue_mutex);
             tac.web_socket_outgoing_message_queue.pop();
             if(tac.web_socket_outgoing_message_queue.empty())
             {
                 BOOST_LOG_SEV(log, trace) << "web_socket_outgoing_message_queue is empty, no more messages to send.";
                 return;
             }
-            BOOST_LOG_SEV(log, trace) << "calling from completion handler " << temp_c;
             async_send_message_to_web_socket(tac, nullptr, service_id);
         });
     }
