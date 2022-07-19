@@ -1546,10 +1546,6 @@ static std::mutex web_socket_outgoing_message_queue_mutex;
                 return;
             }
         }
-        else
-        {
-            BOOST_LOG_SEV(log, trace) << "data is null";
-        }
 
         // We are not currently writing, so send this immediately
         data_message message_to_send = tac.web_socket_outgoing_message_queue.front();
