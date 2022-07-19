@@ -1526,7 +1526,6 @@ namespace aws { namespace iot { namespace securedtunneling {
         }
     }
 
-static std::mutex web_socket_outgoing_message_queue_mutex;
     void tcp_adapter_proxy::async_send_message_to_web_socket(tcp_adapter_context &tac, std::shared_ptr<boost::beast::flat_buffer> const& data_to_send, std::string const & service_id)
     {
         BOOST_LOG_SEV(log, trace) << "Sending messages over web socket for service id: " << service_id;
@@ -1538,7 +1537,7 @@ static std::mutex web_socket_outgoing_message_queue_mutex;
             tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id);
             data_message temp = std::make_pair(data_to_send, socket_connection->after_send_message);
 
-            const std::lock_guard<std::mutex> lock(web_socket_outgoing_message_queue_mutex);
+            const std::lock_guard<std::mutex> lock(tac.web_socket_outgoing_message_queue_mutex);
             tac.web_socket_outgoing_message_queue.push(temp);
             // Are we already writing?
             if(tac.web_socket_outgoing_message_queue.size() > 1)
@@ -1564,7 +1563,7 @@ static std::mutex web_socket_outgoing_message_queue_mutex;
                 capture_after_send_message();
             }
 
-            const std::lock_guard<std::mutex> lock(web_socket_outgoing_message_queue_mutex);
+            const std::lock_guard<std::mutex> lock(tac.web_socket_outgoing_message_queue_mutex);
             tac.web_socket_outgoing_message_queue.pop();
             if(tac.web_socket_outgoing_message_queue.empty())
             {
