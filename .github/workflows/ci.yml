@@ -19,17 +19,7 @@ jobs:
       name: 'Checkout'
     - name: Install brew dependencies
       run: |
-        brew install zlib cmake wget
-    - name: Install openssl
-      working-directory: ${{ github.workspace }}
-      run: |
-        wget https://www.openssl.org/source/openssl-1.1.1n.tar.gz
-        tar -zxvf openssl-1.1.1n.tar.gz
-        cd openssl-1.1.1n
-        ./config
-        make
-        sudo make install
-        sudo ldconfig
+        brew install openssl@1.1 zlib cmake wget
     - name: Install boost
       working-directory: ${{ github.workspace }}
       run: |
@@ -64,7 +54,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1/1.1.1n/ -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl@1.1/1.1.1n/lib/
+        cmake ..
         make
   ubuntu:
     runs-on: ubuntu-latest
