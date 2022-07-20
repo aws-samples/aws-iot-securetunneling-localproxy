@@ -19,7 +19,7 @@ jobs:
       name: 'Checkout'
     - name: Install brew dependencies
       run: |
-        brew install openssl@1.1 zlib cmake wget
+        brew install zlib cmake wget
     - name: Install openssl
       working-directory: ${{ github.workspace }}
       run: |
