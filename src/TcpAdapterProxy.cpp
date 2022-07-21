@@ -1536,14 +1536,19 @@ namespace aws { namespace iot { namespace securedtunneling {
             BOOST_LOG_SEV(log, trace) << "Put data " << data_to_send->size() << " bytes into the web_socket_outgoing_message_queue for service id: " << service_id;
             tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id);
             data_message temp = std::make_pair(data_to_send, socket_connection->after_send_message);
+
+            const std::lock_guard<std::mutex> lock(tac.web_socket_outgoing_message_queue_mutex);
             tac.web_socket_outgoing_message_queue.push(temp);
             // Are we already writing?
             if(tac.web_socket_outgoing_message_queue.size() > 1)
+            {
                 return;
+            }
         }
 
         // We are not currently writing, so send this immediately
         data_message message_to_send = tac.web_socket_outgoing_message_queue.front();
+
         tac.wss->async_write(message_to_send.first->data(), [=, &tac](boost::system::error_code const &ec, std::size_t const bytes_sent)
         {
             if (ec)
@@ -1552,12 +1557,14 @@ namespace aws { namespace iot { namespace securedtunneling {
             }
             BOOST_LOG_SEV(log, trace) << "Sent " << bytes_sent << " bytes over websocket for service id: " << service_id;
             std::function<void()> capture_after_send_message = message_to_send.second;
-            tac.web_socket_outgoing_message_queue.pop();
 
             if(capture_after_send_message)
             {
                 capture_after_send_message();
             }
+
+            const std::lock_guard<std::mutex> lock(tac.web_socket_outgoing_message_queue_mutex);
+            tac.web_socket_outgoing_message_queue.pop();
             if(tac.web_socket_outgoing_message_queue.empty())
             {
                 BOOST_LOG_SEV(log, trace) << "web_socket_outgoing_message_queue is empty, no more messages to send.";

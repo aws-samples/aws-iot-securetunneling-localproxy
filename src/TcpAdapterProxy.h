@@ -87,7 +87,8 @@ namespace aws { namespace iot { namespace securedtunneling {
                 bind_address_actual{ },
                 is_web_socket_reading{ false },
                 is_service_ids_received{ false },
-                web_socket_outgoing_message_queue{}
+                web_socket_outgoing_message_queue{},
+                web_socket_outgoing_message_queue_mutex{}
             { }
 
             boost::asio::io_context                                 io_ctx;
@@ -120,6 +121,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             bool                                                    is_web_socket_reading;
             bool                                                    is_service_ids_received;
             std::queue<data_message>                                web_socket_outgoing_message_queue;
+            std::mutex web_socket_outgoing_message_queue_mutex;
         };
 
         //simple re-usable structure for a basic retry strategy's state
