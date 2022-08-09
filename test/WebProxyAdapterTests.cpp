@@ -22,7 +22,6 @@ namespace aws {
         namespace securedtunneling {
             namespace test {
                 constexpr char LOCALHOST[] = "127.0.0.1";
-                constexpr int IO_PAUSE_MS = 1000;
                 constexpr int IO_TIMEOUT_MS = 10000;
                 mutex m;
                 condition_variable cv;
