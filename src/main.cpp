@@ -20,6 +20,10 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/expressions.hpp>
+#include <boost/uuid/uuid.hpp>
+
+#include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
 
 #include "ProxySettings.h"
 #include "TcpAdapterProxy.h"
@@ -47,11 +51,18 @@ using aws::iot::securedtunneling::proxy_mode;
 using aws::iot::securedtunneling::get_region_endpoint;
 using aws::iot::securedtunneling::settings::apply_region_overrides;
 
-char const * const TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_ACCESS_TOKEN";
+char const * const ACCESS_TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_ACCESS_TOKEN";
+char const * const CLIENT_TOKEN_ENV_VARIABLE = "AWSIOT_CLIENT_TOKEN";
 char const * const ENDPOINT_ENV_VARIABLE = "AWSIOT_TUNNEL_ENDPOINT";
 char const * const REGION_ENV_VARIABLE = "AWSIOT_TUNNEL_REGION";
 char const * const WEB_PROXY_ENV_VARIABLE = "HTTPS_PROXY";
 char const * const web_proxy_env_variable = "https_proxy";
+
+bool validate_client_token(const string client_token)
+{
+    static const boost::regex e("^[a-zA-Z0-9-]{32,128}$");
+    return boost::regex_match(client_token, e);
+}
 
 tuple<string, uint16_t> get_host_and_port(string const & endpoint, uint16_t default_port)
 {
@@ -143,6 +154,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     cliargs_desc.add_options()
         ("help,h", "Show help message")
         ("access-token,t", value<string>()->required(), "Client access token")
+        ("client-token,i", value<string>(), "Optional Client Token")
         ("proxy-endpoint,e", value<string>(), "Endpoint of proxy server with port (if not default 443). Example: data.tunneling.iot.us-east-1.amazonaws.com:443")
         ("region,r", value<string>(), "Endpoint region where tunnel exists. Mutually exclusive flag with --proxy-endpoint")
         ("source-listen-port,s", value<string>(), "Sets the mappings between source listening ports and service identifier. Example: SSH1=5555 or 5555")
@@ -186,8 +198,10 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     store(parse_environment(cliargs_desc, 
         [](std::string name) -> std::string
         {
-            if (name == TOKEN_ENV_VARIABLE)
+            if (name == ACCESS_TOKEN_ENV_VARIABLE)
                 return "access-token";
+            if (name == CLIENT_TOKEN_ENV_VARIABLE)
+                return "client-token";
             if (name == ENDPOINT_ENV_VARIABLE)
                 return "proxy-endpoint";
             if (name == REGION_ENV_VARIABLE)
@@ -212,9 +226,20 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     notify(vm);
     if (token_cli_warning)
     {
-        BOOST_LOG_TRIVIAL(warning) << "Found access token supplied via CLI arg. Consider using environment variable " << TOKEN_ENV_VARIABLE << " instead";
+        BOOST_LOG_TRIVIAL(warning) << "Found access token supplied via CLI arg. Consider using environment variable " << ACCESS_TOKEN_ENV_VARIABLE << " instead";
     }
     cfg.access_token = vm["access-token"].as<string>();
+
+    if (vm.count("client-token") != 0)
+    {
+        string client_token = vm["client-token"].as<string>();
+        if(!validate_client_token(client_token))
+        {
+            BOOST_LOG_TRIVIAL(fatal) << "Provided Client Token does not conform to required pattern: ^[a-zA-Z0-9-]{32,128}$";
+            return false;
+        }
+        cfg.client_token = client_token;
+    }
 
     string proxy_endpoint = vm.count("proxy-endpoint") == 1 ? vm["proxy-endpoint"].as<string>() :
         get_region_endpoint(vm["region"].as<string>(), settings);

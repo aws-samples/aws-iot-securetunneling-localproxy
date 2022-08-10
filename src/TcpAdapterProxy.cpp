@@ -42,6 +42,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
     char const * const PROXY_MODE_QUERY_PARAM = "local-proxy-mode";
     char const * const ACCESS_TOKEN_HEADER = "access-token";
+    char const * const CLIENT_TOKEN_HEADER = "client-token";
     char const * const SOURCE_PROXY_MODE = "source";
     char const * const DESTINATION_PROXY_MODE = "destination";
     char const * const LOCALHOST_IP = "127.0.0.1";
@@ -52,7 +53,6 @@ namespace aws { namespace iot { namespace securedtunneling {
     std::set<std::uint32_t> MESSAGE_TYPES_VALIDATING_STREAM_ID {
         com::amazonaws::iot::securedtunneling::Message_Type_DATA,
         com::amazonaws::iot::securedtunneling::Message_Type_STREAM_RESET};
-
 
     std::string get_region_endpoint(std::string const &region, boost::property_tree::ptree const &settings)
     {
@@ -721,6 +721,10 @@ namespace aws { namespace iot { namespace securedtunneling {
                                                     {
                                                         request.set(boost::beast::http::field::sec_websocket_protocol, GET_SETTING(settings, WEB_SOCKET_SUBPROTOCOL));
                                                         request.set(ACCESS_TOKEN_HEADER, tac.adapter_config.access_token.c_str());
+                                                        if(!tac.adapter_config.client_token.empty())
+                                                        {
+                                                            request.set(CLIENT_TOKEN_HEADER, tac.adapter_config.client_token.c_str());
+                                                        }
                                                         request.set(boost::beast::http::field::user_agent, user_agent_string);
                                                         BOOST_LOG_SEV(log, trace) << "Web socket ugprade request(*not entirely final):\n" << get_token_filtered_request(request);
                                                     },

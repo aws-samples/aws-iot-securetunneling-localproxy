@@ -19,6 +19,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/format.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/uuid/uuid.hpp>
 #include "ProxySettings.h"
 #include "TcpConnection.h"
 #include "TcpServer.h"
