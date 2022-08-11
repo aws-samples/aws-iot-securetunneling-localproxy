@@ -52,17 +52,11 @@ using aws::iot::securedtunneling::get_region_endpoint;
 using aws::iot::securedtunneling::settings::apply_region_overrides;
 
 char const * const ACCESS_TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_ACCESS_TOKEN";
-char const * const CLIENT_TOKEN_ENV_VARIABLE = "AWSIOT_CLIENT_TOKEN";
+char const * const CLIENT_TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_CLIENT_TOKEN";
 char const * const ENDPOINT_ENV_VARIABLE = "AWSIOT_TUNNEL_ENDPOINT";
 char const * const REGION_ENV_VARIABLE = "AWSIOT_TUNNEL_REGION";
 char const * const WEB_PROXY_ENV_VARIABLE = "HTTPS_PROXY";
 char const * const web_proxy_env_variable = "https_proxy";
-
-bool validate_client_token(const string client_token)
-{
-    static const boost::regex e("^[a-zA-Z0-9-]{32,128}$");
-    return boost::regex_match(client_token, e);
-}
 
 tuple<string, uint16_t> get_host_and_port(string const & endpoint, uint16_t default_port)
 {
@@ -232,13 +226,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
 
     if (vm.count("client-token") != 0)
     {
-        string client_token = vm["client-token"].as<string>();
-        if(!validate_client_token(client_token))
-        {
-            BOOST_LOG_TRIVIAL(fatal) << "Provided Client Token does not conform to required pattern: ^[a-zA-Z0-9-]{32,128}$";
-            return false;
-        }
-        cfg.client_token = client_token;
+        cfg.client_token = vm["client-token"].as<string>();
     }
 
     string proxy_endpoint = vm.count("proxy-endpoint") == 1 ? vm["proxy-endpoint"].as<string>() :
