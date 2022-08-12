@@ -76,7 +76,7 @@ RUN git clone https://github.com/aws-samples/aws-iot-securetunneling-localproxy 
 #    rm -rf build/ && \
 #    mkdir build && \
 #    cd build && \
-#    cmake ../ && \
+#    cmake3 ../ && \
 #    make
 
 RUN mkdir -p /home/aws-iot-securetunneling-localproxy && \
