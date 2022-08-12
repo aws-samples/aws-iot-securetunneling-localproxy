@@ -16,12 +16,15 @@
 
 using namespace std;
 
+
 namespace aws {
     namespace iot {
         namespace securedtunneling {
             namespace test {
                 constexpr char LOCALHOST[] = "127.0.0.1";
-                constexpr int IO_PAUSE_MS = 1000;
+                constexpr int IO_TIMEOUT_MS = 10000;
+                mutex m;
+                condition_variable cv;
                 unsigned short get_available_port() {
                     boost::asio::io_context io_ctx { };
                     tcp::acceptor acceptor(io_ctx);
@@ -69,6 +72,7 @@ namespace aws {
                         auto on_tcp_tunnel =
                                 [this](const boost::system::error_code& ec_response) {
                                     ec = ec_response;
+                                    cv.notify_one();
                                 };
                         http_server_thread = make_unique<thread>([this]() { http_server.run(); });
                         https_proxy_adapter_thread = make_unique<thread>([this, on_tcp_tunnel]() {
@@ -89,7 +93,8 @@ namespace aws {
                     cout << "Test HTTPS proxy adapter base case with no credentials" << endl;
                     TestContext test_context{};
                     test_context.start();
-                    this_thread::sleep_for(chrono::microseconds(IO_PAUSE_MS));
+                    std::unique_lock<mutex> lk(m);
+                    cv.wait_for(lk, chrono::milliseconds(IO_TIMEOUT_MS));
                     REQUIRE(test_context.ec.message() == WebProxyAdapterErrc_category().message((int) WebProxyAdapterErrc::Success));
                     REQUIRE(static_cast<WebProxyAdapterErrc>(test_context.ec.value()) == WebProxyAdapterErrc::Success);
                     test_context.stop();
@@ -99,7 +104,8 @@ namespace aws {
                     cout << "Test HTTPS proxy adapter handling of valid credentials response" << endl;
                     TestContext test_context{username + ":" + password};
                     test_context.start();
-                    this_thread::sleep_for(chrono::microseconds(IO_PAUSE_MS));
+                    std::unique_lock<mutex> lk(m);
+                    cv.wait_for(lk, chrono::milliseconds(IO_TIMEOUT_MS));
                     REQUIRE(test_context.ec.message() == WebProxyAdapterErrc_category().message((int) WebProxyAdapterErrc::Success));
                     REQUIRE(static_cast<WebProxyAdapterErrc>(test_context.ec.value()) == WebProxyAdapterErrc::Success);
                     test_context.stop();
@@ -109,7 +115,8 @@ namespace aws {
                     cout << "Test HTTPS proxy adapter handling of bad credentials response" << endl;
                     TestContext test_context{username + "a:" + password};
                     test_context.start();
-                    this_thread::sleep_for(chrono::microseconds(IO_PAUSE_MS));
+                    std::unique_lock<mutex> lk(m);
+                    cv.wait_for(lk, chrono::milliseconds(IO_TIMEOUT_MS));
                     REQUIRE(test_context.ec.message() == WebProxyAdapterErrc_category().message((int) WebProxyAdapterErrc::ClientError));
                     REQUIRE(static_cast<WebProxyAdapterErrc>(test_context.ec.value()) == WebProxyAdapterErrc::ClientError);
                     test_context.stop();
@@ -119,7 +126,8 @@ namespace aws {
                     cout << "Test HTTPS proxy adapter handling of 500 response" << endl;
                     TestContext test_context{"500"};
                     test_context.start();
-                    this_thread::sleep_for(chrono::microseconds(IO_PAUSE_MS));
+                    std::unique_lock<mutex> lk(m);
+                    cv.wait_for(lk, chrono::milliseconds(IO_TIMEOUT_MS));
                     REQUIRE(test_context.ec.message() == WebProxyAdapterErrc_category().message((int) WebProxyAdapterErrc::ServerError));
                     REQUIRE(static_cast<WebProxyAdapterErrc>(test_context.ec.value()) == WebProxyAdapterErrc::ServerError);
                     test_context.stop();
@@ -129,7 +137,8 @@ namespace aws {
                     cout << "Test HTTPS proxy adapter handling of 100 response" << endl;
                     TestContext test_context{"100"};
                     test_context.start();
-                    this_thread::sleep_for(chrono::microseconds(IO_PAUSE_MS));
+                    std::unique_lock<mutex> lk(m);
+                    cv.wait_for(lk, chrono::milliseconds(IO_TIMEOUT_MS));
                     REQUIRE(test_context.ec.message() == WebProxyAdapterErrc_category().message((int) WebProxyAdapterErrc::OtherHttpError));
                     REQUIRE(static_cast<WebProxyAdapterErrc>(test_context.ec.value()) == WebProxyAdapterErrc::OtherHttpError);
                     test_context.stop();
@@ -139,7 +148,8 @@ namespace aws {
                     cout << "Test HTTPS proxy adapter handling of 300 response" << endl;
                     TestContext test_context{"300"};
                     test_context.start();
-                    this_thread::sleep_for(chrono::microseconds(IO_PAUSE_MS));
+                    std::unique_lock<mutex> lk(m);
+                    cv.wait_for(lk, chrono::milliseconds(IO_TIMEOUT_MS));
                     REQUIRE(test_context.ec.message() == WebProxyAdapterErrc_category().message((int) WebProxyAdapterErrc::RedirectionError));
                     REQUIRE(static_cast<WebProxyAdapterErrc>(test_context.ec.value()) == WebProxyAdapterErrc::RedirectionError);
                     test_context.stop();

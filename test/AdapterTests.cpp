@@ -451,8 +451,8 @@ TEST_CASE( "Test destination mode", "[destination]") {
     this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
 
     // Verify destination app is connected
-    REQUIRE( accepted );
     tcp_accept_thread.join();
+    REQUIRE( accepted );
 
     // Simulate sending data messages from destination app
     uint8_t read_buffer[READ_BUFFER_SIZE];
@@ -471,27 +471,6 @@ TEST_CASE( "Test destination mode", "[destination]") {
     {
     return (msg.type() == com::amazonaws::iot::securedtunneling::Message_Type_STREAM_RESET) && msg.streamid() == 1;
     });
-    destination_socket.close();
-
-    accepted = false;
-    tcp_accept_thread = std::thread{[&acceptor, &destination_socket, &accepted]()
-                                    {
-                                        acceptor.accept(destination_socket);
-                                        accepted = true;
-                                    }};
-    ws_server.deliver_message(ws_server_message);
-    this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
-    REQUIRE( accepted );
-    tcp_accept_thread.join();
-
-   // Simulate sending data messages from destination app
-    for(int i = 0; i < 5; ++i)
-    {
-    string const test_string = (boost::format("test message: %1%") % i).str();
-    destination_socket.send(boost::asio::buffer(test_string));
-    destination_socket.read_some(boost::asio::buffer(reinterpret_cast<void *>(read_buffer), READ_BUFFER_SIZE));
-    CHECK( string(reinterpret_cast<char *>(read_buffer)) == test_string );
-    }
 
     //instruct websocket to close on client
     ws_server.close_client("test_closure", boost::beast::websocket::internal_error); //need to perform write to trigger close
