@@ -278,6 +278,106 @@ TEST_CASE( "Test source mode", "[source]") {
     tcp_adapter_thread.join();
 }
 
+TEST_CASE( "Test source mode with client token", "[source]") {
+    using namespace com::amazonaws::iot::securedtunneling;
+    /**
+    * Test case set up
+    * 1. Create tcp socket to acts as destination app.
+    * 2. Create web socket server to act as secure tunneling service (cloud side).
+    * 3. Configure adapter config used for the local proxy.
+    */
+    boost::asio::io_context io_ctx{};
+    tcp::socket client_socket{ io_ctx };
+
+    boost::system::error_code ec;
+    ptree settings;
+    apply_test_settings(settings);
+    TestWebsocketServer ws_server(LOCALHOST, settings);
+    tcp::endpoint ws_address{ws_server.get_endpoint()};
+    std::cout << "Test server is listening on address: " << ws_address.address() << " and port: " << ws_address.port() << endl;
+
+    LocalproxyConfig adapter_cfg;
+    apply_test_config(adapter_cfg, ws_address);
+    adapter_cfg.mode = proxy_mode::SOURCE;
+    adapter_cfg.bind_address = LOCALHOST;
+    adapter_cfg.access_token = "foobar_token";
+    adapter_cfg.client_token = "foobar-client-token";
+    const std::string service_id= "ssh1";
+    uint16_t adapter_chosen_port = get_available_port(io_ctx);
+    adapter_cfg.serviceId_to_endpoint_map[service_id] = boost::lexical_cast<std::string>(adapter_chosen_port);
+
+    tcp_adapter_proxy proxy{ settings, adapter_cfg };
+
+    //start web socket server thread and tcp adapter threads
+    thread ws_server_thread{[&ws_server]() { ws_server.run(); } };
+    thread tcp_adapter_thread{[&proxy]() { proxy.run_proxy(); } };
+
+    // Verify web socket handshake request from local proxy
+    this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
+    CHECK( ws_server.get_handshake_request().method() == boost::beast::http::verb::get );
+    CHECK( ws_server.get_handshake_request().target() == "/tunnel?local-proxy-mode=source" );
+    CHECK( ws_server.get_handshake_request().base()["sec-websocket-protocol"] == "aws.iot.securetunneling-2.0" );
+    CHECK( ws_server.get_handshake_request().base()["access-token"] == adapter_cfg.access_token );
+    CHECK( ws_server.get_handshake_request().base()["client-token"] == adapter_cfg.client_token );
+
+    // Simulate cloud side sends control message Message_Type_SERVICE_IDS
+    message ws_server_message{};
+    ws_server_message.set_type(Message_Type_SERVICE_IDS);
+    ws_server_message.add_availableserviceids(service_id);
+    ws_server_message.set_ignorable(false);
+    ws_server_message.clear_payload();
+
+    ws_server.deliver_message(ws_server_message);
+    this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
+
+    // Simulate source app connects to source local proxy
+    client_socket.connect( tcp::endpoint{boost::asio::ip::make_address(adapter_cfg.bind_address.get()), adapter_chosen_port} );
+
+    uint8_t read_buffer[READ_BUFFER_SIZE];
+
+    // Simulate sending data messages from source app
+    for(int i = 0; i < 5; ++i)
+    {
+        string const test_string = (boost::format("test message: %1%") % i).str();
+        client_socket.send(boost::asio::buffer(test_string));
+        client_socket.read_some(boost::asio::buffer(reinterpret_cast<void *>(read_buffer), READ_BUFFER_SIZE));
+        CHECK( string(reinterpret_cast<char *>(read_buffer)) == test_string );
+    }
+
+    // Verify local proxy sends Message_Type_STREAM_RESET
+    ws_server.expect_next_message(
+            [](message const&msg)
+            {
+                return (msg.type() == com::amazonaws::iot::securedtunneling::Message_Type_STREAM_RESET) && msg.streamid() == 1;
+            });
+    client_socket.close();
+
+    this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
+
+    // Simulate source app connects to source local proxy
+    client_socket.connect( tcp::endpoint{boost::asio::ip::make_address(adapter_cfg.bind_address.get()), adapter_chosen_port} );
+
+    // Simulate sending data messages from source app
+    for(int i = 0; i < 5; ++i)
+    {
+        string const test_string = (boost::format("test message: %1%") % i).str();
+        client_socket.send(boost::asio::buffer(test_string));
+        client_socket.read_some(boost::asio::buffer(reinterpret_cast<void *>(read_buffer), READ_BUFFER_SIZE));
+        CHECK( string(reinterpret_cast<char *>(read_buffer)) == test_string );
+    }
+
+    //instruct websocket to close on client
+    ws_server.close_client("test_closure", boost::beast::websocket::internal_error);
+    //attempt a read on the client which should now see the socket EOF (peer closed) caused by adapter
+    client_socket.read_some(boost::asio::buffer(reinterpret_cast<void *>(read_buffer), READ_BUFFER_SIZE), ec);
+    CHECK( ec.value() == BOOST_EC_SOCKET_CLOSED );
+
+    client_socket.close();
+
+    ws_server_thread.join();
+    tcp_adapter_thread.join();
+}
+
 
 TEST_CASE( "Test destination mode", "[destination]") {
     using namespace com::amazonaws::iot::securedtunneling;

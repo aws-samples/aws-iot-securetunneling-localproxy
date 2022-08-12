@@ -72,6 +72,10 @@ namespace aws {
                 std::string                             access_token { };
                 proxy_mode                              mode{ proxy_mode::UNKNOWN };
                 /**
+                 * A unique client-token to ensure only the agent which generated the token may connect to a tunnel
+                 */
+                std::string                             client_token;
+                /**
                  * local address to bind to for listening in source mode or a local socket address for destination mode,
                  * defaults localhost.
                  */
