@@ -952,6 +952,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                     tcp_connection::pointer socket_read_connection = get_tcp_connection(tac, service_id, connection_id);
                     if (!socket_read_connection)
                     {
+                        async_setup_web_socket_write_buffer_drain(tac, service_id, connection_id);
                         return;
                     }
                     socket_read_connection->is_tcp_socket_reading_ = false;
