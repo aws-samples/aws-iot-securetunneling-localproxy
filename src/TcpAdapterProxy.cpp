@@ -958,6 +958,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                     socket_read_connection->is_tcp_socket_reading_ = false;
                     if (ec)
                     {
+                        BOOST_LOG_SEV(log, trace) << "received error code: " << ec;
                         if (socket_read_connection->on_tcp_error)
                         {
                             socket_read_connection->on_tcp_error(ec);
