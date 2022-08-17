@@ -416,7 +416,6 @@ namespace aws { namespace iot { namespace securedtunneling {
                 BOOST_LOG_SEV(this->log, trace) << "Post-reset TCP drain complete. Closing TCP socket for service id " << service_id << " connection id " << connection_id;
                 BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << connection_to_reset->socket().remote_endpoint();
                 connection_to_reset->socket_.close();
-                delete_tcp_socket(tac, service_id, connection_id);
             };
     }
 
@@ -952,7 +951,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                     tcp_connection::pointer socket_read_connection = get_tcp_connection(tac, service_id, connection_id);
                     if (!socket_read_connection)
                     {
-                        async_setup_web_socket_write_buffer_drain(tac, service_id, connection_id);
+                        // async_setup_web_socket_write_buffer_drain(tac, service_id, connection_id);
                         return;
                     }
                     socket_read_connection->is_tcp_socket_reading_ = false;
@@ -1723,7 +1722,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         if (!connection)
         {
             BOOST_LOG_SEV(log, trace) << "Tcp connection service id: " << service_id << ", connection id: " << connection_id << " does not exist anymore. Restarting read loop.";
-            async_tcp_socket_read_loop(tac, service_id, connection_id);
+            // async_tcp_socket_read_loop(tac, service_id, connection_id);
             return;
         }
         using namespace com::amazonaws::iot::securedtunneling;
