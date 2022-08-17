@@ -217,7 +217,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             client->connectionId_to_tcp_connection_map.clear();
             // client->on_receive_stream_start = std::bind(&tcp_adapter_proxy::async_setup_dest_tcp_socket, this, std::ref(tac), service_id);
             // client->after_setup_tcp_socket = std::bind(&tcp_adapter_proxy::async_setup_bidirectional_data_transfers, this, std::ref(tac), service_id);
-            async_send_stream_start(tac, service_id, 0);
+            async_send_stream_start(tac, service_id, 1);
             async_web_socket_read_until_stream_start(tac, service_id);
         }
         else
