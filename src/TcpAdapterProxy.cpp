@@ -416,6 +416,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 BOOST_LOG_SEV(this->log, trace) << "Post-reset TCP drain complete. Closing TCP socket for service id " << service_id << " connection id " << connection_id;
                 BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << connection_to_reset->socket().remote_endpoint();
                 connection_to_reset->socket_.close();
+                delete_tcp_socket(tac, service_id, connection_id);
             };
     }
 
@@ -469,6 +470,15 @@ namespace aws { namespace iot { namespace securedtunneling {
     {
         BOOST_LOG_SEV(log, debug) << "Handling tcp socket error for service id: " << service_id << " connection id: " << connection_id << " . error message:" << ec.message();
         tcp_connection::pointer connection = get_tcp_connection(tac, service_id, connection_id);
+        try
+        {
+            BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << connection->socket().remote_endpoint();
+        }
+        catch (std::exception& e)
+        {
+            BOOST_LOG_SEV(this->log, info) << "Disconnecting... remote endpoint not found";
+        }
+
         BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << connection->socket().remote_endpoint();
         connection->socket_.close();
         connection->tcp_write_buffer_.consume(connection->tcp_write_buffer_.max_size());
