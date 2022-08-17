@@ -215,17 +215,12 @@ namespace aws { namespace iot { namespace securedtunneling {
         {
             tcp_client::pointer client = tac.serviceId_to_tcp_client_map[service_id];
             client->connectionId_to_tcp_connection_map.clear();
-            // client->on_receive_stream_start = std::bind(&tcp_adapter_proxy::async_setup_dest_tcp_socket, this, std::ref(tac), service_id);
-            // client->after_setup_tcp_socket = std::bind(&tcp_adapter_proxy::async_setup_bidirectional_data_transfers, this, std::ref(tac), service_id);
-            async_send_stream_start(tac, service_id, 1);
             async_web_socket_read_until_stream_start(tac, service_id);
         }
         else
         {
             tcp_server::pointer server = tac.serviceId_to_tcp_server_map[service_id];
             server->connectionId_to_tcp_connection_map.clear();
-            // server->first_connection->after_send_message = std::bind(&tcp_adapter_proxy::async_setup_bidirectional_data_transfers, this, std::ref(tac), service_id);
-            // server->after_setup_tcp_socket = std::bind(&tcp_adapter_proxy::async_send_stream_start, this, std::ref(tac), service_id);
             std::shared_ptr<basic_retry_config> retry_config =
                     std::make_shared<basic_retry_config>(tac.io_ctx,
                                                          GET_SETTING(settings, TCP_CONNECTION_RETRY_COUNT),
