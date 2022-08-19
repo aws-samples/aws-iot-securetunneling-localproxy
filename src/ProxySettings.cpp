@@ -23,7 +23,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
     std::size_t const DEFAULT_MAX_DATA_FRAME_SIZE = DEFAULT_MESSAGE_MAX_SIZE + DEFAULT_DATA_LENGTH_SIZE;
 
     char const * const KEY_TCP_CONNECTION_RETRY_COUNT = "tunneling.proxy.tcp.connection_retry_count";
-    std::int32_t const DEFAULT_TCP_CONNECTION_RETRY_COUNT = 5;
+    std::int32_t const DEFAULT_TCP_CONNECTION_RETRY_COUNT = -1;
 
     char const * const KEY_TCP_CONNECTION_RETRY_DELAY_MS = "tunneling.proxy.tcp.connection_retry_delay_ms";
     std::uint32_t const DEFAULT_TCP_CONNECTION_RETRY_DELAY_MS = 1000;
