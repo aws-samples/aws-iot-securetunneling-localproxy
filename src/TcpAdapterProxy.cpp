@@ -1402,6 +1402,10 @@ namespace aws { namespace iot { namespace securedtunneling {
             // Validate if this mapping exists, if not, discard the message
             string service_id = message.serviceid();
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
+            if (!connection_id)
+            {
+                connection_id = 1;
+            }
             BOOST_LOG_SEV(log, trace) << "Forwarding message to tcp socket with connection id: " << connection_id;
             /**
              * v1 message format does not need to have service id field, so we don't need to do validation on this field.

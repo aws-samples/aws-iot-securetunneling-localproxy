@@ -217,7 +217,7 @@ TEST_CASE( "Test source mode", "[source]") {
     this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
     CHECK( ws_server.get_handshake_request().method() == boost::beast::http::verb::get );
     CHECK( ws_server.get_handshake_request().target() == "/tunnel?local-proxy-mode=source" );
-    CHECK( ws_server.get_handshake_request().base()["sec-websocket-protocol"] == "aws.iot.securetunneling-2.0" );
+    CHECK( ws_server.get_handshake_request().base()["sec-websocket-protocol"] == "aws.iot.securetunneling-3.0" );
     CHECK( ws_server.get_handshake_request().base()["access-token"] == adapter_cfg.access_token );
 
     // Simulate cloud side sends control message Message_Type_SERVICE_IDS
