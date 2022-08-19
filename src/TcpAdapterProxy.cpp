@@ -1292,6 +1292,12 @@ namespace aws { namespace iot { namespace securedtunneling {
             BOOST_LOG_SEV(log, trace) << "Handling control message...";
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
+
+            //for backwards compatibility with v2
+            if (!connection_id)
+            {
+                connection_id = 1;
+            }
             string service_id = message.serviceid();
             // v1 message format does not need to validate service id. Set to the one service id stored in memory.
             if (tac.adapter_config.is_v1_message_format)
@@ -1402,6 +1408,8 @@ namespace aws { namespace iot { namespace securedtunneling {
             // Validate if this mapping exists, if not, discard the message
             string service_id = message.serviceid();
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
+
+            //for backwards compatiblity with v2
             if (!connection_id)
             {
                 connection_id = 1;
