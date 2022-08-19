@@ -299,6 +299,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
     void tcp_adapter_proxy::tcp_socket_reset_init(tcp_adapter_context &tac, string service_id, std::function<void()> post_reset_operation)
     {
+        BOOST_LOG_SEV(log, trace) << "Init tcp socket reset";
         std::unordered_map<uint32_t, tcp_connection::pointer> connection_map;
         if (tac.adapter_config.mode == proxy_mode::SOURCE)
         {
