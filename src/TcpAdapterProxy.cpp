@@ -486,18 +486,24 @@ namespace aws { namespace iot { namespace securedtunneling {
         connection->socket_.close();
         connection->tcp_write_buffer_.consume(connection->tcp_write_buffer_.max_size());
 
-//        connection->on_data_message = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
-//        connection->on_control_message = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
-
         connection->on_web_socket_write_buffer_drain_complete = [&, service_id, connection_id]()
         {
             BOOST_LOG_SEV(this->log, trace) << "on_web_socket_write_buffer_drain_complete callback";
-            // tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
-            // socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
-            // socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::do_nothing, this, std::ref(tac));
-            delete_tcp_socket(tac, service_id, connection_id);
-            async_send_connection_reset(tac, service_id, connection_id);
-            // async_send_stream_reset(tac, service_id, connection_id);
+            tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
+            socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
+
+            if (tac.adapter_config.is_v2_message_format)
+            {
+                tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
+                tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
+                async_send_stream_reset(tac, service_id, connection_id);
+            }
+            else
+            {
+                delete_tcp_socket(tac, service_id, connection_id);
+                async_send_connection_reset(tac, service_id, connection_id);
+            }
+
         };
         async_setup_web_socket_write_buffer_drain(tac, service_id, connection_id);
     }
@@ -1056,6 +1062,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             if (!connection_id)
             {
                 connection_id = 1;
+                tac.adapter_config.is_v2_message_format = true;
             }
             string service_id = message.serviceid();
             switch (message.type())
@@ -1312,6 +1319,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             if (!connection_id)
             {
                 connection_id = 1;
+                tac.adapter_config.is_v2_message_format = true;
             }
             string service_id = message.serviceid();
             // v1 message format does not need to validate service id. Set to the one service id stored in memory.
@@ -1428,6 +1436,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             if (!connection_id)
             {
                 connection_id = 1;
+                tac.adapter_config.is_v2_message_format = true;
             }
             BOOST_LOG_SEV(log, trace) << "Forwarding message to tcp socket with connection id: " << connection_id;
             /**
@@ -2044,8 +2053,8 @@ namespace aws { namespace iot { namespace securedtunneling {
                 [this, &tac, service_id, connection_id]()
                 {
                     tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
-                    tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
-                    tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
+                    tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
+                    tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
                     socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
                     async_send_stream_reset(tac, service_id, connection_id);
                 });
@@ -2066,8 +2075,8 @@ namespace aws { namespace iot { namespace securedtunneling {
                             {
                                 BOOST_LOG_SEV(log, trace) << "ignoring all messages: ";
                                 tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
-                                tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
-                                tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
+                                tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
+                                tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
                                 socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
                                 async_send_stream_reset(tac, service_id, connection_id);
                             });
@@ -2143,8 +2152,8 @@ namespace aws { namespace iot { namespace securedtunneling {
                             [this, &tac, service_id, connection_id]()
                             {
                                 tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
-                                tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
-                                tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
+                                tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
+                                tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
                                 socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
                                 async_send_stream_reset(tac, service_id, connection_id);
                             });
@@ -2163,8 +2172,8 @@ namespace aws { namespace iot { namespace securedtunneling {
                                 [this, &tac, service_id, connection_id]()
                                 {
                                     tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
-                                    tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
-                                    tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
+                                    tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
+                                    tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
                                     socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
                                     async_send_stream_reset(tac, service_id, connection_id);
                                 });
