@@ -315,17 +315,25 @@ namespace aws { namespace iot { namespace securedtunneling {
             tac.num_active_connections = connection_map.size();
         }
 
-        for (auto m: connection_map)
+        if (!tac.num_active_connections)
         {
-            uint32_t connection_id = m.first;
-            tcp_adapter_proxy::tcp_socket_reset(tac, service_id, connection_id, post_reset_operation);
+            tac.num_active_connections = 1;
+            tcp_adapter_proxy::tcp_socket_reset(tac, service_id, 1, post_reset_operation);
+        }
+        else
+        {
+            for (auto m: connection_map)
+            {
+                uint32_t connection_id = m.first;
+                tcp_adapter_proxy::tcp_socket_reset(tac, service_id, connection_id, post_reset_operation);
+            }
         }
     }
     void tcp_adapter_proxy::tcp_socket_reset(tcp_adapter_context &tac, string service_id, uint32_t connection_id, std::function<void()> post_reset_operation)
     {
         // TODO: delete all connections from the map
         tcp_connection::pointer connection = get_tcp_connection(tac, service_id, connection_id);
-        if (!connection->socket_.is_open())
+        if (!connection || !connection->socket_.is_open())
         {
             BOOST_LOG_SEV(log, debug) << "Ignoring explicit reset because TCP socket is already closed";
             --tac.num_active_connections;
@@ -1043,6 +1051,8 @@ namespace aws { namespace iot { namespace securedtunneling {
             BOOST_LOG_SEV(log, trace) << "Wait for control message stream start, receive message type:" << message.type();
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
+
+            // backwards compatiblity with v2
             if (!connection_id)
             {
                 connection_id = 1;
