@@ -1042,6 +1042,10 @@ namespace aws { namespace iot { namespace securedtunneling {
             BOOST_LOG_SEV(log, trace) << "Wait for control message stream start, receive message type:" << message.type();
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
+            if (!connection_id)
+            {
+                connection_id = 1;
+            }
             string service_id = message.serviceid();
             switch (message.type())
             {
