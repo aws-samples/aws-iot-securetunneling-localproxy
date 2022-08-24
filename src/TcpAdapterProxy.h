@@ -171,8 +171,6 @@ namespace aws { namespace iot { namespace securedtunneling {
         void setup_web_socket(tcp_adapter_context &tac);
         //setup async web socket, and as soon as connection is up, setup async ping schedule
         void async_setup_web_socket(tcp_adapter_context &tac);
-        // TODO: may not be needed depending on further testing
-        void do_nothing(tcp_adapter_context &tac);
 
         //Call in order to close and reset the TCP connection. If error code is set
         //then the reset is intentionally reset via web socket, and retries
@@ -181,7 +179,6 @@ namespace aws { namespace iot { namespace securedtunneling {
         void tcp_socket_reset_init(tcp_adapter_context &tac, std::string service_id, std::function<void()> post_reset_operation);
         void tcp_socket_reset(tcp_adapter_context &tac, std::string service_id, uint32_t connection_id, std::function<void()> post_reset_operation);
         void tcp_socket_close(tcp_adapter_context &tac, std::string service_id, uint32_t connection_id);
-        tcp_connection::pointer get_tcp_connection(tcp_adapter_context &tac, std::string service_id); // redundant
         tcp_connection::pointer get_tcp_connection(tcp_adapter_context &tac, std::string service_id, uint32_t connection_id);
 
         void delete_tcp_socket(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
@@ -225,7 +222,6 @@ namespace aws { namespace iot { namespace securedtunneling {
         //it will be too big to process, thus we don't do the read applying back pressure on
         //the socket. Implicitly, this means that an async_read is not happening on the web socket
         bool tcp_has_enough_write_buffer_space(tcp_connection::pointer  connection);
-        bool tcp_has_enough_write_buffer_space(tcp_adapter_context const &tac);
 
         //returns a boolean that indicates if another tcp socket read's data can be put on the
         //web socket write buffer. It's a bit different from tcp write buffer space requirements
@@ -254,8 +250,6 @@ namespace aws { namespace iot { namespace securedtunneling {
 
         void clear_ws_buffers(tcp_adapter_context &tac);
         void clear_tcp_connection_buffers(tcp_connection::pointer connection);
-
-        void tcp_socket_ensure_closed(boost::asio::ip::tcp::socket & tcp_socket);
 
         //closes the websocket connection
         //1 - shutdown the receive side of TCP
