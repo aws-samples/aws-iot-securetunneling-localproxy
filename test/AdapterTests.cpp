@@ -248,7 +248,7 @@ TEST_CASE( "Test source mode", "[source]") {
     ws_server.expect_next_message(
         [](message const&msg)
         {
-            return (msg.type() == com::amazonaws::iot::securedtunneling::Message_Type_STREAM_RESET) && msg.streamid() == 1;
+            return (msg.type() == com::amazonaws::iot::securedtunneling::Message_Type_CONNECTION_RESET) && msg.streamid() == 1;
         });
     client_socket.close();
     
@@ -316,7 +316,7 @@ TEST_CASE( "Test source mode with client token", "[source]") {
     this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
     CHECK( ws_server.get_handshake_request().method() == boost::beast::http::verb::get );
     CHECK( ws_server.get_handshake_request().target() == "/tunnel?local-proxy-mode=source" );
-    CHECK( ws_server.get_handshake_request().base()["sec-websocket-protocol"] == "aws.iot.securetunneling-2.0" );
+    CHECK( ws_server.get_handshake_request().base()["sec-websocket-protocol"] == "aws.iot.securetunneling-3.0" );
     CHECK( ws_server.get_handshake_request().base()["access-token"] == adapter_cfg.access_token );
     CHECK( ws_server.get_handshake_request().base()["client-token"] == adapter_cfg.client_token );
 
@@ -348,7 +348,7 @@ TEST_CASE( "Test source mode with client token", "[source]") {
     ws_server.expect_next_message(
             [](message const&msg)
             {
-                return (msg.type() == com::amazonaws::iot::securedtunneling::Message_Type_STREAM_RESET) && msg.streamid() == 1;
+                return (msg.type() == com::amazonaws::iot::securedtunneling::Message_Type_CONNECTION_RESET) && msg.streamid() == 1;
             });
     client_socket.close();
 
@@ -427,7 +427,7 @@ TEST_CASE( "Test destination mode", "[destination]") {
     // Verify web socket handshake request from local proxy
     CHECK( ws_server.get_handshake_request().method() == boost::beast::http::verb::get );
     CHECK( ws_server.get_handshake_request().target() == "/tunnel?local-proxy-mode=destination" );
-    CHECK( ws_server.get_handshake_request().base()["sec-websocket-protocol"] == "aws.iot.securetunneling-2.0" );
+    CHECK( ws_server.get_handshake_request().base()["sec-websocket-protocol"] == "aws.iot.securetunneling-3.0" );
     CHECK( ws_server.get_handshake_request().base()["access-token"] == adapter_cfg.access_token );
 
     // Simulate cloud side sends control message Message_Type_SERVICE_IDS
