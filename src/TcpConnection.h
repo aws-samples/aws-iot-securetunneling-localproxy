@@ -17,7 +17,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace connectio
     public:
         typedef boost::shared_ptr<tcp_connection> pointer;
 
-        static pointer create(boost::asio::io_context& io_context, std::size_t const & write_buf_size, std::size_t const & read_buf_size, std::size_t ws_write_buf_size, uint64_t connection_id)
+        static pointer create(boost::asio::io_context& io_context, std::size_t const & write_buf_size, std::size_t const & read_buf_size, std::size_t ws_write_buf_size, uint32_t connection_id)
         {
             return pointer(new tcp_connection(io_context, write_buf_size, read_buf_size, ws_write_buf_size, connection_id));
         }
@@ -27,7 +27,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace connectio
             return socket_;
         }
 
-        tcp_connection(boost::asio::io_context & io_context, std::size_t write_buf_size, std::size_t read_buf_size, std::size_t ws_write_buf_size, uint64_t connection_id)
+        tcp_connection(boost::asio::io_context & io_context, std::size_t write_buf_size, std::size_t read_buf_size, std::size_t ws_write_buf_size, uint32_t connection_id)
                 : socket_(io_context)
                 , tcp_write_buffer_(write_buf_size)
                 , tcp_read_buffer_(read_buf_size)
@@ -54,7 +54,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace connectio
         //it impossible to "inject" a non-data message in data sequence order
         boost::beast::multi_buffer                              web_socket_data_write_buffer_;
 
-        uint64_t connection_id_; // assigned connection_id for tcp connection
+        uint32_t connection_id_; // assigned connection_id for tcp connection
 
         // Is this tcp socket currently writing
         bool                                                    is_tcp_socket_writing_{ false };

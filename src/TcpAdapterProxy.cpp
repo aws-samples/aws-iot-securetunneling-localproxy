@@ -1572,13 +1572,6 @@ namespace aws { namespace iot { namespace securedtunneling {
             {
                 throw std::logic_error("Cannot run web socket read loop without handlers in place for control messages and data messages");
             }
-//            if (!tcp_has_enough_write_buffer_space(tac))
-//            {
-//                BOOST_LOG_SEV(log, trace) << "Scheduled async web socket read into tcp write buffer and it does not have enough space!";
-//    #ifdef DEBUG
-//                BOOST_LOG_SEV(log, trace) << "Scheduled async web socket read into tcp write buffer and it does not have enough space!";
-//    #endif
-//            }
 
             else if (tac.is_web_socket_reading)
             {

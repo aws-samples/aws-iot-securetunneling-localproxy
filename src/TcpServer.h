@@ -33,8 +33,6 @@ namespace aws { namespace iot { namespace securedtunneling { namespace connectio
         tcp::acceptor                           acceptor_;
         tcp::resolver                           resolver_;
 
-        // first connection ref used to setup tcp socket, has key value of "1" in the tcp connection map
-        tcp_connection::pointer                 first_connection;
         std::unordered_map<uint32_t, tcp_connection::pointer> connectionId_to_tcp_connection_map;
 
         std::atomic_uint32_t highest_connection_id;
