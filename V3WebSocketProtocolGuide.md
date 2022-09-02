@@ -272,7 +272,7 @@ The communication between V2 and V3 local proxy is supported for a multiplexed t
     * Destination local proxy should treat this as a request to initiate a TCP connection to a configured destination service and associate the new TCP connection with the given connection ID.
     * If the destination mode tunnel client already has an already open/active TCP connection with the given connection ID, it should consider it an error and send ConnectionReset for the given connection ID to tunnel peer.
     * Source mode tunnel clients SHOULD treat receiving ConnectionStart as an error and close the active connection for the given connection ID.
-* Message(type=CONNECTION_START, streamId=1, connectionId=1, payload=<unset>, serviceId=ssh1, availableServiceIds=<unset>, ignorable=<unset>)
+* Example: Message(type=CONNECTION_START, streamId=1, connectionId=1, payload=<unset>, serviceId=ssh1, availableServiceIds=<unset>, ignorable=<unset>)
 
 #### ConnectionReset
 
@@ -286,7 +286,7 @@ The communication between V2 and V3 local proxy is supported for a multiplexed t
         * After closing the connection, the connection ID should be unset internally
         * The tunnel client SHOULD perform an orderly shutdown of the connection and flush any local connection buffers before closing
     * If the receiver does not have an active stream or matching connection, it is safe to ignore a ConnectionReset message
-* Message(type=CONNECTION_RESET, streamId=1, connectionId=1, payload=<unset>, serviceId=ssh1, availableServiceIds=<unset>, ignorable=<unset>)
+* Example: Message(type=CONNECTION_RESET, streamId=1, connectionId=1, payload=<unset>, serviceId=ssh1, availableServiceIds=<unset>, ignorable=<unset>)
   
 #### SessionReset
 
