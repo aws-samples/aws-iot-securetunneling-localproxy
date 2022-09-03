@@ -34,7 +34,7 @@ The handshake performed to connect to a AWS IoT Secure Tunneling server is a sta
     - Local proxy mode must match the mode of the access token or the handshake will fail.
 - The HTTP request size must not exceed 4k bytes in length. Requests larger than this will be rejected
 - The 'Sec-WebSocket-Protocol' header must contain at least one valid protocol string based on what is supported by the service
-    - Valid value: 'aws.iot.securetunneling-2.0'
+    - Valid value: 'aws.iot.securetunneling-3.0'
 - The AWS IoT Secure Tunneling server accepts a `client-token` header for specifying the client token.
   - The client token is an added security layer to protect the tunnel by ensuring that only the agent that generated the client token can use a particular access token to connect to a tunnel.
   - Only one client token value may be present in the request. Supplying multiple values will cause the handshake to fail.
@@ -42,7 +42,7 @@ The handshake performed to connect to a AWS IoT Secure Tunneling server is a sta
   - The client token must be unique across all the open tunnels per AWS account
   - It's recommended to use a UUIDv4 to generate the client token.
   - The client token can be any string that matches the regex `^[a-zA-Z0-9-]{32,128}$`
-  - If a client token is provided, then local proxy needs to pass the same client token for subsequent retries (This is yet to be implemented in the current version of local proxy)
+  - If a client token is provided, then local proxy needs to pass the same client token for subsequent retries
   - If a client token is not provided, then the access token will become invalid after a successful handshake, and localproxy won't be able to reconnect using the same access token.
 
 An example URI of where to connect is as follows:
@@ -128,7 +128,7 @@ While connected to the service with this protocol selected, the following restri
 The core activity during tunneling is sending ProtocolBuffers messages back and forth carrying either data, or messages that manage the connection state (called _control messages_) over the WebSocket connection to the service. This WebSocket connection to the service is synonymous with being connected to the tunnel. The process to support an application data transfer successfully over the tunnel can be divided into three steps. 
 
 ####  Step 1: Establish tunnel connection and perform validations 
-Local proxy will initiate a web socket handshake to connect to the tunnel, using Sec-WebSocket-Protocol _aws.iot.securetunneling-2.0_. The Secure Tunneling service will acknowledge this request after authentication and validation. At this point, we can say the tunnel connection is established. After this, the Secure Tunneling service will send back control message _SERVICE_IDS_, containing a list of service IDs used in OpenTunnel API call, specified by **services** in [DestinationConfig](https://docs.aws.amazon.com/iot/latest/apireference/API_iot-secure-tunneling_DestinationConfig.html). These service IDs will be used as the source of truth of what service IDs are allowed to start local proxy. Upon receving these service IDs, local proxy will validate the service IDs provided through either configuration files or command line arguements. A validation failure on service IDs will cause local proxy fails to start. Below are two possible cases:
+Local proxy will initiate a web socket handshake to connect to the tunnel, using Sec-WebSocket-Protocol _aws.iot.securetunneling-3.0_. The Secure Tunneling service will acknowledge this request after authentication and validation. At this point, we can say the tunnel connection is established. After this, the Secure Tunneling service will send back control message _SERVICE_IDS_, containing a list of service IDs used in OpenTunnel API call, specified by **services** in [DestinationConfig](https://docs.aws.amazon.com/iot/latest/apireference/API_iot-secure-tunneling_DestinationConfig.html). These service IDs will be used as the source of truth of what service IDs are allowed to start local proxy. Upon receving these service IDs, local proxy will validate the service IDs provided through either configuration files or command line arguements. A validation failure on service IDs will cause local proxy fails to start. Below are two possible cases:
 1. Service IDs received from the AWS IoT Secure Tunneling server does not match service IDs used to start local proxy. 
     For example, in OpenTunnel API call, service IDs SSH1, SSH2 are provided. When local proxy starts, it specifies the service IDs as SSH3, through _-s_ or _-d_ parameter. In this case, since SSH3 does not match SSH1 and SSH2, local proxy will fail to start. Even though there is no enforcement on the naming convetion of service ID, the value of service IDs and number of service IDs have to match between OpenTunnel call and local proxy.  
 2. Local proxy cannot find the port mapping for all the service IDs. 
@@ -136,7 +136,7 @@ Local proxy will initiate a web socket handshake to connect to the tunnel, using
 
 ####  Step 2: Start a stream 
 Once started successfully, source local proxy will listen for incoming connections on the configured ports. Destination local proxy, on the other hand, will wait for control message  _StreamStart_. When client application connecting to a configured listening port, source local proxy will accept the TCP connection and sends a _StreamStart_ message with `connection_id = 1` to destination local proxy, for this specific service ID. When preparing to send _StreamStart_ message, source local proxy will also store service ID -> stream ID mapping for book keeping. 
-If multiple ports are used to start local proxy, each stream will send its own  _StreamStart_ message when the TCP connection on the configured port is accepted. A  _StreamStart_ message contains _streamID_, _serviceID_, and _connectionID_. _serviceID_ helps uniquely identify a service transferred over a tunnel . _streamID_ helps to reset a stream and identify stale data. _connectionID_ uniquely identifies a `boost::tcp_connection` object that handles TCP packets independently.
+If multiple ports are used to start local proxy, each stream will send its own  _StreamStart_ message when the TCP connection on the configured port is accepted. A  _StreamStart_ message contains _streamID_, _serviceID_, and _connectionID_. _serviceID_ helps uniquely identify a service transferred over a tunnel . _streamID_ helps to reset a stream and identify stale data. _connectionID_ is uniquely mapped to each `boost::tcp_connection` object within a _serviceID_.
 
 ####  Step 3: End to end data transfer over the tunnel 
 
@@ -155,7 +155,8 @@ Here are some important things to know for a high-level understanding of tunneli
 - The local proxy, and library clients may use connection ID to determine how to respond to or filter incoming messages in a similar manner to that of stream id.
 - Ending a TCP Connection (normally or abnormally) is accomplished by either side sending a _ConnectionReset_ with the stream ID and connection ID that is meant to be closed.
 - Locally detected network failures are communicated by sending _StreamReset_ over the tunnel using the active stream ID if one is active.
-- If there is a network issue with the WebSocket connection, no control message is necessary to send. However, the active stream should be considered invalid and closed. Reconnect to the tunnel via the service and start a new stream.
+- If there is a network issue with the WebSocket connection, no control message is necessary to send. However, the active stream should be considered invalid and closed. The localproxy will then reconnect to the tunnel via the service and start a new stream.
+- StreamReset will immediately close all connections associated with the service.
 
 
 ### Tunneling message frames
@@ -209,10 +210,10 @@ Tunneling frames (without the data length prefix) must parse into a _Message_ ob
 - _Type_ field must be set to a non-zero enum value. Due to ProtocolBuffers schema recommendation, the keyword 'required' is not used in the actual schema
 - It is invalid for a client connected with mode=destination to send a message with _Type_ = _StreamStart_ over the tunnel.
 - It is invalid for any client to send message types associated with a stream (_StreamStart_, _ConnectionStart_, _Data_, _StreamReset_, _ConnectionReset_) with a stream ID of 0
-- It is invalid for a v3 client to send a message type associated with a connection (_StreamStart_, _ConnectionStart_, _Data_, _ConnectionReset_) with a connection ID of 0 will be mapped to connection ID = 1.
-- It is invalid for any client to send _SessionReset_
+- Sending a message type (_StreamStart_, _ConnectionStart_, _Data_, _ConnectionReset_) without a connection ID or with a connection ID of 0 will always make destination v3 localproxy reinterpret it as connection ID set to 1. This is intended behavior.
+- It is invalid for any client to send _SessionReset_.
 - They payload of any message may not contain more than 63kb (64512 bytes) of data.
-- It is invalid to extend the schema with additional fields and send them through the tunnel. The service will close the WebSocket connection if this occurs
+- It is invalid to extend the schema with additional fields and send them through the tunnel. The service will close the WebSocket connection if this occurs.
 - Avoid negative stream ID numbers for message size efficiency. Stream ID of 0 is invalid. Connection ID of 0 will be ignored.
 - It is invalid for any local proxy to send message types _SERVICE_IDS_. It can only be sent from the Secure Tunneling service. 
 - Change the tag numbers of existing field of ProtocolBuffers will cause backward compatibility issue between V1 and V2 local proxy. Fore more information, please read [Extending a Protocol Buffer](https://developers.google.com/protocol-buffers/docs/cpptutorial#extending-a-protocol-buffer).
