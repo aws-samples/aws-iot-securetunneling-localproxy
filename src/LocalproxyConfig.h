@@ -9,6 +9,7 @@
 #include <vector>
 #include <queue>
 #include <memory>
+#include <unordered_map>
 #include <boost/log/trivial.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/optional.hpp>
