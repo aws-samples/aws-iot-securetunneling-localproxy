@@ -99,6 +99,7 @@ and you can add ` -p <port_number>` to expose a port from the docker container. 
 
 ### Prerequisites
 
+* Minimum System Requirements: >8GB of disk space and >1GB of RAM. We recommended building elsewhere and importing the binary if your device does not meet these requirements.
 * C++ 14 compiler
 * CMake 3.6+
 * Development libraries required:
