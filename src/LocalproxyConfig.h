@@ -57,7 +57,7 @@ namespace aws {
                 /**
                  * The web proxy endpoint port. This will be set only if a web proxy is necessary. defaults to 3128.
                  */
-                std::uint16_t                           web_proxy_port {0 };
+                std::uint16_t                           web_proxy_port { 0 };
                 /**
                  * The web proxy authN. This will be set only if an web proxy is necessary and it requires authN.
                  */
@@ -105,6 +105,10 @@ namespace aws {
                  * If this is set to true, it means that v2 local proxy won't validate service id field.
                  */
                 bool                                             is_v1_message_format {false};
+                /**
+                 * A flag to judge if v3 local proxy needs to fallback to communicate using v2 local proxy message format.
+                 */
+                bool                                             is_v2_message_format {false};
             };
         }
     }

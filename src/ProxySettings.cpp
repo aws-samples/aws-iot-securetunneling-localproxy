@@ -23,7 +23,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
     std::size_t const DEFAULT_MAX_DATA_FRAME_SIZE = DEFAULT_MESSAGE_MAX_SIZE + DEFAULT_DATA_LENGTH_SIZE;
 
     char const * const KEY_TCP_CONNECTION_RETRY_COUNT = "tunneling.proxy.tcp.connection_retry_count";
-    std::int32_t const DEFAULT_TCP_CONNECTION_RETRY_COUNT = 5;
+    std::int32_t const DEFAULT_TCP_CONNECTION_RETRY_COUNT = -1;
 
     char const * const KEY_TCP_CONNECTION_RETRY_DELAY_MS = "tunneling.proxy.tcp.connection_retry_delay_ms";
     std::uint32_t const DEFAULT_TCP_CONNECTION_RETRY_DELAY_MS = 1000;
@@ -34,6 +34,9 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
 
     char const * const KEY_MESSAGE_MAX_SIZE = "tunneling.proxy.message.max_size";
     std::size_t const DEFAULT_MESSAGE_MAX_SIZE = 64 * 1024;
+
+    char const * const KEY_MAX_ACTIVE_CONNECTIONS = "tunneling.proxy.tcp.max_active_connections";
+    std::uint32_t const DEFAULT_MAX_ACTIVE_CONNECTIONS = 128;
     
     char const * const KEY_WEB_SOCKET_PING_PERIOD_MS = "tunneling.proxy.websocket.ping_period_ms";
     std::uint32_t const DEFAULT_WEB_SOCKET_PING_PERIOD_MS = 5000;
@@ -48,7 +51,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
     bool const DEFAULT_WEB_SOCKET_DATA_ERROR_RETRY = true;
 
     char const * const KEY_WEB_SOCKET_SUBPROTOCOL = "tunneling.proxy.websocket.subprotocol";
-    std::string const DEFAULT_WEB_SOCKET_SUBPROTOCOL = "aws.iot.securetunneling-2.0";
+    std::string const DEFAULT_WEB_SOCKET_SUBPROTOCOL = "aws.iot.securetunneling-3.0";
 
     char const * const KEY_WEB_SOCKET_MAX_FRAME_SIZE = "tunneling.proxy.websocket.max_frame_size";
     std::size_t const DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE = DEFAULT_MAX_DATA_FRAME_SIZE * 2;
@@ -83,6 +86,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
         ADD_SETTING_DEFAULT(settings, TCP_READ_BUFFER_SIZE);
         ADD_SETTING_DEFAULT(settings, MESSAGE_MAX_PAYLOAD_SIZE);
         ADD_SETTING_DEFAULT(settings, MESSAGE_MAX_SIZE);
+        ADD_SETTING_DEFAULT(settings, MAX_ACTIVE_CONNECTIONS);
         ADD_SETTING_DEFAULT(settings, WEB_SOCKET_PING_PERIOD_MS);
         ADD_SETTING_DEFAULT(settings, WEB_SOCKET_CONNECT_RETRY_DELAY_MS);
         ADD_SETTING_DEFAULT(settings, WEB_SOCKET_CONNECT_RETRY_COUNT);

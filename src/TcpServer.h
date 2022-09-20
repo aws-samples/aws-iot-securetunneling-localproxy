@@ -4,6 +4,7 @@
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <unordered_map>
 #include "TcpConnection.h"
 
 namespace aws { namespace iot { namespace securedtunneling { namespace connection {
@@ -16,8 +17,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace connectio
                 : acceptor_(io_context)
                 , resolver_(io_context)
         {
-            connection_ =
-                    tcp_connection::create(io_context, write_buf_size, read_buf_size, ws_write_buf_size);
+            highest_connection_id = 0;
         }
 
         static pointer create(boost::asio::io_context& io_context, std::size_t const & write_buf_size, std::size_t const & read_buf_size, std::size_t const & ws_write_buf_size)
@@ -32,7 +32,11 @@ namespace aws { namespace iot { namespace securedtunneling { namespace connectio
 
         tcp::acceptor                           acceptor_;
         tcp::resolver                           resolver_;
-        tcp_connection::pointer                 connection_;
+
+        std::unordered_map<uint32_t, tcp_connection::pointer> connectionId_to_tcp_connection_map;
+
+        std::atomic_uint32_t highest_connection_id;
+
         // function object defines what to do after set up a tcp socket
         std::function<void()>                   after_setup_tcp_socket = nullptr;
     };

@@ -32,6 +32,9 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
     extern char const * const KEY_MESSAGE_MAX_SIZE;
     extern std::size_t const DEFAULT_MESSAGE_MAX_SIZE;
 
+    extern char const * const KEY_MAX_ACTIVE_CONNECTIONS;
+    extern std::uint32_t const DEFAULT_MAX_ACTIVE_CONNECTIONS;
+
     extern char const * const KEY_WEB_SOCKET_PING_PERIOD_MS;
     extern std::uint32_t const DEFAULT_WEB_SOCKET_PING_PERIOD_MS;
 
