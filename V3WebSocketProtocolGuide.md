@@ -138,6 +138,19 @@ Local proxy will initiate a web socket handshake to connect to the tunnel, using
 Once started successfully, source local proxy will listen for incoming connections on the configured ports. Destination local proxy, on the other hand, will wait for control message  _StreamStart_. When client application connecting to a configured listening port, source local proxy will accept the TCP connection and sends a _StreamStart_ message with `connection_id = 1` to destination local proxy, for this specific service ID. When preparing to send _StreamStart_ message, source local proxy will also store service ID -> stream ID mapping for book keeping. 
 If multiple ports are used to start local proxy, each stream will send its own  _StreamStart_ message when the TCP connection on the configured port is accepted. A  _StreamStart_ message contains _streamID_, _serviceID_, and _connectionID_. _serviceID_ helps uniquely identify a service transferred over a tunnel . _streamID_ helps to reset a stream and identify stale data. _connectionID_ is uniquely mapped to each `boost::tcp_connection` object within a _serviceID_.
 
+#### Every serviceID is tied to its own streamID
+In summary, every _serviceID_ has a one-to-one mapping with an active _streamID_, as this example describes below.
+
+1. The user opens a tunnel and defines SSH1 and SSH2 service id's.
+2. They then start running localproxy.
+3. Upon startup, the source localproxy sends two stream start messages for SSH1 and SSH2, with _streamID_ 1 for both.
+4. After sending the stream start messages, the mapping looks like:  _serviceID_ SSH1 -> active _streamID_ 1 and _serviceID_SSH2 -> active _streamID_ 1.
+5. The client applications start sending data for both service ids.
+6. Eventually the ssh client for _serviceID_ SSH2 sends a signal that triggers the delivery of a stream_reset message.
+7. This will mark _streamID_ 1 for _serviceID_ SSH2 as inactive and the source localproxy will send another stream_start message with _streamID_ 2 as part of the reset process.
+8. After this the new mapping will be:  _serviceID_ SSH1 -> active _streamID_ 1 and  _serviceID_ SSH2 -> active _streamID_ 2.
+9. Every data message received for SSH2 that has a _streamID_ of 1 thereafter will be ignored.
+
 ####  Step 3: End to end data transfer over the tunnel 
 
 On receiving a StreamStart, the destination local proxy will update the service ID --> Stream ID mapping, add a new connection ID --> tcp_connection mapping, and connect to the configured destination service for a service ID.  The destination local proxy does not send a reply to the source local proxy on successful connection. Immediately after the source local proxy sends StreamStart and immediately after the destination establishes a valid TCP connection, each side respectively can begin to send and receive incoming messages on the active data stream. When the data stream is closed or disrupted (for the local proxy, this is a TCP close or I/O error on the TCP socket), a ConnectionReset control message with the currently stored stream ID, service ID, and connection ID should be sent through the tunnel so the tunnel peer can react appropriately and end the data stream. Control messages associated with a stream should be processed with the same stream ID filter.
