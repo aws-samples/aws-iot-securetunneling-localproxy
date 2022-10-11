@@ -160,6 +160,8 @@ Here are some important things to know for a high-level understanding of tunneli
 
 - The service may use the Service ID to decide how to route traffic between connected tunnel clients. 
   - For example,  when local proxy received a data packet with Service ID  SSH1, it will look up the configuration for SSH1 and see which port this service ID is mapped to. If SSH1 is mapped to port 22 on local host, then this data packet will be forward to port 22 on local host.
+- A stream start message may include one of the service ID's defined as part of the tunnel, or no service ID. It may not, however, include any other service ID not defined during tunnel creation.
+- Any subsequent data messages must include a service ID associated with an active or previously active stream (a stream start message for the specific service ID must be sent first).
 - The local proxy uses the service ID -> stream ID mapping to check the current active stream ID for a specific service ID. 
 - The stream ID validation for a certain stream(service ID) will only be performed on message type _StreamReset_ and _Data_. If a received message failed the stream ID validation, this message is considered to be stale and will be discarded by local proxy. 
 - The local proxy, and library clients may use stream ID to determine how to respond to or filter incoming messages
@@ -174,7 +176,7 @@ Here are some important things to know for a high-level understanding of tunneli
 ### Reconnecting to the secure tunnel
 
 When the websocket is active, the local proxy will periodically send ping-pong message frames to keep the connection alive. The latency to the proxy server is also calculated during this time.
-In the event of a network outage or connection timeout, the local proxy will keep running and will execute a retry loop to reestablish the websocket connection.
+In the event of a network outage or connection timeout, the local proxy will keep running, close the active stream, and execute a retry loop to reestablish the websocket connection.
 By default, the retry interval is 2.5 seconds, and there is no limit to the maximum number of retries. These defaults are configurable in the ProxySettings source file constant declarations.
 
 ### Recovering from a crash or unintended program exit

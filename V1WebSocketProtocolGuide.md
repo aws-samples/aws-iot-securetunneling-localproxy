@@ -132,7 +132,7 @@ Here are some important things to know for a high-level understanding of tunneli
 ### Reconnecting to the secure tunnel
 
 When the websocket is active, the local proxy will periodically send ping-pong message frames to keep the connection alive. The latency to the proxy server is also calculated during this time.
-In the event of a network outage or connection timeout, the local proxy will keep running and will execute a retry loop to reestablish the websocket connection.
+In the event of a network outage or connection timeout, the local proxy will keep running, close the active stream, and execute a retry loop to reestablish the websocket connection.
 By default, the retry interval is 2.5 seconds, and there is no limit to the maximum number of retries. These defaults are configurable in the ProxySettings source file constant declarations.
 
 ### Recovering from a crash or unintended program exit
