@@ -43,7 +43,7 @@ The handshake performed to connect to a AWS IoT Secure Tunneling server is a sta
   - It's recommended to use a UUIDv4 to generate the client token.
   - The client token can be any string that matches the regex `^[a-zA-Z0-9-]{32,128}$`
   - If a client token is provided, then local proxy needs to pass the same client token for subsequent retries (This is yet to be implemented in the current version of local proxy)
-  - If a client token is not provided, then the access token will become invalid after a successful handshake, and localproxy won't be able to reconnect using the same access token.
+  - If a client token is not provided, then the access token will become invalid after a successful handshake, and local proxy won't be able to reconnect using the same access token.
 
 An example URI of where to connect is as follows:
 
@@ -142,12 +142,12 @@ If multiple ports are used to start local proxy, each stream will send its own  
 In summary, every _serviceID_ has a one-to-one mapping with an active _streamID_, as this example describes below.
 
 1. The user opens a tunnel and defines SSH1 and SSH2 service id's.
-2. They then start running localproxy.
-3. Upon startup, the source localproxy sends two stream start messages for SSH1 and SSH2, with _streamID_ 1 for both.
+2. They then start running local proxy.
+3. Upon startup, the source local proxy sends two stream start messages for SSH1 and SSH2, with _streamID_ 1 for both.
 4. After sending the stream start messages, the mapping looks like:  _serviceID_ SSH1 -> active _streamID_ 1 and _serviceID_SSH2 -> active _streamID_ 1.
 5. The client applications start sending data for both service ids.
 6. Eventually the ssh client for _serviceID_ SSH2 sends a signal that triggers the delivery of a stream_reset message.
-7. This will mark _streamID_ 1 for _serviceID_ SSH2 as inactive and the source localproxy will send another stream_start message with _streamID_ 2 as part of the reset process.
+7. This will mark _streamID_ 1 for _serviceID_ SSH2 as inactive and the source local proxy will send another stream_start message with _streamID_ 2 as part of the reset process.
 8. After this the new mapping will be:  _serviceID_ SSH1 -> active _streamID_ 1 and  _serviceID_ SSH2 -> active _streamID_ 2.
 9. Every data message received for SSH2 that has a _streamID_ of 1 thereafter will be ignored.
 
@@ -168,6 +168,19 @@ Here are some important things to know for a high-level understanding of tunneli
 -   Locally detected network failures are communicated by sending _StreamReset_ over the tunnel using the active stream ID if one is active.
 -   If there is a network issue with the WebSocket connection, no control message is necessary to send. However, the active stream should be considered invalid and closed. Reconnect to the tunnel via the service and start a new stream.
 
+### Reconnecting to the secure tunnel
+
+When the websocket is active, the local proxy will periodically send ping-pong message frames to keep the connection alive. The latency to the proxy server is also calculated during this time.
+In the event of a network outage or connection timeout, the local proxy will keep running and will execute a retry loop to reestablish the websocket connection.
+By default, the retry interval is 2.5 seconds, and there is no limit to the maximum number of retries. These values are configurable.
+
+### Recovering from a crash or unintended program exit
+
+If the local proxy unexpectedly terminates, certain behaviors may follow:
+- If the local proxy terminated on the source side, the user is free to restart the local proxy with the same version and config.
+  - If the user wants to reconnect with an older version of the local proxy, they may need to restart the destination local proxy with a matching configuration. For example if using v1, remove any _serviceID_ -> port mappings.
+- If the local proxy terminated on the destination side, the user needs to restart both the source and destination local proxies.
+  - The is because currently the tunnel peers have no knowledge if the other side has disconnected, and the source side will resend a stream start message as a result. While passing state information is technically possible through the payload of data messages, we do not support that at the moment.
 
 ### Tunneling message frames
 
@@ -225,12 +238,18 @@ Tunneling frames (without the data length prefix) must parse into a _Message_ ob
 -   Change the tag numbers of exisiting field of ProtocolBuffers will cause backward compatibility issue between V1 and V2 local proxy. Fore more information, please read [Extending a Protocol Buffer](https://developers.google.com/protocol-buffers/docs/cpptutorial#extending-a-protocol-buffer).
 
 ### Backward compatibility 
+
+Backward compatibility does NOT apply if the client decides to send a previous version message format in the middle of an active websocket session.
+Any attempts to do so will be rejected.
+The following sections assume that both the source and destination have been configured prior to connecting to the websocket.
+Any further configuration changes will require restarting the local proxy.
+
 #### Backward compatibility between V1 and V2 local proxy 
 V1 local proxy protocol uses Sec-WebSocket-Protocol _aws.iot.securetunneling-1.0_ when communicates with AWS IoT Tunneling Service.
 V2 local proxy protocol uses Sec-WebSocket-Protocol _aws.iot.securetunneling-2.0_ when communicates with AWS IoT Tunneling Service.
 The communication between V1 and V2 local proxy is supported for a non-multiplexed tunnel. 
 - _aws.iot.securetunneling-1.0_ and _aws.iot.securetunneling-2.0_ subprotocol are interoperable.
-- An empty service ID field in a message should be interpreted as service ID field is not present. This is because in protocol buffers _proto3_, it can not tell if  a field is set with an empty string or a field is not present at all. 
+- An empty service ID field in a message should be interpreted as service ID field is not present. This is because in protocol buffers _proto3_, it can not tell if a field is set with an empty string or a field is not present at all. The local proxy assumes this value to be an empty string. 
 - Since V1 local proxy doesn't support multiplexing, data transferred using these two subprotocols can not be multiplexed. In that case, V2 local proxy needs to either use a single service ID or not send a service ID at all. Using V2 local proxy with multiple services to communicate with V1 local proxy is not supported.
 - If V1 local proxy receives a message from V2 local proxy, it will ignore the service ID field.
 - An empty service ID field in a received message should be interpreted as a message sent from V1 local proxy. In that case, V2 local proxy should ignore the service ID field.

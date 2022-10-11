@@ -171,6 +171,19 @@ Here are some important things to know for a high-level understanding of tunneli
 - If there is a network issue with the WebSocket connection, no control message is necessary to send. However, the active stream should be considered invalid and closed. The localproxy will then reconnect to the tunnel via the service and start a new stream.
 - StreamReset will immediately close all connections associated with the service.
 
+### Reconnecting to the secure tunnel
+
+When the websocket is active, the local proxy will periodically send ping-pong message frames to keep the connection alive. The latency to the proxy server is also calculated during this time.
+In the event of a network outage or connection timeout, the local proxy will keep running and will execute a retry loop to reestablish the websocket connection.
+By default, the retry interval is 2.5 seconds, and there is no limit to the maximum number of retries. These values are configurable.
+
+### Recovering from a crash or unintended program exit
+
+If the local proxy unexpectedly terminates, certain behaviors may follow:
+- If the local proxy terminated on the source side, the user is free to restart the local proxy with the same version and config.
+    - If the user wants to reconnect with an older version of the local proxy, they may need to restart the destination local proxy with a matching configuration. For example if using v1, remove any _serviceID_ -> port mappings.
+- If the local proxy terminated on the destination side, the user needs to restart both the source and destination local proxies.
+    - The is because currently the tunnel peers have no knowledge if the other side has disconnected, and the source side will resend a stream start message as a result. While passing state information is technically possible through the payload of data messages, we do not support that at the moment.
 
 ### Tunneling message frames
 
@@ -232,6 +245,11 @@ Tunneling frames (without the data length prefix) must parse into a _Message_ ob
 - Change the tag numbers of existing field of ProtocolBuffers will cause backward compatibility issue between V1 and V2 local proxy. Fore more information, please read [Extending a Protocol Buffer](https://developers.google.com/protocol-buffers/docs/cpptutorial#extending-a-protocol-buffer).
 
 ### Backward compatibility
+
+Backwards compatibility does NOT apply if the client decides to send a previous version message format in the middle of an active websocket session.
+Any attempts to do so will be rejected.
+The following sections assume that both the source and destination have been configured prior to connecting to the websocket.
+Any further configuration changes will require restarting the local proxy.
 
 #### Backward compatibility between V2 and V3 local proxy
 V2 local proxy protocol uses Sec-WebSocket-Protocol _aws.iot.securetunneling-2.0_ when communicates with AWS IoT Tunneling Service.
