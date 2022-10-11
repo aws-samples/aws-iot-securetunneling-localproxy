@@ -175,11 +175,11 @@ Here are some important things to know for a high-level understanding of tunneli
 
 When the websocket is active, the local proxy will periodically send ping-pong message frames to keep the connection alive. The latency to the proxy server is also calculated during this time.
 In the event of a network outage or connection timeout, the local proxy will keep running and will execute a retry loop to reestablish the websocket connection.
-By default, the retry interval is 2.5 seconds, and there is no limit to the maximum number of retries. These values are configurable.
+By default, the retry interval is 2.5 seconds, and there is no limit to the maximum number of retries. These defaults are configurable in the ProxySettings source file constant declarations.
 
 ### Recovering from a crash or unintended program exit
 
-If the local proxy unexpectedly terminates, certain behaviors may follow:
+If the local proxy unexpectedly terminates, certain actions may be needed:
 - If the local proxy terminated on the source side, the user is free to restart the local proxy with the same version and config.
     - If the user wants to reconnect with an older version of the local proxy, they may need to restart the destination local proxy with a matching configuration. For example if using v1, remove any _serviceID_ -> port mappings.
 - If the local proxy terminated on the destination side, the user needs to restart both the source and destination local proxies.
