@@ -161,6 +161,9 @@ Here are some important things to know for a high-level understanding of tunneli
 - The service may use the Service ID to decide how to route traffic between connected tunnel clients. 
   - For example,  when local proxy received a data packet with Service ID  SSH1, it will look up the configuration for SSH1 and see which port this service ID is mapped to. If SSH1 is mapped to port 22 on local host, then this data packet will be forward to port 22 on local host.
 - A stream start message may include one of the service ID's defined as part of the tunnel, or no service ID. It may not, however, include any other service ID not defined during tunnel creation.
+- If a stream is started without a service ID and then a subsequent message is sent with a service ID, the secure tunnel service closes the socket.
+  - As a best practice, the destination client should close all active streams attached to a service ID
+  - If the destination is operating in V1 mode and a new stream start message arrives with a service ID, the destination client should close the V1 stream and start a new active stream with that service ID.
 - Any subsequent data messages must include a service ID associated with an active or previously active stream (a stream start message for the specific service ID must be sent first). Otherwise, the service will disconnect the client from the tunnel.
 - The local proxy uses the service ID -> stream ID mapping to check the current active stream ID for a specific service ID. 
 - The stream ID validation for a certain stream(service ID) will only be performed on message type _StreamReset_ and _Data_. If a received message failed the stream ID validation, this message is considered to be stale and will be discarded by local proxy. 
@@ -168,9 +171,9 @@ Here are some important things to know for a high-level understanding of tunneli
   - For example: if a source sends a _StreamStart_ with a stream ID of 345 in response to a newly accepted TCP connection, and afterwards receives a _Data_ message marked with stream ID of 565, that data should be ignored. It's origin is tied to a prior connection over the tunnel from the perspective of the tunnel peer that originated it
   - Another example: if a source local proxy sends a _StreamStart_ with a stream ID of 345 in response to a newly accepted TCP connection, and afterwards receives a _StreamReset_ message marked with stream ID of 565, that message should be ignored. Only a _StreamReset_ with a stream ID of 345 should cause the client to close its local connection
 - The local proxy, and library clients may use connection ID to determine how to respond to or filter incoming messages in a similar manner to that of stream id.
-- Ending a TCP Connection (normally or abnormally) is accomplished by either side sending a _ConnectionReset_ with the stream ID and connection ID that is meant to be closed.
-- Locally detected network failures are communicated by sending _StreamReset_ over the tunnel using the active stream ID if one is active.
-- If there is a network issue with the WebSocket connection, no control message is necessary to send. However, the active stream should be considered invalid and closed. The localproxy will then reconnect to the tunnel via the service and start a new stream.
+- Ending a TCP Connection (normally or abnormally) is accomplished by either side sending a _ConnectionReset_ with the service ID, stream ID and connection ID that is meant to be closed.
+- Local TCP socket errors are communicated by sending _StreamReset_ over the tunnel using the active stream ID associated with a service ID if one exists.
+- If there is a network issue with the WebSocket connection, no control message is necessary to send. However, all active streams should be considered invalid and closed. The localproxy will then reconnect to the tunnel via the service and start a new stream.
 - StreamReset will immediately close all connections associated with the service.
 
 ### Reconnecting to the secure tunnel
@@ -181,7 +184,8 @@ By default, the retry interval is 2.5 seconds, and there is no limit to the maxi
 
 ### Recovering from a crash or unintended program exit
 
-If the local proxy unexpectedly terminates, certain actions may be needed:
+If the local proxy unexpectedly terminates, the tunnel peer will close its tcp sockets and upon reconnection, invalidate and reset all active streams.
+If the user wants to restart the client and reconnect to the tunnel, certain actions may be needed:
 - If the local proxy terminated on the source side, the user is free to restart the local proxy with the same version and config.
     - If the user wants to reconnect with an older version of the local proxy, they may need to restart the destination local proxy with a matching configuration. For example if using v1, remove any _serviceID_ -> port mappings.
 - If the local proxy terminated on the destination side, the user needs to restart both the source and destination local proxies.
