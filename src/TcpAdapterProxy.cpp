@@ -209,18 +209,16 @@ namespace aws { namespace iot { namespace securedtunneling {
     {
         BOOST_LOG_SEV(log, trace) << "Setting up tcp socket for service id: " << service_id;
 
-        tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
-        tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
         if (localproxy_config.mode == proxy_mode::DESTINATION)
         {
             tcp_client::pointer client = tac.serviceId_to_tcp_client_map[service_id];
-            client->connectionId_to_tcp_connection_map.clear();
+            // client->connectionId_to_tcp_connection_map.clear();
             async_web_socket_read_until_stream_start(tac, service_id);
         }
         else
         {
             tcp_server::pointer server = tac.serviceId_to_tcp_server_map[service_id];
-            server->connectionId_to_tcp_connection_map.clear();
+            // server->connectionId_to_tcp_connection_map.clear();
             std::shared_ptr<basic_retry_config> retry_config =
                     std::make_shared<basic_retry_config>(tac.io_ctx,
                                                          GET_SETTING(settings, TCP_CONNECTION_RETRY_COUNT),
@@ -259,7 +257,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                return connection_ptr;
            }
            tcp_server::pointer server = tac.serviceId_to_tcp_server_map[service_id];
-           BOOST_LOG_SEV(log, trace) << "num active connections: " << server->connectionId_to_tcp_connection_map.size();
+           BOOST_LOG_SEV(log, trace) << "num active connections for service id " << service_id << ": " << server->connectionId_to_tcp_connection_map.size();
            if (server->connectionId_to_tcp_connection_map.find(connection_id) == server->connectionId_to_tcp_connection_map.end())
            {
                BOOST_LOG_SEV(log, debug) << "No connectionId_to_tcp_connection mapping for connection id: " << connection_id;
@@ -420,6 +418,28 @@ namespace aws { namespace iot { namespace securedtunneling {
             };
     }
 
+    void tcp_adapter_proxy::tcp_socket_ensure_closed(tcp::socket & tcp_socket)
+    {
+        boost::system::error_code ec;
+        if (tcp_socket.is_open())
+        {
+            BOOST_LOG_SEV(log, debug) << "Previously open connection detected. Closing...";
+            auto remote_endpoint = tcp_socket.remote_endpoint(ec);
+            if (!ec)
+            {
+                BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << remote_endpoint;
+            }
+            else
+            {
+                BOOST_LOG_SEV(this->log, error) << "Could not find remote endpoint: " << ec.message();
+                return;
+            }
+            tcp_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_receive);
+            tcp_socket.close();
+            BOOST_LOG_SEV(log, debug) << "TCP socket closed.";
+        }
+    }
+
     void tcp_adapter_proxy::web_socket_close_and_stop(tcp_adapter_context &tac)
     {
         if (tac.wss)
@@ -454,21 +474,22 @@ namespace aws { namespace iot { namespace securedtunneling {
 
     void tcp_adapter_proxy::delete_tcp_socket(tcp_adapter_context &tac, string const & service_id, uint32_t const & connection_id)
     {
-        if (tac.adapter_config.mode == proxy_mode::SOURCE)
-        {
-            tcp_server::pointer server = tac.serviceId_to_tcp_server_map[service_id];
-            server->connectionId_to_tcp_connection_map.erase(connection_id);
-        }
-        else if (tac.adapter_config.mode == proxy_mode::DESTINATION)
-        {
-            tcp_client::pointer client = tac.serviceId_to_tcp_client_map[service_id];
-            client->connectionId_to_tcp_connection_map.erase(connection_id);
-        }
+        return;
+//        if (tac.adapter_config.mode == proxy_mode::SOURCE)
+//        {
+//            tcp_server::pointer server = tac.serviceId_to_tcp_server_map[service_id];
+//            server->connectionId_to_tcp_connection_map.erase(connection_id);
+//        }
+//        else if (tac.adapter_config.mode == proxy_mode::DESTINATION)
+//        {
+//            tcp_client::pointer client = tac.serviceId_to_tcp_client_map[service_id];
+//            client->connectionId_to_tcp_connection_map.erase(connection_id);
+//        }
     }
 
     void tcp_adapter_proxy::tcp_socket_error(tcp_adapter_context &tac, boost::system::error_code const &ec, string const & service_id, uint32_t const & connection_id)
     {
-        BOOST_LOG_SEV(log, debug) << "Handling tcp socket error for service id: " << service_id << " connection id: " << connection_id << " . error message:" << ec.message();
+        BOOST_LOG_SEV(log, debug) << "Handling tcp socket error for service id: " << service_id << " connection id: " << connection_id << ". error message: " << ec.message();
         tcp_connection::pointer connection = get_tcp_connection(tac, service_id, connection_id);
         try
         {
@@ -478,17 +499,18 @@ namespace aws { namespace iot { namespace securedtunneling {
         {
             BOOST_LOG_SEV(this->log, info) << "Disconnecting... remote endpoint not found";
         }
-        connection->socket_.close();
         connection->tcp_write_buffer_.consume(connection->tcp_write_buffer_.max_size());
+        connection->socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive);
+        connection->socket_.close();
 
         connection->on_web_socket_write_buffer_drain_complete = [&, service_id, connection_id]()
         {
             BOOST_LOG_SEV(this->log, trace) << "on_web_socket_write_buffer_drain_complete callback";
             tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
-            socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
 
             if (tac.adapter_config.is_v2_message_format)
             {
+                socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
                 tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
                 tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
                 async_send_stream_reset(tac, service_id, connection_id);
@@ -984,7 +1006,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 #ifdef DEBUG
                         BOOST_LOG_SEV(log, trace) << "TCP socket read " << bytes_read << " bytes";
 #endif
-                        BOOST_LOG_SEV(log, trace) << "TCP socket read " << bytes_read << " bytes";
+                        BOOST_LOG_SEV(log, trace) << "TCP socket read " << bytes_read << " bytes for service id: " << service_id << ", connection id: " << connection_id;
                         std::size_t bytes_copied = boost::asio::buffer_copy(socket_read_connection->web_socket_data_write_buffer_.prepare(bytes_read), socket_read_connection->tcp_read_buffer_.data(), bytes_read);
                         socket_read_connection->tcp_read_buffer_.consume(bytes_read);
                         socket_read_connection->web_socket_data_write_buffer_.commit(bytes_copied);
@@ -1081,7 +1103,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 {
                     throw proxy_exception("No stream ID set for stream start message!");
                 }
-                BOOST_LOG_SEV(log, debug) << "Received service id :" << service_id << " ,stream id: " << message.streamid();
+                BOOST_LOG_SEV(log, debug) << "Received service id : " << service_id << ", stream id: " << message.streamid();
                 // v1 message format does not need to validate service id. Set to the one service id stored in memory.
                 if (tac.adapter_config.is_v1_message_format)
                 {
@@ -1360,7 +1382,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 {
                     throw proxy_exception("No stream ID set for connection start message!");
                 }
-                BOOST_LOG_SEV(log, debug) << "Received service id :" << service_id << " ,stream id: " << message.streamid() << " , connection id: " << message.connectionid() << " for connection start";
+                BOOST_LOG_SEV(log, debug) << "Received service id : " << service_id << ", stream id: " << message.streamid() << ", connection id: " << message.connectionid() << " for connection start";
                 // v1 message format does not need to validate service id. Set to the one service id stored in memory.
                 if (tac.adapter_config.is_v1_message_format)
                 {
@@ -1655,7 +1677,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 }
                 else
                 {
-                    BOOST_LOG_SEV(log, trace) << "Wrote " << bytes_written << " bytes to tcp socket";
+                    BOOST_LOG_SEV(log, trace) << "Wrote " << bytes_written << " bytes to tcp socket with service id: " << service_id << ", connection_id: " << connection_id;
                     bool had_space_before = tcp_has_enough_write_buffer_space(socket_write_connection);
                     socket_write_connection->tcp_write_buffer_.consume(bytes_written);
                     bool has_space_after = tcp_has_enough_write_buffer_space(socket_write_connection);
@@ -1683,7 +1705,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                         BOOST_LOG_SEV(log, trace) << "TCP write buffer drain complete";
     #endif
                     }
-                    BOOST_LOG_SEV(log, trace) << "Done writing for: " << service_id;
+                    BOOST_LOG_SEV(log, trace) << "Done writing for: " << service_id << ", connection id: " << connection_id;
                 }
             };
             if (connection->is_tcp_socket_writing_)
@@ -1855,6 +1877,11 @@ namespace aws { namespace iot { namespace securedtunneling {
     void tcp_adapter_proxy::async_setup_source_tcp_socket_retry(tcp_adapter_context &tac, std::shared_ptr<basic_retry_config> retry_config, string service_id)
     {
         tcp_server::pointer server = tac.serviceId_to_tcp_server_map[service_id];
+        for (auto element : server->connectionId_to_tcp_connection_map)
+        {
+            tcp_connection::pointer c = element.second;
+            tcp_socket_ensure_closed(c->socket());
+        }
         server->acceptor_.close();
 
         static boost::asio::socket_base::reuse_address reuse_addr_option(true);
@@ -1931,8 +1958,6 @@ namespace aws { namespace iot { namespace securedtunneling {
                     {
                         BOOST_LOG_SEV(log, error) << (boost::format("Could not listen/accept incoming connection on %1%:%2% -- %3%")
                                                       % tac.bind_address_actual % local_port % ec.message()).str();
-                        basic_retry_execute(log, retry_config,
-                                            [=, &ec]() { throw std::runtime_error((boost::format("Failed to accept new connection on %1% -- %2%") % local_port % ec.message()).str()); });
                     }
                     else
                     {
@@ -2005,13 +2030,13 @@ namespace aws { namespace iot { namespace securedtunneling {
             tcp_client::pointer client = tac.serviceId_to_tcp_client_map[service_id];
             std::string dst_host = results->endpoint().address().to_string();
             unsigned short dst_port = results->endpoint().port();
-            BOOST_LOG_SEV(log, debug) << "Resolved destination host to IP: " << dst_host << " , connecting ...";
+            BOOST_LOG_SEV(log, debug) << "Resolved destination host to IP: " << dst_host << ", connecting ...";
             client->connectionId_to_tcp_connection_map[connection_id]->socket().async_connect(*results.begin(),
                                                              [=, &tac](boost::system::error_code const &ec)
                 {
                     if (ec)
                     {
-                        BOOST_LOG_SEV(log, error) << (boost::format("Could not connect to destination %1%:%2% -- %3%") % dst_host % dst_host % ec.message()).str();
+                        BOOST_LOG_SEV(log, error) << (boost::format("Could not connect to destination %1%:%2% -- %3%") % dst_host % dst_port % ec.message()).str();
                         basic_retry_execute(log, retry_config,
                             [this, &tac, service_id, connection_id]()
                             {
@@ -2090,32 +2115,14 @@ namespace aws { namespace iot { namespace securedtunneling {
                     else
                     {
                         BOOST_LOG_SEV(log, debug) << "Resolved bind IP: " << results->endpoint().address().to_string();
-                        boost::system::error_code bind_ec;
 
-                        client->connectionId_to_tcp_connection_map[connection_id]->socket().open(results->endpoint().protocol());
-                        client->connectionId_to_tcp_connection_map[connection_id]->socket().bind({results->endpoint().address(), 0}, bind_ec);
-                        if (bind_ec)
-                        {
-                            BOOST_LOG_SEV(log, error) << (boost::format("Could not bind to address: %1% -- %2%") % results->endpoint().address().to_string() % bind_ec.message()).str();
-                            basic_retry_execute(log, retry_config,
-                                [this, &tac, service_id, connection_id]()
-                                {
-                                    tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
-                                    tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
-                                    tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
-                                    socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
-                                    async_send_stream_reset(tac, service_id, connection_id);
-                                });
-                        }
-                        else
-                        {
-                            tuple<string, string> endpoint_to_connect = tcp_adapter_proxy::get_host_and_port(endpoint, tac.adapter_config.bind_address.get());
-                            std::string dst_host = std::get<0>(endpoint_to_connect);
-                            std::string dst_port = std::get<1>(endpoint_to_connect);
-                            BOOST_LOG_SEV(log, trace) << "Resolving destination host: " << dst_host << " port: " << dst_port;
-                            client->resolver_.async_resolve(dst_host, dst_port,
-                                std::bind(&tcp_adapter_proxy::async_resolve_destination_for_connect, this, std::ref(tac), retry_config, service_id, connection_id, std::placeholders::_1, std::placeholders::_2));
-                        }
+                        tuple<string, string> endpoint_to_connect = tcp_adapter_proxy::get_host_and_port(endpoint, tac.adapter_config.bind_address.get());
+                        std::string dst_host = std::get<0>(endpoint_to_connect);
+                        std::string dst_port = std::get<1>(endpoint_to_connect);
+                        BOOST_LOG_SEV(log, trace) << "Resolving destination host: " << dst_host << " port: " << dst_port;
+                        client->resolver_.async_resolve(dst_host, dst_port,
+                            std::bind(&tcp_adapter_proxy::async_resolve_destination_for_connect, this, std::ref(tac), retry_config, service_id, connection_id, std::placeholders::_1, std::placeholders::_2));
+
                     }
                 });
         }
