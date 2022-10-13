@@ -420,6 +420,21 @@ namespace aws { namespace iot { namespace securedtunneling {
             };
     }
 
+    void tcp_adapter_proxy::tcp_socket_ensure_closed(tcp::socket & tcp_socket)
+    {
+        boost::system::error_code ec;
+        if (tcp_socket.is_open())
+        {
+            BOOST_LOG_SEV(log, debug) << "Previously open connection detected. Closing...";
+            auto remote_endpoint = tcp_socket.remote_endpoint(ec);
+            if (!ec)
+            {
+                BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << remote_endpoint;
+            }
+            tcp_socket.close();
+        }
+    }
+
     void tcp_adapter_proxy::web_socket_close_and_stop(tcp_adapter_context &tac)
     {
         if (tac.wss)
@@ -1855,6 +1870,14 @@ namespace aws { namespace iot { namespace securedtunneling {
     void tcp_adapter_proxy::async_setup_source_tcp_socket_retry(tcp_adapter_context &tac, std::shared_ptr<basic_retry_config> retry_config, string service_id)
     {
         tcp_server::pointer server = tac.serviceId_to_tcp_server_map[service_id];
+        for (auto element : server->connectionId_to_tcp_connection_map)
+        {
+            tcp_connection::pointer c = element.second;
+            if (c)
+            {
+                tcp_socket_ensure_closed(c->socket());
+            }
+        }
         server->acceptor_.close();
 
         static boost::asio::socket_base::reuse_address reuse_addr_option(true);
@@ -2065,6 +2088,11 @@ namespace aws { namespace iot { namespace securedtunneling {
                                                                                                    GET_SETTING(settings, TCP_READ_BUFFER_SIZE),
                                                                                                    GET_SETTING(settings, WEB_SOCKET_WRITE_BUFFER_SIZE),
                                                                                                connection_id);
+        }
+
+        if (client->connectionId_to_tcp_connection_map[connection_id])
+        {
+            tcp_socket_ensure_closed(client->connectionId_to_tcp_connection_map[connection_id]->socket());
         }
 
         if (tac.adapter_config.bind_address.has_value())

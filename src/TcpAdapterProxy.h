@@ -179,6 +179,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         void tcp_socket_reset_init(tcp_adapter_context &tac, std::string service_id, std::function<void()> post_reset_operation);
         void tcp_socket_reset(tcp_adapter_context &tac, std::string service_id, uint32_t connection_id, std::function<void()> post_reset_operation);
         void tcp_socket_close(tcp_adapter_context &tac, std::string service_id, uint32_t connection_id);
+        void tcp_socket_ensure_closed(tcp::socket &tcp_socket);
         tcp_connection::pointer get_tcp_connection(tcp_adapter_context &tac, std::string service_id, uint32_t connection_id);
 
         void delete_tcp_socket(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
