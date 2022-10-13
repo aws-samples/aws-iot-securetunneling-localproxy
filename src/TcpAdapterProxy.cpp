@@ -1873,10 +1873,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         for (auto element : server->connectionId_to_tcp_connection_map)
         {
             tcp_connection::pointer c = element.second;
-            if (c)
-            {
-                tcp_socket_ensure_closed(c->socket());
-            }
+            tcp_socket_ensure_closed(c->socket());
         }
         server->acceptor_.close();
 
@@ -2090,10 +2087,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                                                                                                connection_id);
         }
 
-        if (client->connectionId_to_tcp_connection_map[connection_id])
-        {
-            tcp_socket_ensure_closed(client->connectionId_to_tcp_connection_map[connection_id]->socket());
-        }
+        tcp_socket_ensure_closed(client->connectionId_to_tcp_connection_map[connection_id]->socket());
 
         if (tac.adapter_config.bind_address.has_value())
         {
