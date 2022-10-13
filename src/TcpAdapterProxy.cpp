@@ -483,7 +483,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
     void tcp_adapter_proxy::tcp_socket_error(tcp_adapter_context &tac, boost::system::error_code const &ec, string const & service_id, uint32_t const & connection_id)
     {
-        BOOST_LOG_SEV(log, debug) << "Handling tcp socket error for service id: " << service_id << " connection id: " << connection_id << " . error message:" << ec.message();
+        BOOST_LOG_SEV(log, debug) << "Handling tcp socket error for service id: " << service_id << " connection id: " << connection_id << ". error message: " << ec.message();
         tcp_connection::pointer connection = get_tcp_connection(tac, service_id, connection_id);
         try
         {
@@ -1096,7 +1096,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 {
                     throw proxy_exception("No stream ID set for stream start message!");
                 }
-                BOOST_LOG_SEV(log, debug) << "Received service id :" << service_id << " ,stream id: " << message.streamid();
+                BOOST_LOG_SEV(log, debug) << "Received service id : " << service_id << ", stream id: " << message.streamid();
                 // v1 message format does not need to validate service id. Set to the one service id stored in memory.
                 if (tac.adapter_config.is_v1_message_format)
                 {
@@ -2025,7 +2025,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             tcp_client::pointer client = tac.serviceId_to_tcp_client_map[service_id];
             std::string dst_host = results->endpoint().address().to_string();
             unsigned short dst_port = results->endpoint().port();
-            BOOST_LOG_SEV(log, debug) << "Resolved destination host to IP: " << dst_host << " , connecting ...";
+            BOOST_LOG_SEV(log, debug) << "Resolved destination host to IP: " << dst_host << ", connecting ...";
             client->connectionId_to_tcp_connection_map[connection_id]->socket().async_connect(*results.begin(),
                                                              [=, &tac](boost::system::error_code const &ec)
                 {
@@ -2112,10 +2112,15 @@ namespace aws { namespace iot { namespace securedtunneling {
                     else
                     {
                         BOOST_LOG_SEV(log, debug) << "Resolved bind IP: " << results->endpoint().address().to_string();
-                        boost::system::error_code bind_ec;
 
+                        tuple<string, string> endpoint_to_connect = tcp_adapter_proxy::get_host_and_port(endpoint, tac.adapter_config.bind_address.get());
+                        std::string dst_host = std::get<0>(endpoint_to_connect);
+                        std::string dst_port = std::get<1>(endpoint_to_connect);
+
+                        boost::system::error_code bind_ec;
                         client->connectionId_to_tcp_connection_map[connection_id]->socket().open(results->endpoint().protocol());
-                        client->connectionId_to_tcp_connection_map[connection_id]->socket().bind({results->endpoint().address(), 0}, bind_ec);
+                        client->connectionId_to_tcp_connection_map[connection_id]->socket().bind({results->endpoint().address(),
+                                                                                                  boost::lexical_cast<uint16_t>(dst_port)}, bind_ec);
                         if (bind_ec)
                         {
                             BOOST_LOG_SEV(log, error) << (boost::format("Could not bind to address: %1% -- %2%") % results->endpoint().address().to_string() % bind_ec.message()).str();
@@ -2131,9 +2136,6 @@ namespace aws { namespace iot { namespace securedtunneling {
                         }
                         else
                         {
-                            tuple<string, string> endpoint_to_connect = tcp_adapter_proxy::get_host_and_port(endpoint, tac.adapter_config.bind_address.get());
-                            std::string dst_host = std::get<0>(endpoint_to_connect);
-                            std::string dst_port = std::get<1>(endpoint_to_connect);
                             BOOST_LOG_SEV(log, trace) << "Resolving destination host: " << dst_host << " port: " << dst_port;
                             client->resolver_.async_resolve(dst_host, dst_port,
                                 std::bind(&tcp_adapter_proxy::async_resolve_destination_for_connect, this, std::ref(tac), retry_config, service_id, connection_id, std::placeholders::_1, std::placeholders::_2));
