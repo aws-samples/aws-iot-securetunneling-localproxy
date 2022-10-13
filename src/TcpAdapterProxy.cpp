@@ -2118,9 +2118,9 @@ namespace aws { namespace iot { namespace securedtunneling {
                         std::string dst_port = std::get<1>(endpoint_to_connect);
 
                         boost::system::error_code bind_ec;
-                        client->connectionId_to_tcp_connection_map[connection_id]->socket().open(results->endpoint().protocol());
-                        client->connectionId_to_tcp_connection_map[connection_id]->socket().bind({results->endpoint().address(),
-                                                                                                  boost::lexical_cast<uint16_t>(dst_port)}, bind_ec);
+//                        client->connectionId_to_tcp_connection_map[connection_id]->socket().open(results->endpoint().protocol());
+//                        client->connectionId_to_tcp_connection_map[connection_id]->socket().bind({results->endpoint().address(),
+//                                                                                                  boost::lexical_cast<uint16_t>(dst_port)}, bind_ec);
                         if (bind_ec)
                         {
                             BOOST_LOG_SEV(log, error) << (boost::format("Could not bind to address: %1% -- %2%") % results->endpoint().address().to_string() % bind_ec.message()).str();
