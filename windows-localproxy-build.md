@@ -7,7 +7,7 @@
 * Install the following dependencies (Choose visual studio command prompt based on architecture):
 	* Download and install zlib:
 		* Use Visual Studio native tool command prompt in admin mode.
-		* `git clone -b v1.2.8 https://github.com/madler/zlib.git`
+		* `git clone -b v1.2.13 https://github.com/madler/zlib.git`
 		* `cd zlib`
 		* `mkdir build`
 		* `cd build`
