@@ -36,7 +36,7 @@ previous step, or you can run `./docker-run.sh -p <port_number>` to expose a por
 * Development libraries required:
     * Boost 1.76
     * Protobuf 3.17.x
-    * zlib
+    * zlib 1.12.13+
     * OpenSSL 1.0+
     * Catch2 test framework
 * Stage a dependency build directory and change directory into it:
@@ -54,9 +54,9 @@ Ubuntu example:
 Fedora example:
 `dnf install zlib`
 
-    wget https://www.zlib.net/zlib-1.2.12.tar.gz -O /tmp/zlib-1.2.12.tar.gz
-    tar xzvf /tmp/zlib-1.2.12.tar.gz
-    cd zlib-1.2.12
+    wget https://www.zlib.net/zlib-1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz
+    tar xzvf /tmp/zlib-1.2.13.tar.gz
+    cd zlib-1.2.13
     ./configure
     make
     sudo make install
