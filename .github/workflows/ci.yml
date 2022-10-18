@@ -57,11 +57,10 @@ jobs:
         cmake .. -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1/1.1.1q/ -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl@1.1/1.1.1q/lib/
         make
     - name: Upload Artifact
-      working-directory: ${{ github.workspace }}
       uses: actions/upload-artifact@v3
       with:
         name: localproxy-mac
-        path: ./build/bin/localproxy
+        path: ${{ github.workspace }}/build/bin/localproxy
   ubuntu:
     runs-on: ubuntu-latest
     steps:
@@ -109,11 +108,10 @@ jobs:
         cmake ..
         make
     - name: Upload Artifact
-      working-directory: ${{ github.workspace }}
       uses: actions/upload-artifact@v3
       with:
         name: localproxy-ubuntu
-        path: ./build/bin/localproxy
+        path: ${{ github.workspace }}/build/bin/localproxy
   windows:
     runs-on: windows-2019
     steps:
@@ -182,8 +180,7 @@ jobs:
           cmake -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 16 2019" -A x64 ..\
           msbuild localproxy.vcxproj -p:Configuration=Release
       - name: Upload Artifact
-        working-directory: ${{ github.workspace }}
         uses: actions/upload-artifact@v3
         with:
           name: localproxy-windows
-          path: ./build/bin/localproxy
+          path: ${{ github.workspace }}/build/bin/localproxy
