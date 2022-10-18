@@ -183,4 +183,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: localproxy-windows
-          path: ${{ github.workspace }}\build\bin\localproxy
+          path: ${{ github.workspace }}\build\bin\Release\localproxy.exe
