@@ -298,7 +298,6 @@ After preparing this directory, point to it when running the local proxy with th
 
 * Avoid using the **-t** argument to pass in the access token. We recommend setting the **AWSIOT_TUNNEL_ACCESS_TOKEN** environment variable to specify the client access token with the least visibility
 * Run the local proxy executable with the least privileges in the OS or environment
-    * 
     * If your client application normally connects to a port less than 1024, this would normally require running the local proxy with admin privileges to listen on the same port. This can be avoided if the client application allows you to override the port to connect to. Choose any available port greater than 1024 for the source local proxy to listen to without administrator access. Then you may direct the client application to connect to that port. e.g. For connecting to a source local proxy with an SSH client, the local proxy can be run with `-s 5000` and the SSH client should be run with `-p 5000`
 * On devices with multiple network interfaces, use the **-b** argument to bind the TCP socket to a specific network address restricting the local proxy to only proxy connections on an intended network
 * Consider running the local proxy on separate hosts, containers, sandboxes, chroot jail, or a virtualized environment
