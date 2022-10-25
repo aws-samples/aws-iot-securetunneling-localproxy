@@ -2093,8 +2093,6 @@ namespace aws { namespace iot { namespace securedtunneling {
                                                                                                connection_id);
         }
 
-        tcp_socket_ensure_closed(client->connectionId_to_tcp_connection_map[connection_id]->socket());
-
         if (tac.adapter_config.bind_address.has_value())
         {
             BOOST_LOG_SEV(log, debug) << "Resolving local address host: " << tac.adapter_config.bind_address.get();
