@@ -431,7 +431,13 @@ namespace aws { namespace iot { namespace securedtunneling {
             {
                 BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << remote_endpoint;
             }
+            else
+            {
+                BOOST_LOG_SEV(this->log, error) << "Could not find remote endpoint: " << ec.message();
+                return;
+            }
             tcp_socket.close();
+            BOOST_LOG_SEV(log, debug) << "TCP socket closed.";
         }
     }
 
