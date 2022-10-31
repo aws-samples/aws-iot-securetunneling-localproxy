@@ -36,7 +36,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
     std::size_t const DEFAULT_MESSAGE_MAX_SIZE = 64 * 1024;
 
     char const * const KEY_MAX_ACTIVE_CONNECTIONS = "tunneling.proxy.tcp.max_active_connections";
-    std::uint32_t const DEFAULT_MAX_ACTIVE_CONNECTIONS = 128;
+    std::uint32_t const DEFAULT_MAX_ACTIVE_CONNECTIONS = 128000;
     
     char const * const KEY_WEB_SOCKET_PING_PERIOD_MS = "tunneling.proxy.websocket.ping_period_ms";
     std::uint32_t const DEFAULT_WEB_SOCKET_PING_PERIOD_MS = 5000;
