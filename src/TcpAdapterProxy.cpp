@@ -968,19 +968,18 @@ namespace aws { namespace iot { namespace securedtunneling {
         }
         if (connection->is_tcp_socket_reading_)
         {
-#ifdef DEBUG
-            BOOST_LOG_SEV(log, debug) << "Not starting TCP read loop";
-#endif
+            BOOST_LOG_SEV(log, debug) << "Not starting TCP read loop, socket is already reading";
         }
         else if (wss_has_enough_write_buffer_space(connection->web_socket_data_write_buffer_))
         {
             //max bytes to read not to exceed either the read buffer capacity, or the available space in the web socket write buffer
             std::size_t max_bytes_to_read = std::min(connection->web_socket_data_write_buffer_.max_size() - connection->web_socket_data_write_buffer_.size(), connection->tcp_read_buffer_.max_size());
             connection->is_tcp_socket_reading_ = true;
+            BOOST_LOG_SEV(log, trace) << "Initiating tcp socket read";
             connection->socket_.async_read_some(connection->tcp_read_buffer_.prepare(max_bytes_to_read),
                 [&, service_id, connection_id](boost::system::error_code const &ec, std::size_t const bytes_read)
                 {
-                    BOOST_LOG_SEV(log, trace) << "Reading from tcp socket for service id " << service_id << " connection id " << connection_id;
+                    BOOST_LOG_SEV(log, trace) << "Handling read from tcp socket for service id " << service_id << " connection id " << connection_id;
                     tcp_connection::pointer socket_read_connection = get_tcp_connection(tac, service_id, connection_id);
                     if (!socket_read_connection)
                     {
@@ -1003,9 +1002,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                     else
                     {
                         socket_read_connection->tcp_read_buffer_.commit(bytes_read);
-#ifdef DEBUG
-                        BOOST_LOG_SEV(log, trace) << "TCP socket read " << bytes_read << " bytes";
-#endif
+
                         BOOST_LOG_SEV(log, trace) << "TCP socket read " << bytes_read << " bytes for service id: " << service_id << ", connection id: " << connection_id;
                         std::size_t bytes_copied = boost::asio::buffer_copy(socket_read_connection->web_socket_data_write_buffer_.prepare(bytes_read), socket_read_connection->tcp_read_buffer_.data(), bytes_read);
                         socket_read_connection->tcp_read_buffer_.consume(bytes_read);
@@ -1778,8 +1775,14 @@ namespace aws { namespace iot { namespace securedtunneling {
             }
         }
         else
-        {   //not writing, no buffer contents, skip straight to being done draining
-            invoke_and_clear_handler(connection->on_web_socket_write_buffer_drain_complete);
+        {
+            BOOST_LOG_SEV(log, debug) << "not writing, no buffer contents, skip straight to being done draining";
+            if (connection->on_web_socket_write_buffer_drain_complete)
+            {
+                BOOST_LOG_SEV(log, trace) << "invoking buffer drain complete handler";
+                invoke_and_clear_handler(connection->on_web_socket_write_buffer_drain_complete);
+            }
+
         }
     }
 
