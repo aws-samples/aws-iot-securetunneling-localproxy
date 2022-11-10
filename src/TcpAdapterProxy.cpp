@@ -277,7 +277,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                return connection_ptr;
            }
            tcp_client::pointer client = tac.serviceId_to_tcp_client_map[service_id];
-           BOOST_LOG_SEV(log, trace) << "num active connections: " << client->connectionId_to_tcp_connection_map.size();
+           BOOST_LOG_SEV(log, trace) << "num active connections for service id " << service_id << ": " << client->connectionId_to_tcp_connection_map.size();
            if (client->connectionId_to_tcp_connection_map.find(connection_id) == client->connectionId_to_tcp_connection_map.end())
            {
                return connection_ptr;
