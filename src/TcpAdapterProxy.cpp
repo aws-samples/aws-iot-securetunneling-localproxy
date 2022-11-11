@@ -692,7 +692,8 @@ namespace aws { namespace iot { namespace securedtunneling {
             BOOST_LOG_SEV(log, trace) << "Null connection pointers, skip";
             return;
         }
-        clear_tcp_connection_buffers(connection);
+        //clear_tcp_connection_buffers(connection);
+        connection->after_send_message = std::bind(&tcp_adapter_proxy::async_setup_web_socket_write_buffer_drain, this, std::ref(tac), service_id, connection_id);
         tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::handle_control_message_data_transfer, this, std::ref(tac), std::placeholders::_1);
         tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::forward_data_message_to_tcp_write, this, std::ref(tac), std::placeholders::_1);
         this->async_web_socket_read_loop(tac);
