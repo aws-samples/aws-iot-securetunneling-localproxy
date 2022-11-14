@@ -26,7 +26,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
     std::int32_t const DEFAULT_TCP_CONNECTION_RETRY_COUNT = -1;
 
     char const * const KEY_TCP_CONNECTION_RETRY_DELAY_MS = "tunneling.proxy.tcp.connection_retry_delay_ms";
-    std::uint32_t const DEFAULT_TCP_CONNECTION_RETRY_DELAY_MS = 1000;
+    std::uint32_t const DEFAULT_TCP_CONNECTION_RETRY_DELAY_MS = 2500;
 
     char const * const KEY_MESSAGE_MAX_PAYLOAD_SIZE = "tunneling.proxy.message.max_payload_size";
     //if this is too small with respect to the peer, this client will overflow
@@ -36,10 +36,10 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
     std::size_t const DEFAULT_MESSAGE_MAX_SIZE = 64 * 1024;
 
     char const * const KEY_MAX_ACTIVE_CONNECTIONS = "tunneling.proxy.tcp.max_active_connections";
-    std::uint32_t const DEFAULT_MAX_ACTIVE_CONNECTIONS = 128000;
+    std::uint32_t const DEFAULT_MAX_ACTIVE_CONNECTIONS = 128;
     
     char const * const KEY_WEB_SOCKET_PING_PERIOD_MS = "tunneling.proxy.websocket.ping_period_ms";
-    std::uint32_t const DEFAULT_WEB_SOCKET_PING_PERIOD_MS = 200;
+    std::uint32_t const DEFAULT_WEB_SOCKET_PING_PERIOD_MS = 20000;
 
     char const * const KEY_WEB_SOCKET_CONNECT_RETRY_DELAY_MS = "tunneling.proxy.websocket.retry_delay_ms";
     std::uint32_t const DEFAULT_WEB_SOCKET_CONNECT_RETRY_DELAY_MS = 2500;
