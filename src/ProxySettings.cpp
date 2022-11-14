@@ -39,7 +39,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace settings 
     std::uint32_t const DEFAULT_MAX_ACTIVE_CONNECTIONS = 128000;
     
     char const * const KEY_WEB_SOCKET_PING_PERIOD_MS = "tunneling.proxy.websocket.ping_period_ms";
-    std::uint32_t const DEFAULT_WEB_SOCKET_PING_PERIOD_MS = 5000;
+    std::uint32_t const DEFAULT_WEB_SOCKET_PING_PERIOD_MS = 200;
 
     char const * const KEY_WEB_SOCKET_CONNECT_RETRY_DELAY_MS = "tunneling.proxy.websocket.retry_delay_ms";
     std::uint32_t const DEFAULT_WEB_SOCKET_CONNECT_RETRY_DELAY_MS = 2500;
