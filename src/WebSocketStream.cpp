@@ -42,12 +42,12 @@ namespace aws {
 
             void WebSocketStream::async_ping(const websocket::ping_data& payload, const BoostCallbackFunc& handler) {
                 if (localproxyConfig.is_web_proxy_using_tls) {
-                    BOOST_LOG_SEV(*log, trace) << "Calling async_ping with type: "
-                                               << WEB_PROXY_WITH_TLS_TYPE_NAME;
+//                    BOOST_LOG_SEV(*log, trace) << "Calling async_ping with type: "
+//                                               << WEB_PROXY_WITH_TLS_TYPE_NAME;
                     return boost::get<unique_ptr<WEB_PROXY_WITH_TLS_TYPE>>(wss)->async_ping(payload, handler);
                 } else {
-                    BOOST_LOG_SEV(*log, trace) << "Calling async_ping with type: "
-                                               << WEB_PROXY_NO_TLS_TYPE_NAME;
+//                    BOOST_LOG_SEV(*log, trace) << "Calling async_ping with type: "
+//                                               << WEB_PROXY_NO_TLS_TYPE_NAME;
                     return boost::get<unique_ptr<WEB_PROXY_NO_TLS_TYPE>>(wss)->async_ping(payload, handler);
                 }
             }

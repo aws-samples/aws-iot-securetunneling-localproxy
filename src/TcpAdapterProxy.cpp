@@ -739,7 +739,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         case boost::beast::websocket::frame_type::pong:
             now_millis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
             pong_millis = boost::lexical_cast<decltype(now_millis)>(pd.data(), pd.length());
-            BOOST_LOG_SEV(log, trace) << "Pong reply latency: " << (now_millis - pong_millis) << " ms";
+            // BOOST_LOG_SEV(log, trace) << "Pong reply latency: " << (now_millis - pong_millis) << " ms";
             break;
         default:
             BOOST_LOG_SEV(log, warning) << "Received unknown control frame type(close=0, ping, pong): " << static_cast<std::uint32_t>(ws_message_type);
@@ -770,7 +770,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 BOOST_LOG_SEV(this->log, error) << "Failed on wait timer for web socket ping: " << wait_ec.message();
             }
             do_ping_data(tac, *ping_data);
-            BOOST_LOG_SEV(log, trace) << "Sent ping data: " << ping_data->data();
+            // BOOST_LOG_SEV(log, trace) << "Sent ping data: " << ping_data->data();
             tac.wss->async_ping(*ping_data, std::bind(&tcp_adapter_proxy::async_ping_handler_loop, this, std::ref(tac), ping_data, ping_period, ping_timer, std::placeholders::_1));
         });
     }
