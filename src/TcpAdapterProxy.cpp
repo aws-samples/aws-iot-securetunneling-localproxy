@@ -424,15 +424,22 @@ namespace aws { namespace iot { namespace securedtunneling {
         if (tcp_socket.is_open())
         {
             BOOST_LOG_SEV(log, debug) << "Previously open connection detected. Closing...";
-            auto remote_endpoint = tcp_socket.remote_endpoint(ec);
-            if (!ec)
+            try
             {
-                BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << remote_endpoint;
+                auto remote_endpoint = tcp_socket.remote_endpoint(ec);
+                if (!ec)
+                {
+                    BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << remote_endpoint;
+                }
+                else
+                {
+                    BOOST_LOG_SEV(this->log, error) << "Could not find remote endpoint: " << ec.message();
+                    return;
+                }
             }
-            else
+            catch (std::exception& e)
             {
-                BOOST_LOG_SEV(this->log, error) << "Could not find remote endpoint: " << ec.message();
-                return;
+                BOOST_LOG_SEV(this->log, info) << "Disconnecting... remote endpoint not found";
             }
             tcp_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_receive);
             tcp_socket.close();
@@ -697,7 +704,6 @@ namespace aws { namespace iot { namespace securedtunneling {
         tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::handle_control_message_data_transfer, this, std::ref(tac), std::placeholders::_1);
         // TODO: to remove
         tac.serviceId_to_data_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::forward_data_message_to_tcp_write, this, std::ref(tac), std::placeholders::_1);
-
         this->async_web_socket_read_loop(tac);
         this->async_tcp_socket_read_loop(tac, service_id, connection_id);
     }
