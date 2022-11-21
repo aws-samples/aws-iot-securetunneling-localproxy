@@ -87,7 +87,6 @@ namespace aws { namespace iot { namespace securedtunneling {
                 serviceId_to_tcp_server_map{},
                 serviceId_to_tcp_client_map{},
                 serviceId_to_control_message_handler_map{},
-                serviceId_to_data_message_handler_map{}, // TODO: to remove
                 bind_address_actual{ },
                 is_web_socket_reading{ false },
                 is_service_ids_received{ false },
