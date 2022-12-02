@@ -1070,10 +1070,9 @@ namespace aws { namespace iot { namespace securedtunneling {
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
             // backwards compatiblity with v2
-            if (!connection_id)
+            if (tac.adapter_config.is_v2_message_format)
             {
                 connection_id = 1;
-                tac.adapter_config.is_v2_message_format = true;
             }
             string service_id = message.serviceid();
             switch (message.type())
@@ -1325,10 +1324,9 @@ namespace aws { namespace iot { namespace securedtunneling {
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
             //for backwards compatibility with v2
-            if (!connection_id)
+            if (tac.adapter_config.is_v2_message_format)
             {
                 connection_id = 1;
-                tac.adapter_config.is_v2_message_format = true;
             }
             string service_id = message.serviceid();
             // v1 message format does not need to validate service id. Set to the one service id stored in memory.
@@ -1426,11 +1424,11 @@ namespace aws { namespace iot { namespace securedtunneling {
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
             //for backwards compatiblity with v2
-            if (!connection_id)
+            if (tac.adapter_config.is_v2_message_format)
             {
                 connection_id = 1;
-                tac.adapter_config.is_v2_message_format = true;
             }
+
             BOOST_LOG_SEV(log, trace) << "Forwarding message to tcp socket with connection id: " << connection_id;
             /**
              * v1 message format does not need to have service id field, so we don't need to do validation on this field.
@@ -1533,6 +1531,11 @@ namespace aws { namespace iot { namespace securedtunneling {
                         string service_id = incoming_message.serviceid();
                         uint32_t connection_id = static_cast<uint32_t>(incoming_message.connectionid());
                         // v1 message format does not need to validate service id. Set to the one service id stored in memory.
+                        if (!connection_id)
+                        {
+                            connection_id = 1;
+                            tac.adapter_config.is_v2_message_format = true;
+                        }
                         if (tac.adapter_config.is_v1_message_format)
                         {
                             service_id = tac.adapter_config.serviceId_to_endpoint_map.cbegin()->first;
