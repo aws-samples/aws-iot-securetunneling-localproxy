@@ -1556,10 +1556,9 @@ namespace aws { namespace iot { namespace securedtunneling {
                         else if (incoming_message.type() == Message_Type_DATA)
                         {
                             BOOST_LOG_SEV(log, trace) << "Processing data message";
-                            if (!connection_id)
+                            if (tac.adapter_config.is_v2_message_format)
                             {
                                 connection_id = 1;
-                                tac.adapter_config.is_v2_message_format = true;
                             }
                             tcp_connection::pointer connection = get_tcp_connection(tac, service_id, connection_id);
                             if (connection && connection->on_data_message)
