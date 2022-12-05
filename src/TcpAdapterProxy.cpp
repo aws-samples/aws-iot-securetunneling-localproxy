@@ -1425,12 +1425,6 @@ namespace aws { namespace iot { namespace securedtunneling {
             string service_id = message.serviceid();
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            //for backwards compatiblity with v2
-            if (tac.adapter_config.is_v2_message_format)
-            {
-                connection_id = 1;
-            }
-
             BOOST_LOG_SEV(log, trace) << "Forwarding message to tcp socket with connection id: " << connection_id;
             /**
              * v1 message format does not need to have service id field, so we don't need to do validation on this field.
