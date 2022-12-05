@@ -1069,7 +1069,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            // backwards compatiblity with v2
+            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
             if (!connection_id)
             {
                 connection_id = 1;
@@ -1324,7 +1324,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            //for backwards compatibility with v2
+            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
             if (!connection_id)
             {
                 connection_id = 1;
@@ -1550,6 +1550,8 @@ namespace aws { namespace iot { namespace securedtunneling {
                         else if (incoming_message.type() == Message_Type_DATA)
                         {
                             BOOST_LOG_SEV(log, trace) << "Processing data message";
+
+                            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
                             if (tac.adapter_config.is_v2_message_format)
                             {
                                 connection_id = 1;
@@ -1976,7 +1978,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
                         uint32_t new_connection_id = ++server->highest_connection_id;
 
-                        // backwards compatibility
+                        // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
                         if (tac.adapter_config.is_v2_message_format)
                         {
                             new_connection_id = 1;
