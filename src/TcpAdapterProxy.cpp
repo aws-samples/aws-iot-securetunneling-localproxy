@@ -1069,7 +1069,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            // backwards compatiblity with v2
+            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
             if (!connection_id)
             {
                 connection_id = 1;
@@ -1324,7 +1324,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            //for backwards compatibility with v2
+            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
             if (!connection_id)
             {
                 connection_id = 1;
@@ -1425,12 +1425,6 @@ namespace aws { namespace iot { namespace securedtunneling {
             string service_id = message.serviceid();
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            //for backwards compatiblity with v2
-            if (!connection_id)
-            {
-                connection_id = 1;
-                tac.adapter_config.is_v2_message_format = true;
-            }
             BOOST_LOG_SEV(log, trace) << "Forwarding message to tcp socket with connection id: " << connection_id;
             /**
              * v1 message format does not need to have service id field, so we don't need to do validation on this field.
@@ -1556,6 +1550,12 @@ namespace aws { namespace iot { namespace securedtunneling {
                         else if (incoming_message.type() == Message_Type_DATA)
                         {
                             BOOST_LOG_SEV(log, trace) << "Processing data message";
+
+                            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
+                            if (tac.adapter_config.is_v2_message_format)
+                            {
+                                connection_id = 1;
+                            }
                             tcp_connection::pointer connection = get_tcp_connection(tac, service_id, connection_id);
                             if (connection && connection->on_data_message)
                             {
@@ -1978,7 +1978,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
                         uint32_t new_connection_id = ++server->highest_connection_id;
 
-                        // backwards compatibility
+                        // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
                         if (tac.adapter_config.is_v2_message_format)
                         {
                             new_connection_id = 1;
