@@ -1552,9 +1552,10 @@ namespace aws { namespace iot { namespace securedtunneling {
                             BOOST_LOG_SEV(log, trace) << "Processing data message";
 
                             // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
-                            if (tac.adapter_config.is_v2_message_format)
+                            if (!connection_id)
                             {
                                 connection_id = 1;
+                                tac.adapter_config.is_v2_message_format = true;
                             }
                             tcp_connection::pointer connection = get_tcp_connection(tac, service_id, connection_id);
                             if (connection && connection->on_data_message)
