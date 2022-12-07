@@ -514,6 +514,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             BOOST_LOG_SEV(this->log, trace) << "on_web_socket_write_buffer_drain_complete callback";
             tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
 
+            // if simultaneous connections are not enabled, then send a stream reset
             if (tac.adapter_config.is_v2_message_format)
             {
                 socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
@@ -1986,7 +1987,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
                         uint32_t new_connection_id = ++server->highest_connection_id;
 
-                        // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
+                        // backward compatibility: set connection id to 1 if simultaneous connections is not enabled
                         if (tac.adapter_config.is_v2_message_format)
                         {
                             new_connection_id = 1;
