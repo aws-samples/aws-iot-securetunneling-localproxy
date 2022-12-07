@@ -1426,6 +1426,13 @@ namespace aws { namespace iot { namespace securedtunneling {
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
             BOOST_LOG_SEV(log, trace) << "Forwarding message to tcp socket with connection id: " << connection_id;
+
+            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
+            if (!connection_id)
+            {
+                connection_id = 1;
+                tac.adapter_config.is_v2_message_format = true;
+            }
             /**
              * v1 message format does not need to have service id field, so we don't need to do validation on this field.
              * Fill the service id with the current one used in the local proxy mapping.
