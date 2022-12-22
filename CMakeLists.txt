@@ -48,7 +48,7 @@ find_package(Threads)
 # Generate protobuf files               #
 #########################################
 set_property(GLOBAL PROPERTY PROTOBUF_USE_STATIC_LIBS ON)  #this flag doesn't actually seem to work yet but it's documented
-set_property(GLOBAL PROPERTY PROTOBUF_PKG_VERSION 3.17.3)
+set(PROTOBUF_PKG_VERSION "3.17.3" CACHE STRING "")
 find_package(Protobuf ${PROTOBUF_PKG_VERSION} REQUIRED)
 string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} Protobuf_LITE_STATIC_LIBRARY ${Protobuf_LITE_LIBRARY})
 include_directories(${Protobuf_INCLUDE_DIRS})
@@ -77,7 +77,7 @@ set(Boost_USE_DEBUG_RUNTIME OFF)
 #set_property(GLOBAL PROPERTY Boost_USE_STATIC_LIBS ON)
 #set_property(GLOBAL PROPERTY Boost_USE_DEBUG_RUNTIME OFF)
 #set_property(GLOBAL PROPERTY Boost_USE_MULTITHREADED ON)
-set_property(GLOBAL PROPERTY BOOST_PKG_VERSION 1.81.0)
+set(BOOST_PKG_VERSION "1.81.0" CACHE STRING "")
 find_package(Boost ${BOOST_PKG_VERSION} REQUIRED COMPONENTS system log log_setup thread program_options date_time filesystem)
 include_directories(${Boost_INCLUDE_DIRS})
 foreach(BOOST_LIB ${Boost_LIBRARIES})
