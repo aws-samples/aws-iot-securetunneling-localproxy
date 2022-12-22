@@ -24,9 +24,9 @@ jobs:
       - name: Install boost
         working-directory: ${{ github.workspace }}
         run: |
-          wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O /tmp/boost.tar.gz
+          wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz -O /tmp/boost.tar.gz
           tar xzvf /tmp/boost.tar.gz
-          cd boost_1_81_0
+          cd boost_1_79_0
           ./bootstrap.sh --with-toolset=clang
           ./b2 install toolset=clang link=static
       - name: Install protobuf
@@ -76,9 +76,9 @@ jobs:
       - name: Install boost
         working-directory: ${{ github.workspace }}
         run: |
-          wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O /tmp/boost.tar.gz
+          wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz -O /tmp/boost.tar.gz
           tar xzvf /tmp/boost.tar.gz
-          cd boost_1_81_0
+          cd boost_1_79_0
           ./bootstrap.sh
           sudo ./b2 install link=static
       - name: Install protobuf
@@ -156,9 +156,9 @@ jobs:
           $env:Path += ";C:\Program Files (x86)\zlib\bin"
       - name: Install boost
         run: |
-          Invoke-WebRequest "https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.zip" -OutFile "boost_1_81_0.zip"
-          Expand-Archive "boost_1_81_0.zip" -Force
-          cd .\boost_1_81_0\boost_1_81_0\
+          Invoke-WebRequest "https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.zip" -OutFile "boost_1_79_0.zip"
+          Expand-Archive "boost_1_79_0.zip" -Force
+          cd .\boost_1_79_0\boost_1_79_0\
           .\bootstrap.bat
           .\b2 toolset=msvc-14.2 address-model=64 install define=BOOST_WINAPI_VERSION_WIN10 link=static
       - name: Install protobuf
