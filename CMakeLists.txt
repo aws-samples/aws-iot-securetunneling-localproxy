@@ -74,8 +74,6 @@ endif(BUILD_TESTS)
 #########################################
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_DEBUG_RUNTIME OFF)
-#set_property(GLOBAL PROPERTY Boost_USE_STATIC_LIBS ON)
-#set_property(GLOBAL PROPERTY Boost_USE_DEBUG_RUNTIME OFF)
 #set_property(GLOBAL PROPERTY Boost_USE_MULTITHREADED ON)
 set(BOOST_PKG_VERSION "1.79.0" CACHE STRING "")
 find_package(Boost ${BOOST_PKG_VERSION} REQUIRED COMPONENTS system log log_setup thread program_options date_time filesystem)
