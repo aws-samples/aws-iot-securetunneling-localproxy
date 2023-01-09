@@ -24,9 +24,9 @@ jobs:
       - name: Install boost
         working-directory: ${{ github.workspace }}
         run: |
-          wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz -O /tmp/boost.tar.gz
+          wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz -O /tmp/boost.tar.gz
           tar xzvf /tmp/boost.tar.gz
-          cd boost_1_76_0
+          cd boost_1_79_0
           ./bootstrap.sh --with-toolset=clang
           ./b2 install toolset=clang link=static
       - name: Install protobuf
@@ -76,9 +76,9 @@ jobs:
       - name: Install boost
         working-directory: ${{ github.workspace }}
         run: |
-          wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz -O /tmp/boost.tar.gz
+          wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz -O /tmp/boost.tar.gz
           tar xzvf /tmp/boost.tar.gz
-          cd boost_1_76_0
+          cd boost_1_79_0
           ./bootstrap.sh
           sudo ./b2 install link=static
       - name: Install protobuf
@@ -180,7 +180,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 16 2019" -A x64 ..\
+          cmake -DBOOST_PKG_VERSION=1.76.0 -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 16 2019" -A x64 ..\
           msbuild localproxy.vcxproj -p:Configuration=Release
       - name: Upload Artifact
         uses: actions/upload-artifact@v3

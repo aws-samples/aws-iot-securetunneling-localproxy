@@ -2,10 +2,13 @@ cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 set(AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME localproxy)
 set(AWS_TUNNEL_LOCAL_PROXY_LIB_NAME lproxy)
-set(AWS_TUNNEL_LOCAL_PROXY_TEST_NAME localproxytest)
-
 project(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} CXX)
-project(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} CXX)
+
+option(BUILD_TESTS "Build tests" ON)
+if(BUILD_TESTS)
+    set(AWS_TUNNEL_LOCAL_PROXY_TEST_NAME localproxytest)
+    project(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} CXX)
+endif(BUILD_TESTS)
 
 ######################################
 # Section : Disable in-source builds #
@@ -45,7 +48,8 @@ find_package(Threads)
 # Generate protobuf files               #
 #########################################
 set_property(GLOBAL PROPERTY PROTOBUF_USE_STATIC_LIBS ON)  #this flag doesn't actually seem to work yet but it's documented
-find_package(Protobuf 3.17.3 REQUIRED)
+set(PROTOBUF_PKG_VERSION "3.17.3" CACHE STRING "")
+find_package(Protobuf ${PROTOBUF_PKG_VERSION} REQUIRED)
 string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} Protobuf_LITE_STATIC_LIBRARY ${Protobuf_LITE_LIBRARY})
 include_directories(${Protobuf_INCLUDE_DIRS})
 
@@ -61,15 +65,18 @@ find_package(OpenSSL REQUIRED)
 # Test framework dependency             #
 #########################################
 #probably comment out for cross compiler as Catch2 is really just a header library
-find_package(Catch2 REQUIRED)
+if(BUILD_TESTS)
+    find_package(Catch2 REQUIRED)
+endif(BUILD_TESTS)
 
 #########################################
 # Boost dependencies                    #
 #########################################
-set_property(GLOBAL PROPERTY Boost_USE_STATIC_LIBS ON)
-set_property(GLOBAL PROPERTY Boost_USE_DEBUG_RUNTIME OFF)
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_DEBUG_RUNTIME OFF)
 #set_property(GLOBAL PROPERTY Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.76.0 REQUIRED COMPONENTS system log log_setup thread program_options date_time filesystem)
+set(BOOST_PKG_VERSION "1.79.0" CACHE STRING "")
+find_package(Boost ${BOOST_PKG_VERSION} REQUIRED COMPONENTS system log log_setup thread program_options date_time filesystem)
 include_directories(${Boost_INCLUDE_DIRS})
 foreach(BOOST_LIB ${Boost_LIBRARIES})
     string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} BOOST_STATIC_LIB ${BOOST_LIB})
@@ -80,36 +87,42 @@ endforeach()
 # Target : Build aws-tunnel-local-proxy #
 #########################################
 file(GLOB ALL_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
-file(GLOB TEST_CODE ${PROJECT_SOURCE_DIR}/test/*.cpp)
 
 set(UTIL_SOURCE ${PROJECT_SOURCE_DIR}/src/config/ConfigFile.cpp ${PROJECT_SOURCE_DIR}/src/Url.cpp)
 set(CORE_SOURCES ${PROJECT_SOURCE_DIR}/src/TcpAdapterProxy.cpp ${PROJECT_SOURCE_DIR}/src/ProxySettings.cpp ${PROJECT_SOURCE_DIR}/src/WebProxyAdapter.cpp ${PROTO_HDRS} ${PROTO_SRCS} ${PROJECT_SOURCE_DIR}/src/WebSocketStream.cpp)
 set(MAIN_SOURCES ${PROJECT_SOURCE_DIR}/src/main.cpp ${CORE_SOURCES} ${UTIL_SOURCE})
-set(TEST_SOURCES ${TEST_CODE} ${CORE_SOURCES} ${UTIL_SOURCE})
-
 add_executable(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${MAIN_SOURCES})
-add_executable(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${TEST_SOURCES})
+
+if(BUILD_TESTS)
+    file(GLOB TEST_CODE ${PROJECT_SOURCE_DIR}/test/*.cpp)
+    set(TEST_SOURCES ${TEST_CODE} ${CORE_SOURCES} ${UTIL_SOURCE})
+    add_executable(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${TEST_SOURCES})
+endif(BUILD_TESTS)
 
 #libatomic ensured for all platforms except OSX and WINDOWS
-if(NOT APPLE AND NOT MSVC)
+if(NOT APPLE AND NOT MSVC AND NOT BUILD_TESTS)
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} atomic)
+elseif(NOT APPLE AND NOT MSVC AND BUILD_TESTS)
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} atomic)
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} atomic)
 endif()
+
+include_directories(${PROJECT_SOURCE_DIR}/src)
 
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} OpenSSL::SSL)
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} OpenSSL::Crypto)
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${Boost_STATIC_LIBRARIES})
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${Protobuf_LITE_STATIC_LIBRARY})
-
-
-include_directories(${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::SSL)
-target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::Crypto)
-target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${Boost_STATIC_LIBRARIES})
-target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${Protobuf_LITE_STATIC_LIBRARY})
-
-
 set_property(TARGET ${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS ${CUSTOM_COMPILER_FLAGS})
-set_property(TARGET ${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS ${TEST_COMPILER_FLAGS})
+
+if(BUILD_TESTS)
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::SSL)
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::Crypto)
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${Boost_STATIC_LIBRARIES})
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${Protobuf_LITE_STATIC_LIBRARY})
+    set_property(TARGET ${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS ${TEST_COMPILER_FLAGS})
+endif(BUILD_TESTS)
+
+install(TARGETS ${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} DESTINATION "bin")

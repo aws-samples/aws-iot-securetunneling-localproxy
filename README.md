@@ -63,12 +63,13 @@ Fedora example:
 
 #### 2. Download and install Boost dependency
 
-    wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz -O /tmp/boost.tar.gz
+    wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz -O /tmp/boost.tar.gz
     tar xzvf /tmp/boost.tar.gz
-    cd boost_1_76_0
+    cd boost_1_79_0
     ./bootstrap.sh
     sudo ./b2 install link=static
 
+If you want to install an older version of boost, pass the version string through the cmake variable when compiling the local proxy: `-DBOOST_PKG_VERSION`
 #### 3. Download and install Protobuf dependency
 
     wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf-all-3.17.3.tar.gz
@@ -80,6 +81,7 @@ Fedora example:
     make
     sudo make install
 
+If you want to install an older version of protobuf, pass the version string through the cmake variable when compiling the local proxy: `-DPROTOBUF_PKG_VERSION`
 #### 4. Download and install OpenSSL development libraries
 
 We strongly recommend installing OpenSSL development libraries using your native platform package manager so the local proxy's integration with OpenSSL can use the platform's globally configured root CAs.
