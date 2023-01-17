@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:latest as base
 ARG OPENSSL_CONFIG=linux-generic64
 # Install Prerequisites
 RUN apt-get update && \
