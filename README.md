@@ -34,10 +34,10 @@ previous step, or you can run `./docker-run.sh -p <port_number>` to expose a por
 * C++ 14 compiler
 * CMake 3.6+
 * Development libraries required:
-    * Boost 1.76
+    * Boost 1.79
     * Protobuf 3.17.x
     * zlib 1.12.13+
-    * OpenSSL 1.0+
+    * OpenSSL 1.0+ OR OpenSSL 3
     * Catch2 test framework
 * Stage a dependency build directory and change directory into it:
     * `mkdir dependencies`
