@@ -30,7 +30,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -62,7 +62,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -94,7 +94,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
       - name: Checkout
         uses: actions/checkout@v2
         with:
