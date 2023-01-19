@@ -110,7 +110,7 @@ jobs:
         with:
           file: .github/docker-images/base-images/ubuntu/Dockerfile
           build-args: |
-            OS=ubuntu:22.04
+            OS=ubuntu:18.04
           context: .
           push: true
           tags: |
