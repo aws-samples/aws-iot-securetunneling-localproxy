@@ -6,7 +6,7 @@ ARG OPENSSL_CONFIG
 
 RUN yum check-update; yum upgrade -y && \
 	yum install -y git boost-devel autoconf automake \
-	wget libtool curl make gcc-c++ unzip cmake3 python3 openssl11-devel which \
+	wget libtool curl make gcc-c++ unzip cmake3 python-devel openssl11-devel which \
     && yum clean all \
     && rm -rf /var/cache/yum
 
