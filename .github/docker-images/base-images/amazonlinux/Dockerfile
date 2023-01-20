@@ -42,7 +42,7 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/p
 RUN git clone https://github.com/openssl/openssl.git && \
 	cd openssl && \
 	git checkout OpenSSL_1_1_1-stable && \
-	./Configure $OPENSSL_CONFIG && \
+	./config && \
 	make depend && \
 	make all && \
 	cd /home/dependencies
