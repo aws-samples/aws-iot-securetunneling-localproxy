@@ -5,7 +5,7 @@ FROM redhat/ubi8:latest AS base
 RUN yum -y update \
     && yum -y install \
     git autoconf automake \
-	wget libtool curl make gcc-c++ unzip cmake3 openssl11-devel python-devel \
+	wget libtool curl make gcc-c++ unzip cmake3 python3 \
     && yum clean all \
     && rm -rf /var/cache/yum
 

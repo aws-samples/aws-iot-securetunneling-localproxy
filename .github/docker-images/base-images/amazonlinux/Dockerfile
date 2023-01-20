@@ -5,7 +5,7 @@ FROM amazonlinux:latest AS base
 RUN yum -y update \
     && yum -y install \
     git autoconf automake which \
-	wget libtool curl make gcc-c++ unzip cmake3 openssl11-devel python-devel \
+	wget libtool curl make gcc-c++ unzip cmake3 python3 openssl11-devel \
     && yum clean all \
     && rm -rf /var/cache/yum
 
