@@ -1,13 +1,13 @@
-ARG OS
-FROM ${OS} AS base
+FROM redhat/ubi8:latest AS base
 
 # Install Prerequisites
 
-RUN apt update && apt upgrade -y && \
-	apt install -y git libboost-all-dev autoconf automake \
-	wget libtool curl make g++ unzip cmake libssl-dev python3
-
-# Install Dependencies
+RUN yum -y update \
+    && yum -y install \
+    git autoconf automake \
+	wget libtool curl make gcc-c++ unzip cmake python3 \
+    && yum clean all \
+    && rm -rf /var/cache/yum
 
 RUN mkdir /home/dependencies
 WORKDIR /home/dependencies
