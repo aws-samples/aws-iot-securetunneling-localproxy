@@ -43,7 +43,7 @@ jobs:
       - name: Install Catch2
         working-directory: ${{ github.workspace }}
         run: |
-          git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git
+          git clone --branch v2.13.10 https://github.com/catchorg/Catch2.git
           cd Catch2
           mkdir build
           cd build
