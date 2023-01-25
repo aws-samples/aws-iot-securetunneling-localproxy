@@ -129,6 +129,20 @@ Here are some important things to know for a high-level understanding of tunneli
 -   Locally detected network failures are communicated by sending _StreamReset_ over the tunnel using the active stream ID if one is active.
     -   If there is a network issue with the WebSocket connection, no control message is necessary to send. However, the active stream should be considered invalid and closed. Reconnect to the tunnel via the service and start a new stream
 
+### Reconnecting to the secure tunnel
+
+When the websocket is active, the local proxy will periodically send ping-pong message frames to keep the connection alive. The latency to the proxy server is also calculated during this time.
+In the event of a network outage or connection timeout, the local proxy will keep running, close the active stream, and execute a retry loop to reestablish the websocket connection.
+By default, the retry interval is 2.5 seconds, and there is no limit to the maximum number of retries. These defaults are configurable in the ProxySettings source file constant declarations.
+
+### Recovering from a crash or unintended program exit
+
+If the local proxy unexpectedly terminates, certain actions may be needed:
+- If the local proxy terminated on the source side, the user is free to restart the local proxy with the same version and config.
+    - If the user wants to reconnect with an older version of the local proxy, they may need to restart the destination local proxy with a matching configuration. For example if using v1, remove any _serviceID_ -> port mappings.
+- If the local proxy terminated on the destination side, the user needs to restart both the source and destination local proxies.
+    - The is because currently the tunnel peers have no knowledge if the other side has disconnected, and the source side will resend a stream start message as a result. While passing state information is technically possible through the payload of data messages, we do not support that at the moment.
+
 ### Tunneling message frames
 
 WebSocket binary frames contain a sequence of tunnel frames or messages. Each data message has a **2-byte unsigned short, big endian** data length prefix, followed by sequence of bytes whose length is specified by the data length. These bytes must be parsed into a ProtocolBuffers object that uses the schema shown in this document. Every message received must be processed, and should be processed in order for data stream integrity. If the order of messages is lost or cannot be understood during processing by the client, it should end the data stream with a _StreamReset_. Messages may control the state of the data stream, or it may contain actual stream data. Inspecting the message's type is the first step in processing a message. A single data length + bytes parsed into a ProtocolBuffers message represents an entire tunneling message frame, and the beginning of the next frame's length prefix follows immediately. This is a visual diagram of a single frame:
