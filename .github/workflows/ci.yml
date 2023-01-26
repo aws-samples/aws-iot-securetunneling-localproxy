@@ -27,8 +27,8 @@ jobs:
           wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz -O /tmp/boost.tar.gz
           tar xzvf /tmp/boost.tar.gz
           cd boost_1_79_0
-          ./bootstrap.sh --with-toolset=clang
-          ./b2 install toolset=clang link=static
+          ./bootstrap.sh
+          ./b2 install link=static
       - name: Install protobuf
         working-directory: ${{ github.workspace }}
         run: |
