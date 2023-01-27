@@ -10,7 +10,6 @@
 #include <memory>
 
 
-using boost::beast::string_view;
 namespace base64 = boost::beast::detail::base64;
 
 /**
@@ -25,17 +24,17 @@ template<class Body, class Allocator, class Send>
 void handle_request(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
     // Returns a 4xx response
     auto const client_error =
-            [&req](string_view why, http::status status) {
+            [&req](std::string why, http::status status) {
                 http::response<http::string_body> res{status, req.version()};
                 res.set(http::field::content_type, "text/html");
                 res.keep_alive(req.keep_alive());
-                res.body() = why.to_string();
+                res.body() = why;
                 res.prepare_payload();
                 return res;
             };
     // Returns a 500 response
     auto const server_error =
-            [&req](boost::beast::string_view what)
+            [&req](std::string what)
             {
                 http::response<http::string_body> res{http::status::internal_server_error, req.version()};
                 res.set(http::field::content_type, "text/html");

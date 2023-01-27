@@ -184,7 +184,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 {
                     throw e;
                 }
-                BOOST_LOG_SEV(log, error) << "Failed web socket session ID: " << tac.wss_response["channel-id"].to_string();
+                BOOST_LOG_SEV(log, error) << "Failed web socket session ID: " << tac.wss_response["channel-id"];
             }
         }
     }
@@ -836,12 +836,12 @@ namespace aws { namespace iot { namespace securedtunneling {
                 tac.wss->binary(true);
                 tac.wss->auto_fragment(true);
                 //output this first because it'll be necessary to have this if any further errors need support/debugging
-                BOOST_LOG_SEV(log, info) << "Web socket session ID: " << tac.wss_response["channel-id"].to_string();
+                BOOST_LOG_SEV(log, info) << "Web socket session ID: " << tac.wss_response["channel-id"];
                 if (!tac.wss_response.count(boost::beast::http::field::sec_websocket_protocol))
                 {
                     throw proxy_exception("No websocket subprotocol returned from proxy server!");
                 }
-                BOOST_LOG_SEV(log, debug) << "Web socket subprotocol selected: " << tac.wss_response[boost::beast::http::field::sec_websocket_protocol].to_string();
+                BOOST_LOG_SEV(log, debug) << "Web socket subprotocol selected: " << tac.wss_response[boost::beast::http::field::sec_websocket_protocol];
                 BOOST_LOG_SEV(log, info) << "Successfully established websocket connection with proxy server: wss://" << tac.adapter_config.proxy_host << ":" << tac.adapter_config.proxy_port;
                 std::shared_ptr<boost::beast::websocket::ping_data> ping_data = std::make_shared<boost::beast::websocket::ping_data>();
                 do_ping_data(tac, *ping_data);
