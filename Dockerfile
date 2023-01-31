@@ -56,28 +56,28 @@ RUN git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git && \
 	make install && \
 	cd /home/dependencies
 
-#RUN git clone https://github.com/aws-samples/aws-iot-securetunneling-localproxy && \
-#	cd aws-iot-securetunneling-localproxy && \
-#	mkdir build && \
-#	cd build && \
-#	cmake3 ../ && \
-#	make
+RUN git clone https://github.com/aws-samples/aws-iot-securetunneling-localproxy && \
+	cd aws-iot-securetunneling-localproxy && \
+	mkdir build && \
+	cd build && \
+	cmake3 ../ && \
+	make
 
 # If you'd like to use this Dockerfile to build your LOCAL revisions to the
 # local proxy source code, uncomment the following three commands and comment
 # out the command above. Otherwise, we'll build the local proxy container
 # with fresh source from the GitHub repo.
 
-RUN mkdir /home/dependencies/aws-iot-securetunneling-localproxy
-
-COPY ./ /home/dependencies/aws-iot-securetunneling-localproxy/
-
-RUN cd /home/dependencies/aws-iot-securetunneling-localproxy && \
-    rm -rf build/ && \
-    mkdir build && \
-    cd build && \
-    cmake3 ../ && \
-    make
+#RUN mkdir /home/dependencies/aws-iot-securetunneling-localproxy
+#
+#COPY ./ /home/dependencies/aws-iot-securetunneling-localproxy/
+#
+#RUN cd /home/dependencies/aws-iot-securetunneling-localproxy && \
+#    rm -rf build/ && \
+#    mkdir build && \
+#    cd build && \
+#    cmake3 ../ && \
+#    make
 
 RUN mkdir -p /home/aws-iot-securetunneling-localproxy && \
 	cd /home/aws-iot-securetunneling-localproxy && \
