@@ -37,7 +37,7 @@ previous step, or you can run `./docker-run.sh -p <port_number>` to expose a por
     * Boost 1.81
     * Protobuf 3.17.x
     * zlib 1.12.13+
-    * OpenSSL 1.0+
+    * OpenSSL 1.0+ OR OpenSSL 3
     * Catch2 test framework
 * Stage a dependency build directory and change directory into it:
     * `mkdir dependencies`
