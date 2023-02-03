@@ -34,7 +34,7 @@ previous step, or you can run `./docker-run.sh -p <port_number>` to expose a por
 * C++ 14 compiler
 * CMake 3.6+
 * Development libraries required:
-    * Boost 1.79
+    * Boost 1.81
     * Protobuf 3.17.x
     * zlib 1.12.13+
     * OpenSSL 1.0+ OR OpenSSL 3
@@ -63,9 +63,9 @@ Fedora example:
 
 #### 2. Download and install Boost dependency
 
-    wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz -O /tmp/boost.tar.gz
+    wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O /tmp/boost.tar.gz
     tar xzvf /tmp/boost.tar.gz
-    cd boost_1_79_0
+    cd boost_1_81_0
     ./bootstrap.sh
     sudo ./b2 install link=static
 

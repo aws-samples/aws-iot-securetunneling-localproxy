@@ -1,15 +1,10 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-#include <cstdlib>
 #include <chrono>
 #include <algorithm>
 #include <functional>
 #include <iostream>
-#include <string>
-#include <utility>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 
 #include <boost/phoenix.hpp>
 #include <boost/program_options.hpp>

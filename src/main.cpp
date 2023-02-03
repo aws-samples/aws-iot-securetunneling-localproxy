@@ -9,7 +9,6 @@
 #include <utility>
 #include <tuple>
 
-#include <boost/phoenix.hpp>
 #include <boost/program_options.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -21,6 +20,7 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/uuid/uuid.hpp>
+#include <boost/log/support/date_time.hpp>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
@@ -99,41 +99,52 @@ void log_formatter(boost::log::formatting_ostream& strm, boost::log::record_view
         " " << rec["Message"].extract<std::string>();
 }
 
-void set_logging_filter(std::uint16_t level_numeric)
-{
-    level_numeric = level_numeric > 6 ? 6 : level_numeric;
-
-    switch (level_numeric)
-    {
-    case 6:
-        boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
-        break;
-    case 5:
-        boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::debug);
-        break;
-    case 4:
-        boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
-        break;
-    case 3:
-        boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::warning);
-        break;
-    case 2:
-        boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::error);
-        break;
-    case 1:
-        boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::fatal);
-        break;
-    case 0:
-        boost::log::core::get()->set_logging_enabled(false);
-        break;
-    }
-}
-
 void init_logging(std::uint16_t &logging_level)
 {
     boost::log::add_common_attributes();
-    boost::log::add_console_log(std::cout, boost::log::keywords::format = boost::phoenix::bind(&log_formatter, boost::log::expressions::stream, boost::log::expressions::record));
-    set_logging_filter(logging_level);
+    logging_level = logging_level > 6 ? 6 : logging_level;
+
+    switch (logging_level)
+    {
+        case 6:
+            boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
+            break;
+        case 5:
+            boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::debug);
+            break;
+        case 4:
+            boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
+            break;
+        case 3:
+            boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::warning);
+            break;
+        case 2:
+            boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::error);
+            break;
+        case 1:
+            boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::fatal);
+            break;
+        case 0:
+            boost::log::core::get()->set_logging_enabled(false);
+            break;
+    }
+
+    /* log formatter:
+     * [TimeStamp] [ThreadId] [Severity Level] [Scope] Log message
+     */
+    auto fmtTimeStamp = boost::log::expressions::
+    format_date_time<boost::posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f");
+    auto fmtThreadId = boost::log::expressions::
+    attr<boost::log::attributes::current_thread_id::value_type>("ThreadID");
+    auto fmtSeverity = boost::log::expressions::
+    attr<boost::log::trivial::severity_level>("Severity");
+    boost::log::formatter logFmt =
+            boost::log::expressions::format("[%1%] (%2%) [%3%] %4%")
+            % fmtTimeStamp % fmtThreadId % fmtSeverity % boost::log::expressions::smessage;
+
+    auto consoleSink = boost::log::add_console_log(std::clog);
+    consoleSink->set_formatter(logFmt);
+
 }
 
 bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings, std::uint16_t &logging_level)
@@ -400,7 +411,6 @@ int main(int argc, char ** argv)
 
         if (process_cli(argc, argv, cfg, settings, logging_level))
         {
-            set_logging_filter(logging_level);
             tcp_adapter_proxy proxy{ settings, cfg };
             return proxy.run_proxy();
         }

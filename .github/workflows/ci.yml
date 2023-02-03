@@ -24,9 +24,9 @@ jobs:
       - name: Install boost
         working-directory: ${{ github.workspace }}
         run: |
-          wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz -O /tmp/boost.tar.gz
+          wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O /tmp/boost.tar.gz
           tar xzvf /tmp/boost.tar.gz
-          cd boost_1_79_0
+          cd boost_1_81_0
           ./bootstrap.sh --with-toolset=clang
           ./b2 install toolset=clang link=static
       - name: Install protobuf
@@ -66,9 +66,9 @@ jobs:
       - name: Install boost
         working-directory: ${{ github.workspace }}
         run: |
-          wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz -O /tmp/boost.tar.gz
+          wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O /tmp/boost.tar.gz
           tar xzvf /tmp/boost.tar.gz
-          cd boost_1_79_0
+          cd boost_1_81_0
           ./bootstrap.sh
           sudo ./b2 install link=static
       - name: Install protobuf
