@@ -1,5 +1,4 @@
-# FROM amazonlinux:latest
-FROM amazonlinux:latest as builder
+FROM amazonlinux:latest as base
 ARG OPENSSL_CONFIG
 
 # Install Prerequisites

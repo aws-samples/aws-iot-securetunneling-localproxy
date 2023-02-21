@@ -1,23 +1,21 @@
-name: Base Image Builds
+name: Release Image Builds
 
-# This workflow is to allow the building of Docker base images by merging to the base-images branch of the repo
-# Building the base images is time-consuming and not necessary unless there have been changes to the Dockerfile
-# or a dependency. This workflow allows developers to merge to the base-images to build and publish the base images
-# only when needed. This cuts the time needed for typical workflow runs significantly.
+# This workflow is to allow the building of Docker release images by copying the binary from a base image to a minimum size OS image.
 
 on:
   push:
-    branches: ['base-images', 'docker-builds']
+    branches: ['main']
   pull_request:
-    branches: ['base-images', 'docker-builds']
+    branches: ['main']
     types: [opened, closed]
 
 env:
   PACKAGE_NAME: aws-iot-securetunneling-localproxy
   ECR_BASE_REPO: aws-iot-securetunneling-localproxy-base-images
+  ECR_REPO: aws-iot-securetunneling-localproxy-release-images
 
 jobs:
-  build-base-docker-image-ubuntu-amd64:
+  build-docker-image-ubuntu-amd64:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -39,18 +37,20 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build Ubuntu Base Image
+      - name: Build Ubuntu Release Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/ubuntu/Dockerfile
+          file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-ubuntu-latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-ubuntu-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-ubuntu-${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-ubuntu-latest
           platforms: linux/amd64
-  build-base-docker-image-ubuntu-arm64:
+  build-docker-image-ubuntu-arm64:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -72,18 +72,20 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build Ubuntu Base Image
+      - name: Build Ubuntu Release Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/ubuntu/Dockerfile
+          file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-ubuntu-latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-ubuntu-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-ubuntu-${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-ubuntu-latest
           platforms: linux/arm64
-  build-base-docker-image-ubuntu-armv7:
+  build-docker-image-ubuntu-armv7:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -105,18 +107,20 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build ubuntu Base Image
+      - name: Build ubuntu Release Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/ubuntu/Dockerfile
+          file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:18.04
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:armv7-ubuntu-latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:armv7-ubuntu-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:armv7-ubuntu-${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:armv7-ubuntu-latest
           platforms: linux/arm/v7
-  build-base-docker-image-ubi8-amd64:
+  build-docker-image-ubi8-amd64:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -138,16 +142,20 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build ubi8 Base Image
+      - name: Build ubi8 Release Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/ubi8/Dockerfile
+          file: .github/docker-images/Dockerfile
+          build-args: |
+            OS=redhat/ubi8:latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-ubi8-latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-ubi8-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-ubi8-${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-ubi8-latest
           platforms: linux/amd64
-  build-base-docker-image-ubi8-arm64:
+  build-docker-image-ubi8-arm64:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -169,16 +177,20 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build ubi8 Base Image
+      - name: Build ubi8 Release Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/ubi8/Dockerfile
+          file: .github/docker-images/Dockerfile
+          build-args: |
+            OS=redhat/ubi8:latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-ubi8-latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-ubi8-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-ubi8-${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-ubi8-latest
           platforms: linux/arm64
-  build-base-docker-image-amazonlinux-amd64:
+  build-docker-image-amazonlinux-amd64:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -200,16 +212,20 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build amazonlinux Base Image
+      - name: Build amazonlinux Release Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/amazonlinux/Dockerfile
+          file: .github/docker-images/Dockerfile
+          build-args: |
+            OS=amazonlinux:latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-amazonlinux-latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-amazonlinux-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-amazonlinux-${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-amazonlinux-latest
           platforms: linux/amd64
-  build-base-docker-image-amazonlinux-arm64:
+  build-docker-image-amazonlinux-arm64:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -231,16 +247,20 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build amazonlinux Base Image
+      - name: Build amazonlinux Release Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/amazonlinux/Dockerfile
+          file: .github/docker-images/Dockerfile
+          build-args: |
+            OS=amazonlinux:latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-amazonlinux-latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-amazonlinux-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-amazonlinux-${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-amazonlinux-latest
           platforms: linux/arm64
-  build-base-docker-image-debian-amd64:
+  build-docker-image-debian-amd64:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -262,16 +282,20 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build debian Base Image
+      - name: Build debian Release Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/debian/Dockerfile
+          file: .github/docker-images/Dockerfile
+          build-args: |
+            OS=debian:latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-debian-latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-debian-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-debian-${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-debian-latest
           platforms: linux/amd64
-  build-base-docker-image-debian-arm64:
+  build-docker-image-debian-arm64:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -293,16 +317,20 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build debian Base Image
+      - name: Build debian Release Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/debian/Dockerfile
+          file: .github/docker-images/Dockerfile
+          build-args: |
+            OS=debian:latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-debian-latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-debian-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-debian-${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-debian-latest
           platforms: linux/arm64
-  build-base-docker-image-fedora-amd64:
+  build-docker-image-fedora-amd64:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -324,16 +352,20 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build fedora Base Image
+      - name: Build fedora Release Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/fedora/Dockerfile
+          file: .github/docker-images/Dockerfile
+          build-args: |
+            OS=fedora:latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-fedora-latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-fedora-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-fedora-${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-fedora-latest
           platforms: linux/amd64
-  build-base-docker-image-fedora-arm64:
+  build-docker-image-fedora-arm64:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -355,12 +387,16 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build fedora Base Image
+      - name: Build fedora Release Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/fedora/Dockerfile
+          file: .github/docker-images/Dockerfile
+          build-args: |
+            OS=fedora:latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-fedora-latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-fedora-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-fedora-${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-fedora-latest
           platforms: linux/arm64
