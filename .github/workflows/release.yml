@@ -4,9 +4,9 @@ name: Release Image Builds
 
 on:
   push:
-    branches: ['main']
+    branches: ['main', 'docker-builds']
   pull_request:
-    branches: ['main']
+    branches: ['main', 'docker-builds']
     types: [opened, closed]
 
 env:

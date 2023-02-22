@@ -7,9 +7,9 @@ name: Base Image Builds
 
 on:
   push:
-    branches: ['base-images', 'docker-builds']
+    branches: ['base-images']
   pull_request:
-    branches: ['base-images', 'docker-builds']
+    branches: ['base-images']
     types: [opened, closed]
 
 env:
