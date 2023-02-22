@@ -11,6 +11,7 @@ RUN yum check-update; yum upgrade -y && \
 
 # Install Dependencies
 
+RUN ln -s /usr/bin/cmake3 /usr/bin/cmake
 RUN mkdir /home/dependencies
 
 WORKDIR /home/dependencies
@@ -22,9 +23,9 @@ RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz && \
 	make install
 
 WORKDIR /home/dependencies
-RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz -O /tmp/boost.tar.gz && \
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O /tmp/boost.tar.gz && \
 	tar xzvf /tmp/boost.tar.gz && \
-	cd boost_1_79_0 && \
+	cd boost_1_81_0 && \
 	./bootstrap.sh && \
 	./b2 install link=static
 
@@ -34,7 +35,7 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/p
 	cd protobuf-3.17.3 && \
 	mkdir build && \
 	cd build && \
-	cmake3 ../cmake && \
+	cmake ../cmake && \
 	make && \
 	make install
 
@@ -51,6 +52,6 @@ RUN git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git && \
 	cd Catch2 && \
 	mkdir build && \
 	cd build && \
-	cmake3 ../ && \
+	cmake ../ && \
 	make && \
 	make install

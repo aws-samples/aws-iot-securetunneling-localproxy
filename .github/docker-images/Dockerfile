@@ -13,13 +13,13 @@ RUN mkdir -p /root/aws-iot-securetunneling-localproxy/build \
 
 FROM ${OS} AS minimum_size
 
-COPY --from=deploy /root/aws-iot-securetunneling-localproxy/build/aws-iot-securetunneling-localproxy ./bin
+COPY --from=deploy /root/aws-iot-securetunneling-localproxy/build/aws-iot-securetunneling-localproxy ./aws-iot-securetunneling-localproxy
 
 COPY ./.github/docker-images/oss-compliance /root/oss-compliance
-#RUN HOME_DIR=/root \
-#    && chmod +x ${HOME_DIR}/oss-compliance/generate-oss-compliance.sh \
-#    && chmod +x ${HOME_DIR}/oss-compliance/test/test-oss-compliance.sh \
-#    && bash ${HOME_DIR}/oss-compliance/generate-oss-compliance.sh ${HOME_DIR} \
-#    && rm -rf ${HOME_DIR}/oss-compliance*
+RUN HOME_DIR=/root \
+    && chmod +x ${HOME_DIR}/oss-compliance/generate-oss-compliance.sh \
+    && chmod +x ${HOME_DIR}/oss-compliance/test/test-oss-compliance.sh \
+    && bash ${HOME_DIR}/oss-compliance/generate-oss-compliance.sh ${HOME_DIR} \
+    && rm -rf ${HOME_DIR}/oss-compliance*
 
-ENTRYPOINT ["/bin"]
+ENTRYPOINT ["/aws-iot-securetunneling-localproxy"]
