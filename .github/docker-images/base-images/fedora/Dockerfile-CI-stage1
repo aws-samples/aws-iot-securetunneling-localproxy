@@ -1,0 +1,27 @@
+FROM fedora:latest AS base
+
+# Install Prerequisites
+
+RUN dnf -y update \
+    && dnf -y install \
+    git autoconf automake \
+        which wget libtool libatomic curl make gcc-c++ unzip cmake python3 openssl-devel perl-core \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
+
+RUN mkdir /home/dependencies
+
+WORKDIR /home/dependencies
+RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz && \
+        tar xzvf /tmp/zlib-1.2.13.tar.gz && \
+        cd zlib-1.2.13 && \
+        ./configure && \
+        make && \
+        make install
+
+WORKDIR /home/dependencies
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O /tmp/boost.tar.gz && \
+        tar xzvf /tmp/boost.tar.gz && \
+        cd boost_1_81_0 && \
+        ./bootstrap.sh && \
+    ./b2 install link=static

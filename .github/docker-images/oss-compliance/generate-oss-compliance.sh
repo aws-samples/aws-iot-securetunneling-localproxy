@@ -20,10 +20,10 @@ if [[ $PRETTY_NAME == *"Ubuntu"* || $PRETTY_NAME == *"Debian"* ]]; then
   ${LINUX_PACKAGES}/dpkg-packages.sh
 fi
 
-if [[ $PRETTY_NAME == *"Amazon Linux"* || $PRETTY_NAME == *"Red Hat Enterprise Linux"* || $PRETTY_NAME == "Fedora" ]]; then
+if [[ $PRETTY_NAME == *"Amazon Linux"* || $PRETTY_NAME == *"Red Hat Enterprise Linux"* || $PRETTY_NAME == *"Fedora"* ]]; then
   ${LINUX_PACKAGES}/yum-packages.sh
 fi
 
-cp ${BUILD_FROM_SOURCE_PACKAGES_LICENCES} ${HOME_DIR}/BUILD_FROM_SOURCE_PACKAGES_LICENCES
+cp ${BUILD_FROM_SOURCE_PACKAGES_LICENCES} $/root/BUILD_FROM_SOURCE_PACKAGES_LICENCES
 chmod +x ${HOME_DIR}/test/test-oss-compliance.sh
 bash ${HOME_DIR}/test/test-oss-compliance.sh ${HOME_DIR}

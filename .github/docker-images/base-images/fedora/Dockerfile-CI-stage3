@@ -1,0 +1,19 @@
+ARG STAGE_2
+FROM ${STAGE_2} AS STAGE_3
+
+WORKDIR /home/dependencies
+RUN git clone https://github.com/openssl/openssl.git && \
+        cd openssl && \
+        git checkout OpenSSL_1_1_1-stable && \
+        ./config && \
+        make depend && \
+        make all
+
+WORKDIR /home/dependencies
+RUN git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git && \
+        cd Catch2 && \
+        mkdir build && \
+        cd build && \
+        cmake ../ && \
+        make && \
+        make install
