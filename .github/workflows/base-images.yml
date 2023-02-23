@@ -422,7 +422,7 @@ jobs:
       - name: Build fedora Base Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/fedora/Dockerfile-CI-stage2
+          file: .github/docker-images/base-images/fedora/Dockerfile-CI-stage3
           build-args: |
             STAGE_2=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-fedora-stage2-latest
           context: .
