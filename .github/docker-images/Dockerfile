@@ -13,7 +13,7 @@ RUN mkdir -p /root/aws-iot-securetunneling-localproxy/build \
 
 FROM ${OS} AS minimum_size
 
-COPY --from=deploy /root/aws-iot-securetunneling-localproxy/build/bin/localproxy ./localproxy
+COPY --from=deploy /root/aws-iot-securetunneling-localproxy/build/bin/localproxy /root/bin/localproxy
 
 COPY ./.github/docker-images/oss-compliance /root/oss-compliance
 RUN HOME_DIR=/root \
@@ -23,4 +23,4 @@ RUN HOME_DIR=/root \
     && bash ${HOME_DIR}/oss-compliance/generate-oss-compliance.sh ${HOME_DIR} \
     && rm -rf ${HOME_DIR}/oss-compliance*
 
-ENTRYPOINT ["/localproxy"]
+ENTRYPOINT ["/root/bin"]

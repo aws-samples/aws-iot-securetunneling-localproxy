@@ -24,6 +24,6 @@ if [[ $PRETTY_NAME == *"Amazon Linux"* || $PRETTY_NAME == *"Red Hat Enterprise L
   ${LINUX_PACKAGES}/yum-packages.sh
 fi
 
-cp ${BUILD_FROM_SOURCE_PACKAGES_LICENCES} $/root/BUILD_FROM_SOURCE_PACKAGES_LICENCES
+cp ${BUILD_FROM_SOURCE_PACKAGES_LICENCES} /root/BUILD_FROM_SOURCE_PACKAGES_LICENCES
 chmod +x ${HOME_DIR}/test/test-oss-compliance.sh
 bash ${HOME_DIR}/test/test-oss-compliance.sh ${HOME_DIR}

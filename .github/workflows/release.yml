@@ -365,38 +365,3 @@ jobs:
             ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-fedora-${{ github.sha }}
             ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-fedora-latest
           platforms: linux/amd64
-  build-docker-image-fedora-arm64:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
-          aws-region: us-east-1
-      - name: Login to ECR
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Build fedora Release Image
-        uses: docker/build-push-action@v3
-        with:
-          file: .github/docker-images/Dockerfile
-          build-args: |
-            OS=fedora:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-fedora-latest
-          context: .
-          push: true
-          tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-fedora-${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-fedora-latest
-          platforms: linux/arm64

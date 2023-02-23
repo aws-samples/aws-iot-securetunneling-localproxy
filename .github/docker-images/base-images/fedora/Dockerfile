@@ -5,9 +5,7 @@ FROM fedora:latest AS base
 RUN dnf -y update \
     && dnf -y install \
     git autoconf automake \
-        which wget libtool libatomic curl make gcc-c++ unzip cmake python3 openssl-devel perl-core \
-    && dnf clean all \
-    && rm -rf /var/cache/dnf
+        which wget libtool libatomic curl make gcc-c++ unzip cmake python3 openssl-devel perl-core
 
 RUN mkdir /home/dependencies
 
