@@ -3,8 +3,7 @@ FROM redhat/ubi8:latest AS base
 # Install Prerequisites
 
 RUN yum -y update \
-    && yum -y install \
-    git autoconf automake \
+    && yum -y install git autoconf automake \
 	wget libtool libatomic curl make gcc-c++ unzip cmake python3 openssl-devel
 
 RUN mkdir /home/dependencies

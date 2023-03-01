@@ -20,17 +20,25 @@ This code enables tunneling of a single threaded TCP client / server socket inte
 
 ### Using Pre-built Docker Images
 
-We provide several docker images on various platforms.
+We provide several docker images on various platforms. Both x86 and ARM are supported, though armv7 is currently limited to the ubuntu images.
 There are two types of images: base images and release images.
 The base images come with all dependencies pre-installed. You will still need to download and build the source.
 These are useful if you want to modify and [compile](https://github.com/aws-samples/aws-iot-securetunneling-localproxy#download-and-build-the-local-proxy) the local proxy on your own, but are large (~1 GB each).
 You can find them at:
-#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/base-images
-The release images are minimum size images that include a pre-built binary. No dependencies are installed, so recompilation will not work.
-The format of every tag is `[arch]-[os]-[git commit sha]` for example: amd64-ubuntu-33879dd7f1500f7b3e56e48ce8b002cd9b0f9e4e.
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-base
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/debian-base
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/amazonlinux-base
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubi8-base
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/fedora-base
+The release images are minimum size images that include a pre-built binary with no dependencies installed.
+Every tag contains a git commit sha for example: 33879dd7f1500f7b3e56e48ce8b002cd9b0f9e4e.
 You can cross-check the git commit sha with the commits in the local proxy repo to see if the binary contains changes added in a specific commit.
 You can find them at:
-#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/release-images
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/debian-bin
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/amazonlinux-bin
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubi8-bin
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/fedora-bin
 
 ### Building a Docker Image
 
@@ -40,9 +48,15 @@ If you do not want to use the prebuilt images, you can build them yourself:
 
 `docker build -t <your tag> .`
 
+Or, for the debian-ubuntu combined Dockerfile:
+
+`docker build -t <your tag> . --build-arg OS=<choice of debian/ubuntu>:latest`
+
 To build cross-platform images for ARM:
 
 `docker buildx --platform linux/arm64 -t <your tag> .`
+
+You may also try armv7 for 32 bit images, but supported functionality may be limited.
 
 After the Docker build completes, run `docker run --rm -it <tag>` to open a shell inside the container created in the
 previous step, or you can add ` -p <port_number>` to expose a port from the docker container. Note that when the localproxy runs in source mode, it binds by default to `localhost`, If you want to access the localproxy from outside the container, make sure to use the option `-b 0.0.0.0` when you run the localproxy from the container so that it binds to `0.0.0.0` since `localhost` can not be access from outside the container.

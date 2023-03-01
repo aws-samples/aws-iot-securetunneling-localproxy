@@ -11,8 +11,16 @@ on:
 
 env:
   PACKAGE_NAME: aws-iot-securetunneling-localproxy
-  ECR_BASE_REPO: aws-iot-securetunneling-localproxy-base-images
-  ECR_REPO: aws-iot-securetunneling-localproxy-release-images
+  ECR_BASE_UBUNTU: ubuntu-base
+  ECR_BASE_UBI8: ubi8-base
+  ECR_BASE_AMAZONLINUX: amazonlinux-base
+  ECR_BASE_DEBIAN: debian-base
+  ECR_BASE_FEDORA: fedora-base
+  ECR_RELEASE_UBUNTU: ubuntu-bin
+  ECR_RELEASE_UBI8: ubi8-bin
+  ECR_RELEASE_AMAZONLINUX: amazonlinux-bin
+  ECR_RELEASE_DEBIAN: debian-bin
+  ECR_RELEASE_FEDORA: fedora-bin
 
 jobs:
   build-docker-image-ubuntu-amd64:
@@ -43,12 +51,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-ubuntu-latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBUNTU }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-ubuntu-${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-ubuntu-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:latest
           platforms: linux/amd64
   build-docker-image-ubuntu-arm64:
     runs-on: ubuntu-latest
@@ -78,12 +86,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-ubuntu-latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBUNTU }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-ubuntu-${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-ubuntu-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:latest
           platforms: linux/arm64
   build-docker-image-ubuntu-armv7:
     runs-on: ubuntu-latest
@@ -113,12 +121,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:18.04
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:armv7-ubuntu-latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBUNTU }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:armv7-ubuntu-${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:armv7-ubuntu-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:latest
           platforms: linux/arm/v7
   build-docker-image-ubi8-amd64:
     runs-on: ubuntu-latest
@@ -148,12 +156,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=redhat/ubi8:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-ubi8-latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBI8 }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-ubi8-${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-ubi8-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBI8 }}:${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBI8 }}:latest
           platforms: linux/amd64
   build-docker-image-ubi8-arm64:
     runs-on: ubuntu-latest
@@ -183,12 +191,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=redhat/ubi8:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-ubi8-latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBI8 }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-ubi8-${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-ubi8-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBI8 }}:${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBI8 }}:latest
           platforms: linux/arm64
   build-docker-image-amazonlinux-amd64:
     runs-on: ubuntu-latest
@@ -218,12 +226,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=amazonlinux:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-amazonlinux-latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-amazonlinux-${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-amazonlinux-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_AMAZONLINUX }}:${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_AMAZONLINUX }}:latest
           platforms: linux/amd64
   build-docker-image-amazonlinux-arm64:
     runs-on: ubuntu-latest
@@ -253,12 +261,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=amazonlinux:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-amazonlinux-latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-amazonlinux-${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-amazonlinux-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_AMAZONLINUX }}:${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_AMAZONLINUX }}:latest
           platforms: linux/arm64
   build-docker-image-debian-amd64:
     runs-on: ubuntu-latest
@@ -288,12 +296,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=debian:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-debian-latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_DEBIAN }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-debian-${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-debian-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_DEBIAN }}:${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_DEBIAN }}:latest
           platforms: linux/amd64
   build-docker-image-debian-arm64:
     runs-on: ubuntu-latest
@@ -323,12 +331,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=debian:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-debian-latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_DEBIAN }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-debian-${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:arm64-debian-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_DEBIAN }}:${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_DEBIAN }}:latest
           platforms: linux/arm64
   build-docker-image-fedora-amd64:
     runs-on: ubuntu-latest
@@ -358,10 +366,10 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=fedora:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-fedora-latest
+            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_FEDORA }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-fedora-${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_REPO }}:amd64-fedora-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_FEDORA }}:${{ github.sha }}
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_FEDORA }}:latest
           platforms: linux/amd64

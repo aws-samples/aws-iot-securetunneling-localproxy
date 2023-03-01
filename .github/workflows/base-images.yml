@@ -14,7 +14,11 @@ on:
 
 env:
   PACKAGE_NAME: aws-iot-securetunneling-localproxy
-  ECR_BASE_REPO: aws-iot-securetunneling-localproxy-base-images
+  ECR_BASE_UBUNTU: ubuntu-base
+  ECR_BASE_UBI8: ubi8-base
+  ECR_BASE_AMAZONLINUX: amazonlinux-base
+  ECR_BASE_DEBIAN: debian-base
+  ECR_BASE_FEDORA: fedora-base
 
 jobs:
   build-base-docker-image-ubuntu-amd64:
@@ -48,7 +52,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-ubuntu-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBUNTU }}:latest
           platforms: linux/amd64
   build-base-docker-image-ubuntu-arm64:
     runs-on: ubuntu-latest
@@ -81,7 +85,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-ubuntu-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBUNTU }}:latest
           platforms: linux/arm64
   build-base-docker-image-ubuntu-armv7:
     runs-on: ubuntu-latest
@@ -114,7 +118,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:armv7-ubuntu-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBUNTU }}:latest
           platforms: linux/arm/v7
   build-base-docker-image-ubi8-amd64:
     runs-on: ubuntu-latest
@@ -145,7 +149,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-ubi8-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBI8 }}:latest
           platforms: linux/amd64
   build-base-docker-image-ubi8-arm64:
     runs-on: ubuntu-latest
@@ -176,7 +180,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-ubi8-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBI8 }}:latest
           platforms: linux/arm64
   build-base-docker-image-amazonlinux-amd64:
     runs-on: ubuntu-latest
@@ -207,7 +211,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-amazonlinux-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
           platforms: linux/amd64
   build-base-docker-image-amazonlinux-arm64:
     runs-on: ubuntu-latest
@@ -238,7 +242,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-amazonlinux-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
           platforms: linux/arm64
   build-base-docker-image-debian-amd64:
     runs-on: ubuntu-latest
@@ -266,10 +270,12 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           file: .github/docker-images/base-images/debian/Dockerfile
+          build-args: |
+            OS=debian:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-debian-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_DEBIAN }}:latest
           platforms: linux/amd64
   build-base-docker-image-debian-arm64:
     runs-on: ubuntu-latest
@@ -297,10 +303,12 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           file: .github/docker-images/base-images/debian/Dockerfile
+          build-args: |
+            OS=debian:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:arm64-debian-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_DEBIAN }}:latest
           platforms: linux/arm64
   build-base-docker-image-fedora-amd64:
     runs-on: ubuntu-latest
@@ -331,5 +339,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_REPO }}:amd64-fedora-latest
+            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_FEDORA }}:latest
           platforms: linux/amd64
