@@ -30,6 +30,7 @@ You can find them at:
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/amazonlinux-base
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubi8-base
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/fedora-base
+
 The release images are minimum size images that include a pre-built binary with no dependencies installed.
 Every tag contains a git commit sha for example: 33879dd7f1500f7b3e56e48ce8b002cd9b0f9e4e.
 You can cross-check the git commit sha with the commits in the local proxy repo to see if the binary contains changes added in a specific commit.
