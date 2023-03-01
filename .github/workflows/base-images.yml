@@ -46,7 +46,7 @@ jobs:
       - name: Build Ubuntu Base Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/ubuntu/Dockerfile
+          file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
             OS=ubuntu:latest
           context: .
@@ -79,7 +79,7 @@ jobs:
       - name: Build Ubuntu Base Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/ubuntu/Dockerfile
+          file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
             OS=ubuntu:latest
           context: .
@@ -112,7 +112,7 @@ jobs:
       - name: Build ubuntu Base Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/ubuntu/Dockerfile
+          file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
             OS=ubuntu:18.04
           context: .
@@ -269,7 +269,7 @@ jobs:
       - name: Build debian Base Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/debian/Dockerfile
+          file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
             OS=debian:latest
           context: .
@@ -302,7 +302,7 @@ jobs:
       - name: Build debian Base Image
         uses: docker/build-push-action@v3
         with:
-          file: .github/docker-images/base-images/debian/Dockerfile
+          file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
             OS=debian:latest
           context: .
