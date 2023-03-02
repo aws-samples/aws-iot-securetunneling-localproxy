@@ -15,11 +15,11 @@ on:
 env:
   PACKAGE_NAME: aws-iot-securetunneling-localproxy
   ECR_ACCOUNT_URL: public.ecr.aws
-  ECR_BASE_UBUNTU: ${{ env.PACKAGE_NAME }}/ubuntu-base
-  ECR_BASE_UBI8: ${{ env.PACKAGE_NAME }}/ubi8-base
-  ECR_BASE_AMAZONLINUX: ${{ env.PACKAGE_NAME }}/amazonlinux-base
-  ECR_BASE_DEBIAN: ${{ env.PACKAGE_NAME }}/debian-base
-  ECR_BASE_FEDORA: ${{ env.PACKAGE_NAME }}/fedora-base
+  ECR_BASE_UBUNTU: aws-iot-securetunneling-localproxy/ubuntu-base
+  ECR_BASE_UBI8: aws-iot-securetunneling-localproxy/ubi8-base
+  ECR_BASE_AMAZONLINUX: aws-iot-securetunneling-localproxy/amazonlinux-base
+  ECR_BASE_DEBIAN: aws-iot-securetunneling-localproxy/debian-base
+  ECR_BASE_FEDORA: aws-iot-securetunneling-localproxy/fedora-base
 
 jobs:
   build-base-docker-image-ubuntu-amd64:
