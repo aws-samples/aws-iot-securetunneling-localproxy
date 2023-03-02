@@ -12,16 +12,16 @@ on:
 env:
   PACKAGE_NAME: aws-iot-securetunneling-localproxy
   ECR_ACCOUNT_URL: public.ecr.aws
-  ECR_BASE_UBUNTU: ubuntu-base
-  ECR_BASE_UBI8: ubi8-base
-  ECR_BASE_AMAZONLINUX: amazonlinux-base
-  ECR_BASE_DEBIAN: debian-base
-  ECR_BASE_FEDORA: fedora-base
-  ECR_RELEASE_UBUNTU: ubuntu-bin
-  ECR_RELEASE_UBI8: ubi8-bin
-  ECR_RELEASE_AMAZONLINUX: amazonlinux-bin
-  ECR_RELEASE_DEBIAN: debian-bin
-  ECR_RELEASE_FEDORA: fedora-bin
+  ECR_BASE_UBUNTU: ${{ env.PACKAGE_NAME }}/ubuntu-base
+  ECR_BASE_UBI8: ${{ env.PACKAGE_NAME }}/ubi8-base
+  ECR_BASE_AMAZONLINUX: ${{ env.PACKAGE_NAME }}/amazonlinux-base
+  ECR_BASE_DEBIAN: ${{ env.PACKAGE_NAME }}/debian-base
+  ECR_BASE_FEDORA: ${{ env.PACKAGE_NAME }}/fedora-base
+  ECR_RELEASE_UBUNTU: ${{ env.PACKAGE_NAME }}/ubuntu-bin
+  ECR_RELEASE_UBI8: ${{ env.PACKAGE_NAME }}/ubi8-bin
+  ECR_RELEASE_AMAZONLINUX: ${{ env.PACKAGE_NAME }}/amazonlinux-bin
+  ECR_RELEASE_DEBIAN: ${{ env.PACKAGE_NAME }}/debian-bin
+  ECR_RELEASE_FEDORA: ${{ env.PACKAGE_NAME }}/fedora-bin
 
 jobs:
   build-docker-image-ubuntu-amd64:
