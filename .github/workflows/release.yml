@@ -11,6 +11,7 @@ on:
 
 env:
   PACKAGE_NAME: aws-iot-securetunneling-localproxy
+  ECR_ACCOUNT_URL: public.ecr.aws
   ECR_BASE_UBUNTU: ubuntu-base
   ECR_BASE_UBI8: ubi8-base
   ECR_BASE_AMAZONLINUX: amazonlinux-base
@@ -36,7 +37,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}/${{ env.PACKAGE_NAME }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -51,12 +52,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBUNTU }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:latest
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:latest
           platforms: linux/amd64
   build-docker-image-ubuntu-arm64:
     runs-on: ubuntu-latest
@@ -71,7 +72,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}/${{ env.PACKAGE_NAME }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -86,12 +87,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBUNTU }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:latest
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:latest
           platforms: linux/arm64
   build-docker-image-ubuntu-armv7:
     runs-on: ubuntu-latest
@@ -106,7 +107,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}/${{ env.PACKAGE_NAME }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -121,12 +122,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:18.04
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBUNTU }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBUNTU }}:latest
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:latest
           platforms: linux/arm/v7
   build-docker-image-ubi8-amd64:
     runs-on: ubuntu-latest
@@ -141,7 +142,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}/${{ env.PACKAGE_NAME }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -156,12 +157,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=redhat/ubi8:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBI8 }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBI8 }}:${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBI8 }}:latest
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:${{ github.sha }}
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:latest
           platforms: linux/amd64
   build-docker-image-ubi8-arm64:
     runs-on: ubuntu-latest
@@ -176,7 +177,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}/${{ env.PACKAGE_NAME }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -191,12 +192,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=redhat/ubi8:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_UBI8 }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBI8 }}:${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_UBI8 }}:latest
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:${{ github.sha }}
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:latest
           platforms: linux/arm64
   build-docker-image-amazonlinux-amd64:
     runs-on: ubuntu-latest
@@ -211,7 +212,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}/${{ env.PACKAGE_NAME }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -226,12 +227,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=amazonlinux:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_AMAZONLINUX }}:${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_AMAZONLINUX }}:latest
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:${{ github.sha }}
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:latest
           platforms: linux/amd64
   build-docker-image-amazonlinux-arm64:
     runs-on: ubuntu-latest
@@ -246,7 +247,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}/${{ env.PACKAGE_NAME }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -261,12 +262,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=amazonlinux:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_AMAZONLINUX }}:${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_AMAZONLINUX }}:latest
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:${{ github.sha }}
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:latest
           platforms: linux/arm64
   build-docker-image-debian-amd64:
     runs-on: ubuntu-latest
@@ -281,7 +282,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}/${{ env.PACKAGE_NAME }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -296,12 +297,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=debian:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_DEBIAN }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_DEBIAN }}:${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_DEBIAN }}:latest
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:${{ github.sha }}
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:latest
           platforms: linux/amd64
   build-docker-image-debian-arm64:
     runs-on: ubuntu-latest
@@ -316,7 +317,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}/${{ env.PACKAGE_NAME }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -331,12 +332,12 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=debian:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_DEBIAN }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_DEBIAN }}:${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_DEBIAN }}:latest
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:${{ github.sha }}
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:latest
           platforms: linux/arm64
   build-docker-image-fedora-amd64:
     runs-on: ubuntu-latest
@@ -351,7 +352,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{secrets.ECR_ACCOUNT_URL}}
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}/${{ env.PACKAGE_NAME }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -366,10 +367,10 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=fedora:latest
-            BASE_IMAGE=${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_BASE_FEDORA }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_FEDORA }}:latest
           context: .
           push: true
           tags: |
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_FEDORA }}:${{ github.sha }}
-            ${{secrets.ECR_ACCOUNT_URL}}/${{ env.ECR_RELEASE_FEDORA }}:latest
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:${{ github.sha }}
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:latest
           platforms: linux/amd64

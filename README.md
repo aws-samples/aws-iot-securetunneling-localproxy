@@ -26,20 +26,30 @@ The base images come with all dependencies pre-installed. You will still need to
 These are useful if you want to modify and [compile](https://github.com/aws-samples/aws-iot-securetunneling-localproxy#download-and-build-the-local-proxy) the local proxy on your own, but are large (~1 GB each).
 You can find them at:
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-base
+- amd64/arm64/armv7
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/debian-base
+- amd64/arm64
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/amazonlinux-base
+- amd64/arm64
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubi8-base
+- amd64/arm64
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/fedora-base
+- amd64
 
 The release images are minimum size images that include a pre-built binary with no dependencies installed.
 Every tag contains a git commit sha for example: 33879dd7f1500f7b3e56e48ce8b002cd9b0f9e4e.
 You can cross-check the git commit sha with the commits in the local proxy repo to see if the binary contains changes added in a specific commit.
 You can find them at:
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin
+- amd64/arm64/armv7
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/debian-bin
+- amd64/arm64
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/amazonlinux-bin
+- amd64/arm64
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubi8-bin
+- amd64/arm64
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/fedora-bin
+- amd64
 
 ### Building a Docker Image
 
