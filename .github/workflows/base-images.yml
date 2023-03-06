@@ -1,0 +1,344 @@
+name: Base Image Builds
+
+# This workflow is to allow the building of Docker base images by merging to the base-images branch of the repo
+# Building the base images is time-consuming and not necessary unless there have been changes to the Dockerfile
+# or a dependency. This workflow allows developers to merge to the base-images to build and publish the base images
+# only when needed. This cuts the time needed for typical workflow runs significantly.
+
+on:
+  push:
+    branches: ['base-images', 'docker-builds']
+  pull_request:
+    branches: ['base-images', 'docker-builds']
+    types: [opened, closed]
+
+env:
+  PACKAGE_NAME: aws-iot-securetunneling-localproxy
+  ECR_ACCOUNT_URL: public.ecr.aws
+  ECR_BASE_UBUNTU: aws-iot-securetunneling-localproxy/ubuntu-base
+  ECR_BASE_UBI8: aws-iot-securetunneling-localproxy/ubi8-base
+  ECR_BASE_AMAZONLINUX: aws-iot-securetunneling-localproxy/amazonlinux-base
+  ECR_BASE_DEBIAN: aws-iot-securetunneling-localproxy/debian-base
+  ECR_BASE_FEDORA: aws-iot-securetunneling-localproxy/fedora-base
+
+jobs:
+  build-base-docker-image-ubuntu-amd64:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
+          aws-region: us-east-1
+      - name: Login to ECR
+        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build Ubuntu Base Image
+        uses: docker/build-push-action@v3
+        with:
+          file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
+          build-args: |
+            OS=ubuntu:latest
+          context: .
+          push: true
+          tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:latest
+          platforms: linux/amd64
+  build-base-docker-image-ubuntu-arm64:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
+          aws-region: us-east-1
+      - name: Login to ECR
+        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build Ubuntu Base Image
+        uses: docker/build-push-action@v3
+        with:
+          file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
+          build-args: |
+            OS=ubuntu:latest
+          context: .
+          push: true
+          tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:latest
+          platforms: linux/arm64
+  build-base-docker-image-ubuntu-armv7:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
+          aws-region: us-east-1
+      - name: Login to ECR
+        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build ubuntu Base Image
+        uses: docker/build-push-action@v3
+        with:
+          file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
+          build-args: |
+            OS=ubuntu:18.04
+          context: .
+          push: true
+          tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:latest
+          platforms: linux/arm/v7
+  build-base-docker-image-ubi8-amd64:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
+          aws-region: us-east-1
+      - name: Login to ECR
+        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build ubi8 Base Image
+        uses: docker/build-push-action@v3
+        with:
+          file: .github/docker-images/base-images/ubi8/Dockerfile
+          context: .
+          push: true
+          tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:latest
+          platforms: linux/amd64
+  build-base-docker-image-ubi8-arm64:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
+          aws-region: us-east-1
+      - name: Login to ECR
+        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build ubi8 Base Image
+        uses: docker/build-push-action@v3
+        with:
+          file: .github/docker-images/base-images/ubi8/Dockerfile
+          context: .
+          push: true
+          tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:latest
+          platforms: linux/arm64
+  build-base-docker-image-amazonlinux-amd64:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
+          aws-region: us-east-1
+      - name: Login to ECR
+        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build amazonlinux Base Image
+        uses: docker/build-push-action@v3
+        with:
+          file: .github/docker-images/base-images/amazonlinux/Dockerfile
+          context: .
+          push: true
+          tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
+          platforms: linux/amd64
+  build-base-docker-image-amazonlinux-arm64:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
+          aws-region: us-east-1
+      - name: Login to ECR
+        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build amazonlinux Base Image
+        uses: docker/build-push-action@v3
+        with:
+          file: .github/docker-images/base-images/amazonlinux/Dockerfile
+          context: .
+          push: true
+          tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
+          platforms: linux/arm64
+  build-base-docker-image-debian-amd64:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
+          aws-region: us-east-1
+      - name: Login to ECR
+        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build debian Base Image
+        uses: docker/build-push-action@v3
+        with:
+          file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
+          build-args: |
+            OS=debian:latest
+          context: .
+          push: true
+          tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:latest
+          platforms: linux/amd64
+  build-base-docker-image-debian-arm64:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
+          aws-region: us-east-1
+      - name: Login to ECR
+        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build debian Base Image
+        uses: docker/build-push-action@v3
+        with:
+          file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
+          build-args: |
+            OS=debian:latest
+          context: .
+          push: true
+          tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:latest
+          platforms: linux/arm64
+  build-base-docker-image-fedora-amd64:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
+          aws-region: us-east-1
+      - name: Login to ECR
+        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build fedora Base Image
+        uses: docker/build-push-action@v3
+        with:
+          file: .github/docker-images/base-images/fedora/Dockerfile
+          context: .
+          push: true
+          tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_FEDORA }}:latest
+          platforms: linux/amd64

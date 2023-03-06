@@ -18,12 +18,66 @@ This code enables tunneling of a single threaded TCP client / server socket inte
 
 * Docker 18+
 
-### Running the Docker Build
+### Using Pre-built Docker Images
 
+We provide several docker images on various platforms. Both x86 and ARM are supported, though armv7 is currently limited to the ubuntu images.
+There are two types of images: base images and release images.
+The base images come with all dependencies pre-installed. You will still need to download and build the source.
+These are useful if you want to modify and [compile](https://github.com/aws-samples/aws-iot-securetunneling-localproxy#download-and-build-the-local-proxy) the local proxy on your own, but are large (~1 GB each).
+You can find them at:
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-base
+- amd64/arm64/armv7
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/debian-base
+- amd64/arm64
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/amazonlinux-base
+- amd64/arm64
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubi8-base
+- amd64/arm64
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/fedora-base
+- amd64
+
+The release images are minimum size images that include a pre-built binary with no dependencies installed.
+Every tag contains a git commit sha for example: 33879dd7f1500f7b3e56e48ce8b002cd9b0f9e4e.
+You can cross-check the git commit sha with the commits in the local proxy repo to see if the binary contains changes added in a specific commit.
+You can find them at:
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin
+- amd64/arm64/armv7
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/debian-bin
+- amd64/arm64
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/amazonlinux-bin
+- amd64/arm64
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubi8-bin
+- amd64/arm64
+#### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/fedora-bin
+- amd64
+
+### Building a Docker Image
+
+If you do not want to use the prebuilt images, you can build them yourself:
+
+`cd .github/docker-images/base-images/<os of choice>`
+
+`docker build -t <your tag> .`
+
+Or, for the debian-ubuntu combined Dockerfile:
+
+`docker build -t <your tag> . --build-arg OS=<choice of debian/ubuntu>:latest`
+
+To build cross-platform images for ARM:
+
+`docker buildx --platform linux/arm64 -t <your tag> .`
+
+You may also try armv7 for 32 bit images, but supported functionality may be limited.
+
+After the Docker build completes, run `docker run --rm -it <tag>` to open a shell inside the container created in the
+previous step...
+
+Because it may not make practical sense to SSH into a docker container, you can transfer binaries by exposing your machine's filesystem to the containerized filesystem via bind mount. To bind mount a volume on your physical machine's current directory: 
+`docker run --rm -it -v $(pwd):/root <tag>`
+and you can add ` -p <port_number>` to expose a port from the docker container. Note that when the localproxy runs in source mode, it binds by default to `localhost`, If you want to access the localproxy from outside the container, make sure to use the option `-b 0.0.0.0` when you run the localproxy from the container so that it binds to `0.0.0.0` since `localhost` can not be access from outside the container.
+
+#### Deprecated Method
 `./docker-build.sh`
-
-After the Docker build completes, run `./docker-run.sh` to open a shell inside the container created in the
-previous step, or you can run `./docker-run.sh -p <port_number>` to expose a port from the docker container. Here you can find both the `localproxy` and `localproxytest` binaries. Note that when the localproxy runs in source mode, it binds by default to `localhost`, If you want to access the localproxy from outside the container, make sure to use the option `-b 0.0.0.0` when you run the localproxy from the container so that it binds to `0.0.0.0` since `localhost` can not be access from outside the container.
 
 ---
 
