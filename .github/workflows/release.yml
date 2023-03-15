@@ -52,7 +52,7 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:latest
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:amd64
           context: .
           push: true
           tags: |
@@ -87,7 +87,7 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:latest
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:arm64
           context: .
           push: true
           tags: |
@@ -122,7 +122,7 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=ubuntu:18.04
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:armv7
           context: .
           push: true
           tags: |
@@ -157,7 +157,7 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=redhat/ubi8:latest
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:amd64
           context: .
           push: true
           tags: |
@@ -192,7 +192,7 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=redhat/ubi8:latest
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:arm64
           context: .
           push: true
           tags: |
@@ -227,7 +227,7 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=amazonlinux:latest
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:amd64
           context: .
           push: true
           tags: |
@@ -262,7 +262,7 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=amazonlinux:latest
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:arm64
           context: .
           push: true
           tags: |
@@ -297,7 +297,7 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=debian:latest
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:amd64
           context: .
           push: true
           tags: |
@@ -332,7 +332,7 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=debian:latest
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:arm64
           context: .
           push: true
           tags: |
@@ -367,7 +367,7 @@ jobs:
           file: .github/docker-images/Dockerfile
           build-args: |
             OS=fedora:latest
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_FEDORA }}:latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_FEDORA }}:amd64
           context: .
           push: true
           tags: |
