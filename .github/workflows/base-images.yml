@@ -45,7 +45,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build Ubuntu Base Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
@@ -78,7 +78,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build Ubuntu Base Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
@@ -111,7 +111,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build ubuntu Base Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
@@ -119,7 +119,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:arm/v7
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:armv7
           platforms: linux/arm/v7
   build-base-docker-image-ubi8-amd64:
     runs-on: ubuntu-latest
@@ -144,7 +144,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build ubi8 Base Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/base-images/ubi8/Dockerfile
           context: .
@@ -175,7 +175,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build ubi8 Base Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/base-images/ubi8/Dockerfile
           context: .
@@ -206,7 +206,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build amazonlinux Base Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/base-images/amazonlinux/Dockerfile
           context: .
@@ -237,7 +237,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build amazonlinux Base Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/base-images/amazonlinux/Dockerfile
           context: .
@@ -268,7 +268,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build debian Base Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
@@ -301,7 +301,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build debian Base Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
@@ -334,7 +334,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build fedora Base Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/base-images/fedora/Dockerfile
           context: .

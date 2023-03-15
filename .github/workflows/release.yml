@@ -47,7 +47,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build Ubuntu Release Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/Dockerfile
           build-args: |
@@ -57,7 +57,7 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}-amd64
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:amd64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:amd64-latest
           platforms: linux/amd64
   build-docker-image-ubuntu-arm64:
     runs-on: ubuntu-latest
@@ -82,7 +82,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build Ubuntu Release Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/Dockerfile
           build-args: |
@@ -92,7 +92,7 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}-arm64
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:arm64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:arm64-latest
           platforms: linux/arm64
   build-docker-image-ubuntu-armv7:
     runs-on: ubuntu-latest
@@ -117,7 +117,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build ubuntu Release Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/Dockerfile
           build-args: |
@@ -126,8 +126,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}-arm/v7
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:arm/v7
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}-armv7
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:armv7-latest
           platforms: linux/arm/v7
   build-docker-image-ubi8-amd64:
     runs-on: ubuntu-latest
@@ -152,7 +152,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build ubi8 Release Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/Dockerfile
           build-args: |
@@ -162,7 +162,7 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:${{ github.sha }}-amd64
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:amd64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:amd64-latest
           platforms: linux/amd64
   build-docker-image-ubi8-arm64:
     runs-on: ubuntu-latest
@@ -187,7 +187,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build ubi8 Release Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/Dockerfile
           build-args: |
@@ -197,7 +197,7 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:${{ github.sha }}-arm64
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:arm64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:arm64-latest
           platforms: linux/arm64
   build-docker-image-amazonlinux-amd64:
     runs-on: ubuntu-latest
@@ -222,7 +222,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build amazonlinux Release Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/Dockerfile
           build-args: |
@@ -232,7 +232,7 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:${{ github.sha }}-amd64
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:amd64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:amd64-latest
           platforms: linux/amd64
   build-docker-image-amazonlinux-arm64:
     runs-on: ubuntu-latest
@@ -257,7 +257,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build amazonlinux Release Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/Dockerfile
           build-args: |
@@ -267,7 +267,7 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:${{ github.sha }}-arm64
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:arm64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:arm64-latest
           platforms: linux/arm64
   build-docker-image-debian-amd64:
     runs-on: ubuntu-latest
@@ -292,7 +292,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build debian Release Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/Dockerfile
           build-args: |
@@ -302,7 +302,7 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:${{ github.sha }}-amd64
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:amd64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:amd64-latest
           platforms: linux/amd64
   build-docker-image-debian-arm64:
     runs-on: ubuntu-latest
@@ -327,7 +327,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build debian Release Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/Dockerfile
           build-args: |
@@ -337,7 +337,7 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:${{ github.sha }}-arm64
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:arm64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:arm64-latest
           platforms: linux/arm64
   build-docker-image-fedora-amd64:
     runs-on: ubuntu-latest
@@ -362,7 +362,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build fedora Release Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: .github/docker-images/Dockerfile
           build-args: |
@@ -372,5 +372,5 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:${{ github.sha }}-amd64
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:amd64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:amd64-latest
           platforms: linux/amd64
