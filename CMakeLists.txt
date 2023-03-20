@@ -59,6 +59,7 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROJECT_SOURCE_DIR}/resources/Mess
 #########################################
 # OpenSSL dependency                    #
 #########################################
+set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
 
 #########################################
