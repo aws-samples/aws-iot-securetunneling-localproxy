@@ -8,7 +8,7 @@ FROM ${BASE_IMAGE} AS deploy
 COPY . /root/aws-iot-securetunneling-localproxy
 RUN mkdir -p /root/aws-iot-securetunneling-localproxy/build \
     && cd /root/aws-iot-securetunneling-localproxy/build \
-    && cmake .. -DOPENSSL_ROOT_DIR=/usr/local/ssl -DOPENSSL_LIBRARIES=/usr/local/include/openssl \
+    && cmake .. \
     && make
 
 FROM ${OS} AS minimum_size

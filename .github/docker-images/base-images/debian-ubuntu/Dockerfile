@@ -5,7 +5,7 @@ FROM ${OS} AS base
 
 RUN apt update && apt upgrade -y && \
 	apt install -y git libboost-all-dev autoconf automake \
-	wget libtool curl make g++ unzip cmake python3
+	wget libtool curl make g++ unzip cmake libssl-dev python3
 
 # Install Dependencies
 
@@ -37,12 +37,12 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/p
 	make install
 
 WORKDIR /home/dependencies
-RUN wget https://github.com/openssl/openssl/archive/refs/tags/openssl-3.0.2.tar.gz -O /tmp/openssl-3.0.2.tar.gz && \
-    tar xzvf /tmp/openssl-3.0.2.tar.gz && \
-	cd openssl-openssl-3.0.2 && \
+RUN git clone https://github.com/openssl/openssl.git && \
+	cd openssl && \
+	git checkout OpenSSL_1_1_1-stable && \
 	./config && \
-    make && \
-	make install
+	make depend && \
+	make all
 
 WORKDIR /home/dependencies
 RUN git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git && \
