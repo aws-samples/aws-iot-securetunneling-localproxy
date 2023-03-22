@@ -56,7 +56,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}-amd64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:amd64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:amd64-latest
           platforms: linux/amd64
   build-docker-image-ubuntu-arm64:
@@ -91,7 +91,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}-arm64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:arm64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:arm64-latest
           platforms: linux/arm64
   build-docker-image-ubuntu-armv7:
@@ -126,7 +126,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:${{ github.sha }}-armv7
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:armv7-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:armv7-latest
           platforms: linux/arm/v7
   build-docker-image-ubi8-amd64:
@@ -161,7 +161,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:${{ github.sha }}-amd64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:amd64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:amd64-latest
           platforms: linux/amd64
   build-docker-image-ubi8-arm64:
@@ -196,7 +196,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:${{ github.sha }}-arm64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:arm64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:arm64-latest
           platforms: linux/arm64
   build-docker-image-amazonlinux-amd64:
@@ -231,7 +231,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:${{ github.sha }}-amd64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:amd64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:amd64-latest
           platforms: linux/amd64
   build-docker-image-amazonlinux-arm64:
@@ -266,7 +266,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:${{ github.sha }}-arm64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:arm64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_AMAZONLINUX }}:arm64-latest
           platforms: linux/arm64
   build-docker-image-debian-amd64:
@@ -301,7 +301,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:${{ github.sha }}-amd64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:amd64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:amd64-latest
           platforms: linux/amd64
   build-docker-image-debian-arm64:
@@ -336,7 +336,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:${{ github.sha }}-arm64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:arm64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:arm64-latest
           platforms: linux/arm64
   build-docker-image-fedora-amd64:
@@ -371,6 +371,6 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:${{ github.sha }}-amd64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:amd64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:amd64-latest
           platforms: linux/amd64

@@ -53,7 +53,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:amd64
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:amd64-${{ github.sha }}
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:amd64-latest
           platforms: linux/amd64
   build-base-docker-image-ubuntu-arm64:
     runs-on: ubuntu-latest
@@ -86,6 +87,7 @@ jobs:
           context: .
           push: true
           tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:arm64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:arm64
           platforms: linux/arm64
   build-base-docker-image-ubuntu-armv7:
@@ -119,6 +121,7 @@ jobs:
           context: .
           push: true
           tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:armv7-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:armv7
           platforms: linux/arm/v7
   build-base-docker-image-ubi8-amd64:
@@ -150,6 +153,7 @@ jobs:
           context: .
           push: true
           tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:amd64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:amd64
           platforms: linux/amd64
   build-base-docker-image-ubi8-arm64:
@@ -181,6 +185,7 @@ jobs:
           context: .
           push: true
           tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:arm64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:arm64
           platforms: linux/arm64
   build-base-docker-image-amazonlinux-amd64:
@@ -212,6 +217,7 @@ jobs:
           context: .
           push: true
           tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:amd64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:amd64
           platforms: linux/amd64
   build-base-docker-image-amazonlinux-arm64:
@@ -243,6 +249,7 @@ jobs:
           context: .
           push: true
           tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:arm64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:arm64
           platforms: linux/arm64
   build-base-docker-image-debian-amd64:
@@ -276,6 +283,7 @@ jobs:
           context: .
           push: true
           tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:amd64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:amd64
           platforms: linux/amd64
   build-base-docker-image-debian-arm64:
@@ -309,6 +317,7 @@ jobs:
           context: .
           push: true
           tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:arm64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:arm64
           platforms: linux/arm64
   build-base-docker-image-fedora-amd64:
@@ -340,5 +349,6 @@ jobs:
           context: .
           push: true
           tags: |
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_FEDORA }}:amd64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_FEDORA }}:amd64
           platforms: linux/amd64
