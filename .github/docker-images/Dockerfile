@@ -5,7 +5,13 @@ FROM ${BASE_IMAGE} AS deploy
 RUN apt update && apt upgrade -y &&  \
     apt install -y git wget curl make g++ cmake
 
-WORKDIR /root
+WORKDIR /home/dependencies
+RUN rm -rf zlib-1.2.13 \
+    && rm -rf boost_1_81_0 \
+    && rm -rf protobuf-3.17.3 \
+    && rm -rf Catch2 \
+
+
 RUN wget https://www.openssl.org/source/openssl-3.0.8.tar.gz \
     && tar xzvf openssl-3.0.8.tar.gz \
     && cd openssl-3.0.8 \
@@ -21,11 +27,8 @@ COPY . /root/aws-iot-securetunneling-localproxy
 RUN mkdir -p /root/aws-iot-securetunneling-localproxy/build \
     && cd /root/aws-iot-securetunneling-localproxy/build \
     && cmake .. \
-    && make
-
-FROM ${OS} AS minimum_size
-
-COPY --from=deploy /root/aws-iot-securetunneling-localproxy/build/bin/localproxy /root/bin/localproxy
+    && make \
+    && cp /root/aws-iot-securetunneling-localproxy/build/bin/localproxy /root/bin/localproxy
 
 COPY ./.github/docker-images/oss-compliance /root/oss-compliance
 RUN HOME_DIR=/root \

@@ -38,12 +38,12 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/p
 	make install
 
 WORKDIR /home/dependencies
-RUN git clone https://github.com/openssl/openssl.git && \
-	cd openssl && \
-	git checkout OpenSSL_1_1_1-stable && \
-	./config && \
-	make depend && \
-	make all
+RUN wget https://www.openssl.org/source/openssl-3.0.8.tar.gz \
+    && tar xzvf openssl-3.0.8.tar.gz \
+    && cd openssl-3.0.8 \
+    && ./config \
+    && make depend \
+    && make all
 
 WORKDIR /home/dependencies
 RUN git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git && \
