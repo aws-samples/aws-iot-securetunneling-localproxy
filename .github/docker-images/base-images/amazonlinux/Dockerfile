@@ -9,7 +9,6 @@ RUN yum check-update; yum upgrade -y && \
 
 # Install Dependencies
 
-RUN ln -s /usr/bin/cmake3 /usr/bin/cmake
 RUN mkdir /home/dependencies
 
 WORKDIR /home/dependencies
