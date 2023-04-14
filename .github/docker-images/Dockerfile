@@ -5,6 +5,7 @@ FROM ${BASE_IMAGE} AS deploy
 ###############################################################################
 # Copy and build local proxy
 ###############################################################################
+
 COPY . /root/aws-iot-securetunneling-localproxy
 RUN mkdir -p /root/aws-iot-securetunneling-localproxy/build \
     && cd /root/aws-iot-securetunneling-localproxy/build \
@@ -12,6 +13,10 @@ RUN mkdir -p /root/aws-iot-securetunneling-localproxy/build \
     && make
 
 FROM ${OS} AS minimum_size
+
+RUN apt update && apt upgrade -y && \
+	apt install -y ca-certificates && \
+    update-ca-certificates
 
 COPY --from=deploy /root/aws-iot-securetunneling-localproxy/build/bin/localproxy /root/bin/localproxy
 
