@@ -376,6 +376,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 BOOST_LOG_SEV(this->log, trace) << "Post-reset TCP drain complete. Closing TCP socket for service id " << service_id << " connection id " << connection_id;
                 BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << connection_to_reset->socket().remote_endpoint();
                 connection_to_reset->socket_.close();
+                delete_tcp_socket(tac, service_id, connection_id);
                 *tcp_write_buffer_drain_complete = true;
                 if (*web_socket_write_buffer_drain_complete)
                 {
@@ -2019,9 +2020,13 @@ namespace aws { namespace iot { namespace securedtunneling {
                         {
                             async_send_stream_start(tac, service_id, new_connection_id);
                         }
-                        else
+                        else if (!tac.adapter_config.is_v2_message_format)
                         {
                             async_send_connection_start(tac, service_id, new_connection_id);
+                        }
+                        else
+                        {
+                            BOOST_LOG_SEV(log, debug) << "Can not send stream start or connection start. Tried to use connection id: " << new_connection_id;
                         }
 
                         do_accept_tcp_connection(tac, retry_config, service_id, local_port, false);
