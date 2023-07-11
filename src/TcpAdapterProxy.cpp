@@ -517,6 +517,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             // if simultaneous connections are not enabled, then send a stream reset
             if (tac.adapter_config.is_v2_message_format)
             {
+                BOOST_LOG_SEV(log, info) << "simultaneous connections are not enabled, sending stream reset";
                 socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
                 tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
                 async_send_stream_reset(tac, service_id, connection_id);
@@ -1073,6 +1074,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
             if (!connection_id)
             {
+                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
                 connection_id = 1;
                 tac.adapter_config.is_v2_message_format = true;
             }
@@ -1328,6 +1330,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
             if (!connection_id)
             {
+                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
                 connection_id = 1;
                 tac.adapter_config.is_v2_message_format = true;
             }
@@ -1431,6 +1434,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
             if (!connection_id)
             {
+                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
                 connection_id = 1;
                 tac.adapter_config.is_v2_message_format = true;
             }
@@ -1562,6 +1566,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                             // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
                             if (!connection_id)
                             {
+                                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
                                 connection_id = 1;
                                 tac.adapter_config.is_v2_message_format = true;
                             }
@@ -1990,6 +1995,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                         // backward compatibility: set connection id to 1 if simultaneous connections is not enabled
                         if (tac.adapter_config.is_v2_message_format)
                         {
+                            BOOST_LOG_SEV(log, info) << "Falling back to older protocol, setting new connection id to 1";
                             new_connection_id = 1;
                         }
                         BOOST_LOG_SEV(log, info) << "creating tcp connection id " << new_connection_id;
