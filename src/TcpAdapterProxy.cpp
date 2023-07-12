@@ -1075,7 +1075,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
             if (!connection_id)
             {
-                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
+                BOOST_LOG_SEV(log, info) << "reverting to v2 message format L1078";
                 connection_id = 1;
                 tac.adapter_config.is_v2_message_format = true;
             }
@@ -1331,7 +1331,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
             if (!connection_id)
             {
-                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
+                BOOST_LOG_SEV(log, info) << "reverting to v2 message format L1334";
                 connection_id = 1;
                 tac.adapter_config.is_v2_message_format = true;
             }
@@ -1435,7 +1435,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
             if (!connection_id)
             {
-                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
+                BOOST_LOG_SEV(log, info) << "reverting to v2 message format L1438";
                 connection_id = 1;
                 tac.adapter_config.is_v2_message_format = true;
             }
@@ -1567,7 +1567,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                             // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
                             if (!connection_id)
                             {
-                                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
+                                BOOST_LOG_SEV(log, info) << "reverting to v2 message format L1570";
                                 connection_id = 1;
                                 tac.adapter_config.is_v2_message_format = true;
                             }
