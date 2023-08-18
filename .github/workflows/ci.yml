@@ -44,7 +44,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DBUILD_TESTS=OFF -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1/1.1.1t/ -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl@1.1/1.1.1t/lib/
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=OFF -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1/1.1.1t/ -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl@1.1/1.1.1t/lib/
           make
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
