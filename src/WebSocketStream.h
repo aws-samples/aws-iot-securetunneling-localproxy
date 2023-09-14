@@ -150,7 +150,7 @@ namespace aws {
                  * @param handler the callback handler when the async operation is complete.
                  */
                 void
-                async_ssl_handshake(const ssl::stream_base::handshake_type &type, const BoostCallbackFunc &handler);
+                async_ssl_handshake(const ssl::stream_base::handshake_type &type, const std::string &host, const BoostCallbackFunc &handler);
 #endif
 
                 /**
