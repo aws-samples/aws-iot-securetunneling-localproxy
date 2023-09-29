@@ -147,6 +147,7 @@ namespace aws {
                 /**
                  * Performs the SSL handshake between the localproxy and the proxy server asynchronously.
                  * @param type The handshake type
+                 * @param host the host subdoman and domain
                  * @param handler the callback handler when the async operation is complete.
                  */
                 void
