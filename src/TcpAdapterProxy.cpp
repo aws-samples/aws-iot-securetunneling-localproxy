@@ -506,7 +506,8 @@ namespace aws { namespace iot { namespace securedtunneling {
             BOOST_LOG_SEV(this->log, info) << "Disconnecting... remote endpoint not found";
         }
         connection->tcp_write_buffer_.consume(connection->tcp_write_buffer_.max_size());
-        connection->socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive);
+        // this works on Linux x86_64 but causes a bus error on Darwin arm64, commenting it out
+        //connection->socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive);
         connection->socket_.close();
 
         connection->on_web_socket_write_buffer_drain_complete = [&, service_id, connection_id]()
