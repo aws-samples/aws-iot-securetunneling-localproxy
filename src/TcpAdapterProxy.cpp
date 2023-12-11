@@ -253,8 +253,12 @@ namespace aws { namespace iot { namespace securedtunneling {
        {
            if (tac.serviceId_to_tcp_server_map.find(service_id) == tac.serviceId_to_tcp_server_map.end())
            {
-               BOOST_LOG_SEV(log, debug) << "No serviceId_to_tcp_server mapping for service_id: " << service_id;
-               return connection_ptr;
+               if(tac.serviceId_to_tcp_server_map.find(tac.adapter_config.serviceId_to_endpoint_map.cbegin()->first) == tac.serviceId_to_tcp_server_map.end())
+               {
+                   BOOST_LOG_SEV(log, debug) << "No serviceId_to_tcp_server mapping for service_id: " << service_id;
+                   return connection_ptr;
+               }
+               service_id = tac.adapter_config.serviceId_to_endpoint_map.cbegin()->first;;
            }
            tcp_server::pointer server = tac.serviceId_to_tcp_server_map[service_id];
            BOOST_LOG_SEV(log, trace) << "num active connections for service id " << service_id << ": " << server->connectionId_to_tcp_connection_map.size();
@@ -603,9 +607,9 @@ namespace aws { namespace iot { namespace securedtunneling {
         BOOST_LOG_SEV(log, debug) << "Sending stream start, setting new stream ID to: " << new_stream_id << ", service id: " << service_id;
 
         outgoing_message.set_type(Message_Type_STREAM_START);
-        outgoing_message.set_serviceid(service_id);
+        outgoing_message.set_serviceid("");
         outgoing_message.set_streamid(new_stream_id);
-        outgoing_message.set_connectionid(connection_id);
+        //outgoing_message.set_connectionid(connection_id);
         outgoing_message.set_ignorable(false);
         outgoing_message.clear_payload();
         async_send_message(tac, outgoing_message);
@@ -662,9 +666,9 @@ namespace aws { namespace iot { namespace securedtunneling {
         // NOTE: serviceIds -> streamId mapping will be updated when send/receive stream start, no action needed now.
         std::int32_t stream_id = tac.serviceId_to_streamId_map[service_id];
         outgoing_message.set_type(Message_Type_STREAM_RESET);
-        outgoing_message.set_serviceid(service_id);
+        outgoing_message.set_serviceid("");
         outgoing_message.set_streamid(stream_id);
-        outgoing_message.set_connectionid(0);
+        //outgoing_message.set_connectionid(0);
         outgoing_message.set_ignorable(false);
         outgoing_message.clear_payload();
         async_send_message(tac, outgoing_message, service_id, connection_id);
@@ -1076,7 +1080,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             if (!connection_id)
             {
                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
-                connection_id = 1;
+                connection_id = 0;
                 tac.adapter_config.is_v2_message_format = true;
             }
             string service_id = message.serviceid();
@@ -1308,6 +1312,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                  // Remove empty string map and put new mapping
                  tac.adapter_config.serviceId_to_endpoint_map.erase("");
                  tac.adapter_config.serviceId_to_endpoint_map[service_id] = endpoint;
+
                  BOOST_LOG_SEV(log, info) << "Updated port mapping for v1 format: ";
                  for (auto m : tac.adapter_config.serviceId_to_endpoint_map)
                  {
@@ -1332,7 +1337,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             if (!connection_id)
             {
                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
-                connection_id = 1;
+                connection_id = 0;
                 tac.adapter_config.is_v2_message_format = true;
             }
             string service_id = message.serviceid();
@@ -1436,7 +1441,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             if (!connection_id)
             {
                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
-                connection_id = 1;
+                connection_id = 0;
                 tac.adapter_config.is_v2_message_format = true;
             }
             /**
@@ -1568,7 +1573,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                             if (!connection_id)
                             {
                                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
-                                connection_id = 1;
+                                connection_id = 0;
                                 tac.adapter_config.is_v2_message_format = true;
                             }
                             tcp_connection::pointer connection = get_tcp_connection(tac, service_id, connection_id);
@@ -1769,9 +1774,9 @@ namespace aws { namespace iot { namespace securedtunneling {
             }
             BOOST_LOG_SEV(log, debug) << "Prepare to send data message: service id: " << service_id << " stream id: " << tac.serviceId_to_streamId_map[service_id] << " connection id: " << connection_id;
             // Construct outgoing message
-            outgoing_message.set_serviceid(service_id);
+            outgoing_message.set_serviceid("");
             outgoing_message.set_streamid(tac.serviceId_to_streamId_map[service_id]);
-            outgoing_message.set_connectionid(connection_id);
+            //outgoing_message.set_connectionid(connection_id);
             size_t const send_size = std::min<std::size_t>(GET_SETTING(settings, MESSAGE_MAX_PAYLOAD_SIZE),
                                                            connection->web_socket_data_write_buffer_.size());
             boost::asio::buffer_copy(outgoing_message_buffer.prepare(send_size), connection->web_socket_data_write_buffer_.data(), send_size);
@@ -1996,9 +2001,10 @@ namespace aws { namespace iot { namespace securedtunneling {
                         // backward compatibility: set connection id to 1 if simultaneous connections is not enabled
                         if (tac.adapter_config.is_v2_message_format)
                         {
-                            BOOST_LOG_SEV(log, info) << "Falling back to older protocol, setting new connection id to 1";
-                            new_connection_id = 1;
+                            BOOST_LOG_SEV(log, info) << "Falling back to older protocol, setting new connection id to 0";
+                            new_connection_id = 0;
                         }
+                        new_connection_id = 0;
                         BOOST_LOG_SEV(log, info) << "creating tcp connection id " << new_connection_id;
 
                         if (server->connectionId_to_tcp_connection_map.find(new_connection_id) == server->connectionId_to_tcp_connection_map.end() &&
@@ -2016,7 +2022,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                         server->connectionId_to_tcp_connection_map[new_connection_id]->socket() = std::move(new_socket);
                         BOOST_LOG_SEV(log, info) << "Accepted tcp connection on port " << server->connectionId_to_tcp_connection_map[new_connection_id]->socket().local_endpoint().port() << " from " << server->connectionId_to_tcp_connection_map[new_connection_id]->socket().remote_endpoint();
 
-                        if (is_first_connection)
+                        if (true)
                         {
                             async_send_stream_start(tac, service_id, new_connection_id);
                         }
