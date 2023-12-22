@@ -104,6 +104,7 @@ namespace aws {
                  * The end point will store either source listening or destination service depends on the mode of local proxy.
                  */
                 std::unordered_map<std::string, std::string>     serviceId_to_endpoint_map;
+
                 /**
                  * A flag to judge if v2 local proxy needs to fallback to communicate using v1 local proxy message format.
                  * v1 local proxy format fallback will be enabled when a tunnel is opened with no or 1 service id.
