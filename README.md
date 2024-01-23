@@ -72,9 +72,13 @@ You may also try armv7 for 32 bit images, but supported functionality may be lim
 After the Docker build completes, run `docker run --rm -it <tag>` to open a shell inside the container created in the
 previous step...
 
-Because it may not make practical sense to SSH into a docker container, you can transfer binaries by exposing your machine's filesystem to the containerized filesystem via bind mount. To bind mount a volume on your physical machine's current directory: 
+Because it may not make practical sense to SSH into a docker container, it is advised to pull the image containing the binary and run it within the host's network context. ` docker run --rm -it --network=host public.ecr.aws/aws-iot-securetunneling-localproxy/<os>-bin:<arch>-latest <additional args>`
+
+To perform a custom port mapping, add ` -p <port_number>` to expose a port from the docker container. Note that when the localproxy runs in source mode, it binds by default to `localhost`, If you want to access the localproxy from outside the container, make sure to use the option `-b 0.0.0.0` when you run the localproxy from the container so that it binds to `0.0.0.0` since `localhost` can not be accessed from outside the container.
+
+You can also expose your machine's filesystem to the containerized filesystem via bind mount. To bind mount a volume on your physical machine's current directory: 
 `docker run --rm -it -v $(pwd):/root <tag>`
-and you can add ` -p <port_number>` to expose a port from the docker container. Note that when the localproxy runs in source mode, it binds by default to `localhost`, If you want to access the localproxy from outside the container, make sure to use the option `-b 0.0.0.0` when you run the localproxy from the container so that it binds to `0.0.0.0` since `localhost` can not be access from outside the container.
+
 
 #### Deprecated Method
 `./docker-build.sh`
