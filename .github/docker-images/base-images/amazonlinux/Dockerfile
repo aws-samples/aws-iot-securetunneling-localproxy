@@ -1,16 +1,23 @@
-FROM amazonlinux:latest as base
+FROM amazonlinux:2023 as base
 ARG OPENSSL_CONFIG
 
 # Install Prerequisites
 
 RUN yum check-update; yum upgrade -y && \
-	yum install -y git boost-devel autoconf automake \
-	wget libtool curl make gcc-c++ unzip cmake3 python-devel openssl11-devel which
+	yum install -y git boost-devel autoconf automake libatomic perl \
+	wget libtool make gcc-c++ unzip cmake3 python-devel openssl-devel which
 
 # Install Dependencies
 
-RUN ln -s /usr/bin/cmake3 /usr/bin/cmake
 RUN mkdir /home/dependencies
+
+WORKDIR /home/dependencies
+RUN wget https://www.openssl.org/source/openssl-3.0.12.tar.gz \
+    && tar xzvf openssl-3.0.12.tar.gz \
+    && cd openssl-3.0.12 \
+    && ./config \
+    && make depend \
+    && make all
 
 WORKDIR /home/dependencies
 RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz && \
@@ -36,14 +43,6 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/p
 	cmake ../cmake && \
 	make && \
 	make install
-
-WORKDIR /home/dependencies
-RUN git clone https://github.com/openssl/openssl.git && \
-	cd openssl && \
-	git checkout OpenSSL_1_1_1-stable && \
-	./config && \
-	make depend && \
-	make all
 
 WORKDIR /home/dependencies
 RUN git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git && \

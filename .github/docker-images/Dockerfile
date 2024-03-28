@@ -5,6 +5,7 @@ FROM ${BASE_IMAGE} AS deploy
 ###############################################################################
 # Copy and build local proxy
 ###############################################################################
+
 COPY . /root/aws-iot-securetunneling-localproxy
 RUN mkdir -p /root/aws-iot-securetunneling-localproxy/build \
     && cd /root/aws-iot-securetunneling-localproxy/build \
@@ -23,4 +24,4 @@ RUN HOME_DIR=/root \
     && bash ${HOME_DIR}/oss-compliance/generate-oss-compliance.sh ${HOME_DIR} \
     && rm -rf ${HOME_DIR}/oss-compliance*
 
-ENTRYPOINT ["/root/bin"]
+ENTRYPOINT ["/root/bin/localproxy"]

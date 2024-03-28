@@ -22,7 +22,7 @@ This code enables tunneling of a single threaded TCP client / server socket inte
 
 We provide several docker images on various platforms. Both x86 and ARM are supported, though armv7 is currently limited to the ubuntu images.
 There are two types of images: base images and release images.
-The base images come with all dependencies pre-installed. You will still need to download and build the source.
+The base images come with all dependencies pre-installed. You will still need to download and build the source. These images are tagged with their corresponding arch.
 These are useful if you want to modify and [compile](https://github.com/aws-samples/aws-iot-securetunneling-localproxy#download-and-build-the-local-proxy) the local proxy on your own, but are large (~1 GB each).
 You can find them at:
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-base
@@ -37,7 +37,7 @@ You can find them at:
 - amd64
 
 The release images are minimum size images that include a pre-built binary with no dependencies installed.
-Every tag contains a git commit sha for example: 33879dd7f1500f7b3e56e48ce8b002cd9b0f9e4e.
+These images are tagged with the git commit and corresponding arch. Example: 33879dd7f1500f7b3e56e48ce8b002cd9b0f9e4e-amd64.
 You can cross-check the git commit sha with the commits in the local proxy repo to see if the binary contains changes added in a specific commit.
 You can find them at:
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin
@@ -61,7 +61,7 @@ If you do not want to use the prebuilt images, you can build them yourself:
 
 Or, for the debian-ubuntu combined Dockerfile:
 
-`docker build -t <your tag> . --build-arg OS=<choice of debian/ubuntu>:latest`
+`docker build -t <your tag> . --build-arg OS=<choice of debian/ubuntu>:<platform>`
 
 To build cross-platform images for ARM:
 

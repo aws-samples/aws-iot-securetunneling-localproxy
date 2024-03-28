@@ -4,9 +4,17 @@ FROM redhat/ubi8:latest AS base
 
 RUN yum -y update \
     && yum -y install git autoconf automake \
-	wget libtool libatomic curl make gcc-c++ unzip cmake python3 openssl-devel
+	wget libtool libatomic curl make gcc-c++ unzip cmake python3 openssl-devel perl
 
 RUN mkdir /home/dependencies
+
+WORKDIR /home/dependencies
+RUN wget https://www.openssl.org/source/openssl-3.0.12.tar.gz \
+    && tar xzvf openssl-3.0.12.tar.gz \
+    && cd openssl-3.0.12 \
+    && ./config \
+    && make depend \
+    && make all
 
 WORKDIR /home/dependencies
 RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz && \
@@ -32,14 +40,6 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/p
 	cmake ../cmake && \
 	make && \
 	make install
-
-WORKDIR /home/dependencies
-RUN git clone https://github.com/openssl/openssl.git && \
-	cd openssl && \
-	git checkout OpenSSL_1_1_1-stable && \
-	./config && \
-	make depend && \
-	make all
 
 WORKDIR /home/dependencies
 RUN git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git && \
