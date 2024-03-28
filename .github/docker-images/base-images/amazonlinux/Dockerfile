@@ -4,7 +4,7 @@ ARG OPENSSL_CONFIG
 # Install Prerequisites
 
 RUN yum check-update; yum upgrade -y && \
-	yum install -y git boost-devel autoconf automake libatomic \
+	yum install -y git boost-devel autoconf automake libatomic perl-IPC-Cmd \
 	wget libtool make gcc-c++ unzip cmake3 python-devel openssl-devel which
 
 # Install Dependencies
