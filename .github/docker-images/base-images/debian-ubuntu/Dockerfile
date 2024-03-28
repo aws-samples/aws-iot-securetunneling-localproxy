@@ -13,6 +13,14 @@ RUN apt update && apt upgrade -y && \
 RUN mkdir /home/dependencies
 
 WORKDIR /home/dependencies
+RUN wget https://www.openssl.org/source/openssl-3.0.12.tar.gz \
+    && tar xzvf openssl-3.0.12.tar.gz \
+    && cd openssl-3.0.12 \
+    && ./config \
+    && make depend \
+    && make all
+
+WORKDIR /home/dependencies
 RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz && \
 	tar xzvf /tmp/zlib-1.2.13.tar.gz && \
 	cd zlib-1.2.13 && \
