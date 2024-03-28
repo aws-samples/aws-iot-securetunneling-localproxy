@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cctype>
 #include <functional>
+#include <cstdint>
 
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
