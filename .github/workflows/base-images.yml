@@ -49,7 +49,7 @@ jobs:
         with:
           file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
-            OS=ubuntu:latest
+            OS=ubuntu:22.04
           context: .
           push: true
           tags: |
@@ -83,7 +83,7 @@ jobs:
         with:
           file: .github/docker-images/base-images/debian-ubuntu/Dockerfile
           build-args: |
-            OS=ubuntu:latest
+            OS=ubuntu:22.04
           context: .
           push: true
           tags: |
