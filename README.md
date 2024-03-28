@@ -103,7 +103,7 @@ and you can add ` -p <port_number>` to expose a port from the docker container. 
 Note: This step may be simpler to complete via a native software application manager.
 
 Ubuntu example:
-`sudo apt install zlibc`
+`sudo apt install zlib1g`
 
 Fedora example:
 `dnf install zlib`

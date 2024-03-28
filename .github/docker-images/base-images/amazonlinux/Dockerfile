@@ -1,10 +1,10 @@
-FROM amazonlinux:latest as base
+FROM amazonlinux:2023 as base
 ARG OPENSSL_CONFIG
 
 # Install Prerequisites
 
 RUN yum check-update; yum upgrade -y && \
-	yum install -y git boost-devel autoconf automake \
+	yum install -y git boost-devel autoconf automake libatomic \
 	wget libtool make gcc-c++ unzip cmake3 python-devel openssl-devel which
 
 # Install Dependencies
@@ -12,7 +12,7 @@ RUN yum check-update; yum upgrade -y && \
 RUN mkdir /home/dependencies
 
 WORKDIR /home/dependencies
-RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz && \
+RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz && \
 	tar xzvf /tmp/zlib-1.2.13.tar.gz && \
 	cd zlib-1.2.13 && \
 	./configure && \

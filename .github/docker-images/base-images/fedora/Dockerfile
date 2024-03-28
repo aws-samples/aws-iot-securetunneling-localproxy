@@ -10,7 +10,7 @@ RUN dnf -y update \
 RUN mkdir /home/dependencies
 
 WORKDIR /home/dependencies
-RUN wget https://www.zlib.net/zlib-1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz && \
+RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz && \
         tar xzvf /tmp/zlib-1.2.13.tar.gz && \
         cd zlib-1.2.13 && \
         ./configure && \
