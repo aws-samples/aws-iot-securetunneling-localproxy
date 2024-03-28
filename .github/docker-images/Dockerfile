@@ -14,10 +14,6 @@ RUN mkdir -p /root/aws-iot-securetunneling-localproxy/build \
 
 FROM ${OS} AS minimum_size
 
-RUN apt update && apt upgrade -y && \
-	apt install -y ca-certificates && \
-    update-ca-certificates
-
 COPY --from=deploy /root/aws-iot-securetunneling-localproxy/build/bin/localproxy /root/bin/localproxy
 
 COPY ./.github/docker-images/oss-compliance /root/oss-compliance

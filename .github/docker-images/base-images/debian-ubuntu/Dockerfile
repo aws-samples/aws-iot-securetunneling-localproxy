@@ -5,7 +5,8 @@ FROM ${OS} AS base
 
 RUN apt update && apt upgrade -y && \
 	apt install -y git libboost-all-dev autoconf automake \
-	wget libtool curl make g++ unzip cmake libssl-dev python3
+	wget libtool curl make g++ unzip cmake libssl-dev python3 \
+	ca-certificates && update-ca-certificates
 
 # Install Dependencies
 
