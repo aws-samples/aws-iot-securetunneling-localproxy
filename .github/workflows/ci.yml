@@ -145,11 +145,11 @@ jobs:
           $env:Path += ";C:\Program Files (x86)\zlib\bin"
       - name: Install boost
         run: |
-          Invoke-WebRequest "https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.zip" -OutFile "boost_1_76_0.zip"
-          Expand-Archive "boost_1_76_0.zip" -Force
-          cd .\boost_1_76_0\boost_1_76_0\
+          Invoke-WebRequest "https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.zip" -OutFile "boost_1_81_0.zip"
+          Expand-Archive "boost_1_81_0.zip" -Force
+          cd .\boost_1_81_0\boost_1_81_0\
           .\bootstrap.bat
-          .\b2 toolset=msvc-14.2 address-model=64 install define=BOOST_WINAPI_VERSION_WIN10 link=static
+          .\b2 toolset=msvc-14.2 address-model=64 install define=_WIN32_WINNT=0x0601 define=BOOST_WINAPI_VERSION_WIN7 link=static
       - name: Install protobuf
         run: |
           cd \
@@ -169,7 +169,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DBUILD_TESTS=OFF -DBOOST_PKG_VERSION=1.76.0 -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 16 2019" -A x64 ..\
+          cmake -DBUILD_TESTS=OFF -DBOOST_PKG_VERSION=1.81.0 -DWIN32_WINNT=0x0601 -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 16 2019" -A x64 ..\
           msbuild localproxy.vcxproj -p:Configuration=Release
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
