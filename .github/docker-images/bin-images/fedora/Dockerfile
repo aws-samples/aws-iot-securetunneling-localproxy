@@ -25,6 +25,6 @@ RUN HOME_DIR=/root \
 
 # OS-specific commands
 RUN dnf -y update \
-    && dnf -y install libatomic
+    && dnf -y install libatomic libicu
 
 ENTRYPOINT ["/root/bin/localproxy"]

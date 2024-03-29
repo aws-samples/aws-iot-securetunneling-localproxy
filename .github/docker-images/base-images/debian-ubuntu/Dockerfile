@@ -5,17 +5,15 @@ FROM ${OS} AS base
 
 RUN apt update && apt upgrade -y && \
 	apt install -y git libboost-all-dev autoconf automake \
-	wget libtool curl make g++ unzip cmake libssl-dev python3 \
-	ca-certificates && update-ca-certificates
-
+	wget libtool curl make g++ unzip cmake libssl-dev python3
 # Install Dependencies
 
 RUN mkdir /home/dependencies
 
 WORKDIR /home/dependencies
-RUN wget https://www.openssl.org/source/openssl-3.0.12.tar.gz \
-    && tar xzvf openssl-3.0.12.tar.gz \
-    && cd openssl-3.0.12 \
+RUN wget https://www.openssl.org/source/openssl-3.0.8.tar.gz \
+    && tar xzvf openssl-3.0.8.tar.gz \
+    && cd openssl-3.0.8 \
     && ./config \
     && make \
     && make install

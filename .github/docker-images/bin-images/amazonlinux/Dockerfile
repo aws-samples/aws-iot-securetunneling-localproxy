@@ -25,6 +25,6 @@ RUN HOME_DIR=/root \
 
 # OS-specific commands
 RUN yum check-update; yum upgrade -y && \
-	yum install -y libatomic
+	yum install -y libatomic libicu
 
 ENTRYPOINT ["/root/bin/localproxy"]
