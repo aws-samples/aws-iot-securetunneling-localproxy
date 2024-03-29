@@ -49,9 +49,9 @@ jobs:
       - name: Build Ubuntu Release Image
         uses: docker/build-push-action@v4
         with:
-          file: .github/docker-images/Dockerfile
+          file: .github/docker-images/bin-images/debian-ubuntu/Dockerfile
           build-args: |
-            OS=ubuntu:latest
+            OS=ubuntu:22.04
             BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:amd64-latest
           context: .
           push: true
@@ -84,9 +84,9 @@ jobs:
       - name: Build Ubuntu Release Image
         uses: docker/build-push-action@v4
         with:
-          file: .github/docker-images/Dockerfile
+          file: .github/docker-images/bin-images/debian-ubuntu/Dockerfile
           build-args: |
-            OS=ubuntu:latest
+            OS=ubuntu:22.04
             BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:arm64-latest
           context: .
           push: true
@@ -119,7 +119,7 @@ jobs:
       - name: Build ubuntu Release Image
         uses: docker/build-push-action@v4
         with:
-          file: .github/docker-images/Dockerfile
+          file: .github/docker-images/bin-images/debian-ubuntu/Dockerfile
           build-args: |
             OS=ubuntu:18.04
             BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBUNTU }}:armv7-latest
@@ -154,7 +154,7 @@ jobs:
       - name: Build ubi8 Release Image
         uses: docker/build-push-action@v4
         with:
-          file: .github/docker-images/Dockerfile
+          file: .github/docker-images/bin-images/ubi8/Dockerfile
           build-args: |
             OS=redhat/ubi8:latest
             BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:amd64-latest
@@ -189,7 +189,7 @@ jobs:
       - name: Build ubi8 Release Image
         uses: docker/build-push-action@v4
         with:
-          file: .github/docker-images/Dockerfile
+          file: .github/docker-images/bin-images/ubi8/Dockerfile
           build-args: |
             OS=redhat/ubi8:latest
             BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_UBI8 }}:arm64-latest
@@ -224,9 +224,9 @@ jobs:
       - name: Build amazonlinux Release Image
         uses: docker/build-push-action@v4
         with:
-          file: .github/docker-images/Dockerfile
+          file: .github/docker-images/bin-images/amazonlinux/Dockerfile
           build-args: |
-            OS=amazonlinux:latest
+            OS=amazonlinux:2023
             BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:amd64-latest
           context: .
           push: true
@@ -259,9 +259,9 @@ jobs:
       - name: Build amazonlinux Release Image
         uses: docker/build-push-action@v4
         with:
-          file: .github/docker-images/Dockerfile
+          file: .github/docker-images/bin-images/amazonlinux/Dockerfile
           build-args: |
-            OS=amazonlinux:latest
+            OS=amazonlinux:2023
             BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:arm64-latest
           context: .
           push: true
@@ -294,7 +294,7 @@ jobs:
       - name: Build debian Release Image
         uses: docker/build-push-action@v4
         with:
-          file: .github/docker-images/Dockerfile
+          file: .github/docker-images/bin-images/debian-ubuntu/Dockerfile
           build-args: |
             OS=debian:latest
             BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:amd64-latest
@@ -329,7 +329,7 @@ jobs:
       - name: Build debian Release Image
         uses: docker/build-push-action@v4
         with:
-          file: .github/docker-images/Dockerfile
+          file: .github/docker-images/bin-images/debian-ubuntu/Dockerfile
           build-args: |
             OS=debian:latest
             BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_DEBIAN }}:arm64-latest
@@ -364,7 +364,7 @@ jobs:
       - name: Build fedora Release Image
         uses: docker/build-push-action@v4
         with:
-          file: .github/docker-images/Dockerfile
+          file: .github/docker-images/bin-images/fedora/Dockerfile
           build-args: |
             OS=fedora:latest
             BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_FEDORA }}:amd64-latest
