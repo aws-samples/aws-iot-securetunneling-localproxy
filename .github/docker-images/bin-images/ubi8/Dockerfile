@@ -25,6 +25,7 @@ RUN HOME_DIR=/root \
 
 # OS-specific commands
 RUN yum check-update; yum upgrade -y && \
-	yum install -y libatomic libicu
+	yum install -y libatomic libicu ca-certificates && \
+    update-ca-trust extract
 
 ENTRYPOINT ["/root/bin/localproxy"]

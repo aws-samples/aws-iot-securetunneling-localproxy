@@ -11,9 +11,9 @@ RUN apt update && apt upgrade -y && \
 RUN mkdir /home/dependencies
 
 WORKDIR /home/dependencies
-RUN wget https://www.openssl.org/source/openssl-3.0.8.tar.gz \
-    && tar xzvf openssl-3.0.8.tar.gz \
-    && cd openssl-3.0.8 \
+RUN wget https://www.openssl.org/source/openssl-3.0.12.tar.gz \
+    && tar xzvf openssl-3.0.12.tar.gz \
+    && cd openssl-3.0.12 \
     && ./config \
     && make \
     && make install
@@ -27,9 +27,9 @@ RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.
 	make install
 
 WORKDIR /home/dependencies
-RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O /tmp/boost.tar.gz && \
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.84.0/source/boost_1_84_0.tar.gz -O /tmp/boost.tar.gz && \
 	tar xzvf /tmp/boost.tar.gz && \
-	cd boost_1_81_0 && \
+	cd boost_1_84_0 && \
 	./bootstrap.sh && \
     ./b2 install link=static
 
