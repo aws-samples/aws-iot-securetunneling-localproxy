@@ -10,6 +10,14 @@ RUN dnf -y update \
 RUN mkdir /home/dependencies
 
 WORKDIR /home/dependencies
+RUN wget https://www.openssl.org/source/openssl-3.0.12.tar.gz \
+    && tar xzvf openssl-3.0.12.tar.gz \
+    && cd openssl-3.0.12 \
+    && ./config \
+    && make \
+    && make install
+
+WORKDIR /home/dependencies
 RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz && \
         tar xzvf /tmp/zlib-1.2.13.tar.gz && \
         cd zlib-1.2.13 && \
@@ -18,9 +26,9 @@ RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.
         make install
 
 WORKDIR /home/dependencies
-RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O /tmp/boost.tar.gz && \
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.84.0/source/boost_1_84_0.tar.gz -O /tmp/boost.tar.gz && \
         tar xzvf /tmp/boost.tar.gz && \
-        cd boost_1_81_0 && \
+        cd boost_1_84_0 && \
         ./bootstrap.sh && \
     ./b2 install link=static
 
@@ -33,14 +41,6 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/p
         cmake ../cmake && \
         make && \
         make install
-
-WORKDIR /home/dependencies
-RUN git clone https://github.com/openssl/openssl.git && \
-        cd openssl && \
-        git checkout OpenSSL_1_1_1-stable && \
-        ./config && \
-        make depend && \
-        make all
 
 WORKDIR /home/dependencies
 RUN git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git && \

@@ -1,16 +1,22 @@
-FROM amazonlinux:latest as base
-ARG OPENSSL_CONFIG
+FROM amazonlinux:2023 as base
 
 # Install Prerequisites
 
 RUN yum check-update; yum upgrade -y && \
-	yum install -y git boost-devel autoconf automake \
-	wget libtool curl make gcc-c++ unzip cmake3 python-devel openssl11-devel which
+	yum install -y git boost-devel autoconf automake libatomic perl \
+	wget libtool make gcc-c++ unzip cmake3 python-devel openssl-devel which
 
 # Install Dependencies
 
-RUN ln -s /usr/bin/cmake3 /usr/bin/cmake
 RUN mkdir /home/dependencies
+
+WORKDIR /home/dependencies
+RUN wget https://www.openssl.org/source/openssl-3.0.12.tar.gz \
+    && tar xzvf openssl-3.0.12.tar.gz \
+    && cd openssl-3.0.12 \
+    && ./config \
+    && make \
+    && make install
 
 WORKDIR /home/dependencies
 RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.13.tar.gz && \
@@ -21,9 +27,9 @@ RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.
 	make install
 
 WORKDIR /home/dependencies
-RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O /tmp/boost.tar.gz && \
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.84.0/source/boost_1_84_0.tar.gz -O /tmp/boost.tar.gz && \
 	tar xzvf /tmp/boost.tar.gz && \
-	cd boost_1_81_0 && \
+	cd boost_1_84_0 && \
 	./bootstrap.sh && \
 	./b2 install link=static
 
@@ -36,14 +42,6 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/p
 	cmake ../cmake && \
 	make && \
 	make install
-
-WORKDIR /home/dependencies
-RUN git clone https://github.com/openssl/openssl.git && \
-	cd openssl && \
-	git checkout OpenSSL_1_1_1-stable && \
-	./config && \
-	make depend && \
-	make all
 
 WORKDIR /home/dependencies
 RUN git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git && \

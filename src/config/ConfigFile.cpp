@@ -25,6 +25,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/sources/severity_feature.hpp>
 #include <boost/log/sources/severity_logger.hpp>
+#include <boost/format.hpp>
 
 #include "ConfigFile.h"
 

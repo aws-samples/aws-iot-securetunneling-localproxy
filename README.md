@@ -22,7 +22,7 @@ This code enables tunneling of a single threaded TCP client / server socket inte
 
 We provide several docker images on various platforms. Both x86 and ARM are supported, though armv7 is currently limited to the ubuntu images.
 There are two types of images: base images and release images.
-The base images come with all dependencies pre-installed. You will still need to download and build the source.
+The base images come with all dependencies pre-installed. You will still need to download and build the source. These images are tagged with their corresponding arch.
 These are useful if you want to modify and [compile](https://github.com/aws-samples/aws-iot-securetunneling-localproxy#download-and-build-the-local-proxy) the local proxy on your own, but are large (~1 GB each).
 You can find them at:
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-base
@@ -36,10 +36,14 @@ You can find them at:
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/fedora-base
 - amd64
 
-The release images are minimum size images that include a pre-built binary with no dependencies installed.
-Every tag contains a git commit sha for example: 33879dd7f1500f7b3e56e48ce8b002cd9b0f9e4e.
+The release images are minimum size images that include a pre-built binary with only the necessary shared libs installed. To use the release images, simply pass the localproxy CLI args into the docker run command. Example:
+
+`docker run --rm -it --network=host public.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin:amd64-latest --region us-east-1 -s 5555 -t <ACCESS_TOKEN>`
+
+This will automatically pull down the latest docker image and run the localproxy without having to manually install it on your system.
+These images are tagged with the git commit and corresponding arch. Example: 33879dd7f1500f7b3e56e48ce8b002cd9b0f9e4e-amd64.
 You can cross-check the git commit sha with the commits in the local proxy repo to see if the binary contains changes added in a specific commit.
-You can find them at:
+The release images can be found at:
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin
 - amd64/arm64/armv7
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/debian-bin
@@ -61,7 +65,7 @@ If you do not want to use the prebuilt images, you can build them yourself:
 
 Or, for the debian-ubuntu combined Dockerfile:
 
-`docker build -t <your tag> . --build-arg OS=<choice of debian/ubuntu>:latest`
+`docker build -t <your tag> . --build-arg OS=<choice of debian/ubuntu>:<platform>`
 
 To build cross-platform images for ARM:
 

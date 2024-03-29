@@ -24,4 +24,7 @@ RUN HOME_DIR=/root \
     && bash ${HOME_DIR}/oss-compliance/generate-oss-compliance.sh ${HOME_DIR} \
     && rm -rf ${HOME_DIR}/oss-compliance*
 
+# OS-specific commands
+RUN apt update && apt upgrade -y && apt install -y ca-certificates && update-ca-certificates
+
 ENTRYPOINT ["/root/bin/localproxy"]
