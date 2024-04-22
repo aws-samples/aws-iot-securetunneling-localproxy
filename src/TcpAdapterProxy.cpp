@@ -1258,14 +1258,6 @@ namespace aws { namespace iot { namespace securedtunneling {
             }
 
             /**
-             * Set flag to mark local proxy will communicate using local proxy v1 message format.
-             * local proxy v1 message format: 1 service id. It can be a empty string when open tunnel with no service in destination config.
-             */
-            if (service_id_list.size() == 1)
-            {
-                tac.adapter_config.is_v1_message_format = true;
-            }
-            /**
              * Build serviceId <-> endpoint mapping if not done yet.
              * Case1: Configuration is provided through configuration files. Upon receiving service ids, search through
              * the configuration directory and find the service ids provided in those files.
