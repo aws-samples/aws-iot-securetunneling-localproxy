@@ -1109,7 +1109,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
+            // backward compatibility: set is_v2_message_format to true if receives no connection id
             if (!connection_id)
             {
                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
@@ -1357,7 +1357,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
+            // backward compatibility: set is_v2_message_format to true if receives no connection id
             if (!connection_id)
             {
                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
@@ -1460,7 +1460,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
             BOOST_LOG_SEV(log, trace) << "Forwarding message to tcp socket with connection id: " << connection_id;
 
-            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
+            // backward compatibility: set is_v2_message_format to true if receives no connection id
             if (!connection_id)
             {
                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
@@ -1591,7 +1591,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                         {
                             BOOST_LOG_SEV(log, trace) << "Processing data message";
 
-                            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
+                            // backward compatibility: set is_v2_message_format to true if receives no connection id
                             if (!connection_id)
                             {
                                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
