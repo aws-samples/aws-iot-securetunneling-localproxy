@@ -2028,12 +2028,13 @@ namespace aws { namespace iot { namespace securedtunneling {
 
                         uint32_t new_connection_id = ++server->highest_connection_id;
 
-                        // backward compatibility: set connection id to 1 if simultaneous connections is not enabled
+                        // backward compatibility: set connection id to 0 if simultaneous connections is not enabled
                         if (tac.adapter_config.is_v2_message_format || tac.adapter_config.is_v1_message_format)
                         {
                             BOOST_LOG_SEV(log, info) << "Falling back to older protocol, setting new connection id to 0";
                             new_connection_id = 0;
                         }
+
                         BOOST_LOG_SEV(log, info) << "creating tcp connection id " << new_connection_id;
 
                         if (server->connectionId_to_tcp_connection_map.find(new_connection_id) == server->connectionId_to_tcp_connection_map.end() &&
