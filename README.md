@@ -313,7 +313,7 @@ The local proxy process can be stopped using various methods:
 * A tunnel expires after its lifetime expiry. This will result in the local proxy dropping the connection to the service and exiting the process successfully. 
 
 ### Backward compatibility
-V2 local proxy is able to communicate with V1 local proxy if only one connection needs to be established over the tunnel. This means when you open a tunnel,  no more than one service should be passed in the **services** list. 
+V2 local proxy is able to communicate with V1 local proxy if only one connection needs to be established over the tunnel. This means when you open a tunnel,  no more than one service should be passed in the **services** list.
 
 Example 1: 
 

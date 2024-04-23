@@ -172,7 +172,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
         ("config", value<string>(), "Use the supplied configuration file to apply CLI args. Actual CLI args override the contents of this file")
         ("verbose,v", value<std::uint16_t>()->default_value(4), "Logging level to standard out. [0, 255] (0=off, 1=fatal, 2=error, 3=warning, 4=info, 5=debug, >=6=trace)")
         ("mode,m", value<string>(), "The mode local proxy will run: src(source) or dst(destination)")
-        ("destination-client-type,y", value<string>(), "Specify the value DEVICE_CLIENT1.9 to run the localproxy in compatibility mode with destination clients using Device Client 1.9+ and/or Greengrass Secure Tunneling Component 1.0.19+. This should only be used when running localproxy in source mode.")
+        ("destination-client-type,y", value<string>(), "Specify the value V1 or V2 to run the localproxy in compatibility mode with older clients. This should only be used when running localproxy in source mode.")
         ("config-dir", value<string>(), "Set the configuration directory where service identifier mappings are stored. If not specified, will read mappings from default directory ./config (same directory where local proxy binary is running)")
         ;
     store(parse_command_line(argc, argv, cliargs_desc), vm);
