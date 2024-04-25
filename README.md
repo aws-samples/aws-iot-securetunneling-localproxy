@@ -233,14 +233,19 @@ V1 local proxy: local proxy uses Sec-WebSocket-Protocol _aws.iot.securetunneling
 
 V2 local proxy: local proxy uses Sec-WebSocket-Protocol _aws.iot.securetunneling-2.0_ when communicates with AWS IoT Tunneling Service.
 
+V3 local proxy: local proxy uses Sec-WebSocket-Protocol _aws.iot.securetunneling-3.0_ when communicates with AWS IoT Tunneling Service.
+
 Source local proxy: local proxy that runs in source mode.
 
 Destination local proxy:  local proxy that runs in destination mode.
 
-
 ### Multi-port tunneling feature support
 Multi-port tunneling feature allows more than one stream multiplexed on same tunnel. 
 This feature is only supported with V2 local proxy. If you have some devices that on V1 local proxy, some on V2 local proxy, simply upgrade the local proxy on the source device to V2 local proxy. When V2 local proxy talks to V1 local proxy, the backward compatibility is maintained. For more details, please refer to section [backward compatibility](#backward-compatibility)
+
+### Simultaneous TCP connections feature support
+Simultaneous TCP is a feature that allows application layer (e.g. HTTP) protocols to open multiple TCP connections over a single stream.
+This feature is only supported with V3 local proxy. If you have some devices that on V1/V2 local proxy, some on V3 local proxy, simply upgrade the local proxy on the source device to V3 local proxy. When V3 local proxy talks to V1/V2 local proxy, the backward compatibility is maintained as long as users specify `V1` or `V2` as the value for `destination-client-type`. For more details, please refer to section [backward compatibility](#backward-compatibility)
 
 ### Service identifier (Service ID)
 If you need to use multi-port tunneling feature, service ID is needed to start local proxy. A service identifier will be used as the new format to specify the source listening port or destination service when start local proxy. The identifier is like an alias for the source listening port or destination service. For the format requirement of service ID, please refer to AWS public doc [services in DestinationConfig ](https://docs.aws.amazon.com/iot/latest/apireference/API_iot-secure-tunneling_DestinationConfig.html). There is no restriction on how this service ID should be named, as long as it can help uniquely identifying a connection or stream. 
@@ -326,6 +331,16 @@ Example 3:
     aws iotsecuretunneling open-tunnel 
 
 In this example, no service ID is used. Backward compatibility is supported.
+
+V3 local proxy is able to communicate with V1 and V2 local proxy if only one connection/stream needs to be established over the tunnel. When connecting to older versions, you will need to pass the `destination-client-type` CLI arg if and only if starting the localproxy in source mode. The same rules listed above still apply when connecting over V1.
+
+Example when targeting a V1 destination, like Device Client of the Greengrass Secure Tunneling Component: 
+
+    ./localproxy -s 3333 --destination-client-type V1 -v 6 -r us-east-1
+
+Example when targeting a V2 destination:
+   
+    ./localproxy -s 3333 --destination-client-type V2 -v 6 -r us-east-1
 
 ### HTTP proxy Support
 
@@ -449,6 +464,9 @@ Specifies the verbosity of the output. Value must be between 0-255, however mean
 
 **-m/--mode [argvalue]**
 Specifies the mode local proxy will run. Accepted values are: src, source, dst, destination.
+
+**-y/--destination-client-type [argvalue]**
+Specifies the backward compatibility mode the local proxy will run when opening a source connection to an older destination client. Currently supported values are: V1, V2. The localproxy will assume the destination to be V3 if no/invalid value is passed.
 
 **--config-dir [argvalue]**
 Specifies the configuration directory where service identifier mappings are configured. If this parameter is not specified, local proxy will read configuration files from default directory _./config_, under the file path where `localproxy` binary are located. 

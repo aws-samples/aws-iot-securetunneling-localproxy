@@ -1109,7 +1109,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
+            // backward compatibility: set is_v2_message_format to true if receives no connection id
             if (!connection_id)
             {
                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
@@ -1258,14 +1258,6 @@ namespace aws { namespace iot { namespace securedtunneling {
             }
 
             /**
-             * Set flag to mark local proxy will communicate using local proxy v1 message format.
-             * local proxy v1 message format: 1 service id. It can be a empty string when open tunnel with no service in destination config.
-             */
-            if (service_id_list.size() == 1)
-            {
-                tac.adapter_config.is_v1_message_format = true;
-            }
-            /**
              * Build serviceId <-> endpoint mapping if not done yet.
              * Case1: Configuration is provided through configuration files. Upon receiving service ids, search through
              * the configuration directory and find the service ids provided in those files.
@@ -1365,7 +1357,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
+            // backward compatibility: set is_v2_message_format to true if receives no connection id
             if (!connection_id)
             {
                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
@@ -1468,7 +1460,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
             BOOST_LOG_SEV(log, trace) << "Forwarding message to tcp socket with connection id: " << connection_id;
 
-            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
+            // backward compatibility: set is_v2_message_format to true if receives no connection id
             if (!connection_id)
             {
                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
@@ -1599,7 +1591,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                         {
                             BOOST_LOG_SEV(log, trace) << "Processing data message";
 
-                            // backward compatibility: set connection id to 1 if first received a message with no connection id (id value will be 0)
+                            // backward compatibility: set is_v2_message_format to true if receives no connection id
                             if (!connection_id)
                             {
                                 BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
@@ -2036,12 +2028,13 @@ namespace aws { namespace iot { namespace securedtunneling {
 
                         uint32_t new_connection_id = ++server->highest_connection_id;
 
-                        // backward compatibility: set connection id to 1 if simultaneous connections is not enabled
+                        // backward compatibility: set connection id to 0 if simultaneous connections is not enabled
                         if (tac.adapter_config.is_v2_message_format || tac.adapter_config.is_v1_message_format)
                         {
                             BOOST_LOG_SEV(log, info) << "Falling back to older protocol, setting new connection id to 0";
                             new_connection_id = 0;
                         }
+
                         BOOST_LOG_SEV(log, info) << "creating tcp connection id " << new_connection_id;
 
                         if (server->connectionId_to_tcp_connection_map.find(new_connection_id) == server->connectionId_to_tcp_connection_map.end() &&
