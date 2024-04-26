@@ -1,4 +1,4 @@
-# FROM amazonlinux:latest
+# FROM amazonlinux:2
 FROM amazonlinux:latest as builder
 ARG OPENSSL_CONFIG
 
@@ -89,7 +89,7 @@ WORKDIR /home/aws-iot-securetunneling-localproxy/
 
 ## Actual docker image
 
-FROM amazonlinux:latest
+FROM amazonlinux:2
 
 # Install openssl for libssl dependency.
 
