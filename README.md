@@ -22,7 +22,7 @@ This code enables tunneling of a single threaded TCP client / server socket inte
 
 We provide several docker images on various platforms. Both x86 and ARM are supported, though armv7 is currently limited to the ubuntu images.
 There are two types of images: base images and release images.
-The base images come with all dependencies pre-installed. You will still need to download and build the source.
+The base images come with all dependencies pre-installed. You will still need to download and build the source. These images are tagged with their corresponding arch.
 These are useful if you want to modify and [compile](https://github.com/aws-samples/aws-iot-securetunneling-localproxy#download-and-build-the-local-proxy) the local proxy on your own, but are large (~1 GB each).
 You can find them at:
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-base
@@ -36,10 +36,14 @@ You can find them at:
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/fedora-base
 - amd64
 
-The release images are minimum size images that include a pre-built binary with no dependencies installed.
-Every tag contains a git commit sha for example: 33879dd7f1500f7b3e56e48ce8b002cd9b0f9e4e.
+The release images are minimum size images that include a pre-built binary with only the necessary shared libs installed. To use the release images, simply pass the localproxy CLI args into the docker run command. Example:
+
+`docker run --rm -it --network=host public.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin:amd64-latest --region us-east-1 -s 5555 -t <ACCESS_TOKEN>`
+
+This will automatically pull down the latest docker image and run the localproxy without having to manually install it on your system.
+These images are tagged with the git commit and corresponding arch. Example: 33879dd7f1500f7b3e56e48ce8b002cd9b0f9e4e-amd64.
 You can cross-check the git commit sha with the commits in the local proxy repo to see if the binary contains changes added in a specific commit.
-You can find them at:
+The release images can be found at:
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin
 - amd64/arm64/armv7
 #### https://gallery.ecr.aws/aws-iot-securetunneling-localproxy/debian-bin
@@ -61,7 +65,7 @@ If you do not want to use the prebuilt images, you can build them yourself:
 
 Or, for the debian-ubuntu combined Dockerfile:
 
-`docker build -t <your tag> . --build-arg OS=<choice of debian/ubuntu>:latest`
+`docker build -t <your tag> . --build-arg OS=<choice of debian/ubuntu>:<platform>`
 
 To build cross-platform images for ARM:
 
@@ -229,14 +233,19 @@ V1 local proxy: local proxy uses Sec-WebSocket-Protocol _aws.iot.securetunneling
 
 V2 local proxy: local proxy uses Sec-WebSocket-Protocol _aws.iot.securetunneling-2.0_ when communicates with AWS IoT Tunneling Service.
 
+V3 local proxy: local proxy uses Sec-WebSocket-Protocol _aws.iot.securetunneling-3.0_ when communicates with AWS IoT Tunneling Service.
+
 Source local proxy: local proxy that runs in source mode.
 
 Destination local proxy:  local proxy that runs in destination mode.
 
-
 ### Multi-port tunneling feature support
 Multi-port tunneling feature allows more than one stream multiplexed on same tunnel. 
 This feature is only supported with V2 local proxy. If you have some devices that on V1 local proxy, some on V2 local proxy, simply upgrade the local proxy on the source device to V2 local proxy. When V2 local proxy talks to V1 local proxy, the backward compatibility is maintained. For more details, please refer to section [backward compatibility](#backward-compatibility)
+
+### Simultaneous TCP connections feature support
+Simultaneous TCP is a feature that allows application layer (e.g. HTTP) protocols to open multiple TCP connections over a single stream.
+This feature is only supported with V3 local proxy. If you have some devices that on V1/V2 local proxy, some on V3 local proxy, simply upgrade the local proxy on the source device to V3 local proxy. When V3 local proxy talks to V1/V2 local proxy, the backward compatibility is maintained as long as users specify `V1` or `V2` as the value for `destination-client-type`. For more details, please refer to section [backward compatibility](#backward-compatibility)
 
 ### Service identifier (Service ID)
 If you need to use multi-port tunneling feature, service ID is needed to start local proxy. A service identifier will be used as the new format to specify the source listening port or destination service when start local proxy. The identifier is like an alias for the source listening port or destination service. For the format requirement of service ID, please refer to AWS public doc [services in DestinationConfig ](https://docs.aws.amazon.com/iot/latest/apireference/API_iot-secure-tunneling_DestinationConfig.html). There is no restriction on how this service ID should be named, as long as it can help uniquely identifying a connection or stream. 
@@ -322,6 +331,16 @@ Example 3:
     aws iotsecuretunneling open-tunnel 
 
 In this example, no service ID is used. Backward compatibility is supported.
+
+V3 local proxy is able to communicate with V1 and V2 local proxy if only one connection/stream needs to be established over the tunnel. When connecting to older versions, you will need to pass the `destination-client-type` CLI arg if and only if starting the localproxy in source mode. The same rules listed above still apply when connecting over V1.
+
+Example when targeting a V1 destination, like Device Client of the Greengrass Secure Tunneling Component: 
+
+    ./localproxy -s 3333 --destination-client-type V1 -v 6 -r us-east-1
+
+Example when targeting a V2 destination:
+   
+    ./localproxy -s 3333 --destination-client-type V2 -v 6 -r us-east-1
 
 ### HTTP proxy Support
 
@@ -445,6 +464,9 @@ Specifies the verbosity of the output. Value must be between 0-255, however mean
 
 **-m/--mode [argvalue]**
 Specifies the mode local proxy will run. Accepted values are: src, source, dst, destination.
+
+**-y/--destination-client-type [argvalue]**
+Specifies the backward compatibility mode the local proxy will run when opening a source connection to an older destination client. Currently supported values are: V1, V2. The localproxy will assume the destination to be V3 if no/invalid value is passed.
 
 **--config-dir [argvalue]**
 Specifies the configuration directory where service identifier mappings are configured. If this parameter is not specified, local proxy will read configuration files from default directory _./config_, under the file path where `localproxy` binary are located. 

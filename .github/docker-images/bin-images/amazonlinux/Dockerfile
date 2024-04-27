@@ -1,4 +1,3 @@
-ARG OS
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE} AS deploy
 
@@ -12,7 +11,7 @@ RUN mkdir -p /root/aws-iot-securetunneling-localproxy/build \
     && cmake .. \
     && make
 
-FROM ${OS} AS minimum_size
+FROM amazonlinux:2023 AS minimum_size
 
 COPY --from=deploy /root/aws-iot-securetunneling-localproxy/build/bin/localproxy /root/bin/localproxy
 
@@ -23,5 +22,9 @@ RUN HOME_DIR=/root \
     && chmod +x ${HOME_DIR}/oss-compliance/test/test-oss-compliance.sh \
     && bash ${HOME_DIR}/oss-compliance/generate-oss-compliance.sh ${HOME_DIR} \
     && rm -rf ${HOME_DIR}/oss-compliance*
+
+# OS-specific commands
+RUN yum check-update; yum upgrade -y && \
+	yum install -y libatomic libicu
 
 ENTRYPOINT ["/root/bin/localproxy"]
