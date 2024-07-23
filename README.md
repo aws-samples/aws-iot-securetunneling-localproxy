@@ -1,4 +1,12 @@
-## AWS IoT Secure Tunneling Local Proxy Reference Implementation C++
+
+## As of 3.1.2 May 2024 Update, `--destination-client-type V1` will be a required parameter when connecting with the following:
+- AWS IoT Device Client
+- AWS IoT Secure Tunneling Component
+- Browser-based Secure Tunneling from the AWS Console
+- any Secure Tunneling demo code written before 2022
+- 1.x versions of the localproxy
+
+# AWS IoT Secure Tunneling Local Proxy Reference Implementation C++
 
 Example C++ implementation of a local proxy for the AWS IoT Secure Tunneling service
 
