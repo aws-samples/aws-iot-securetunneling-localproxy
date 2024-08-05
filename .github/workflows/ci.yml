@@ -27,7 +27,7 @@ jobs:
           tar xzvf /tmp/boost.tar.gz
           cd boost_1_84_0
           ./bootstrap.sh --with-toolset=clang
-          ./b2 install toolset=clang link=static
+          sudo ./b2 install toolset=clang link=static
       - name: Install protobuf
         working-directory: ${{ github.workspace }}
         run: |
