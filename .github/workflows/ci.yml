@@ -38,7 +38,7 @@ jobs:
           cd build_make
           cmake ../cmake
           make
-          make install
+          sudo make install
       - name: Building localproxy
         working-directory: ${{ github.workspace }}
         run: |
