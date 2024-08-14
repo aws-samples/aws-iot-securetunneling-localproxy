@@ -119,7 +119,7 @@ jobs:
           $env:Path += ";C:\NASM\nasm-2.15.05\"
           Invoke-WebRequest "https://github.com/openssl/openssl/archive/refs/tags/openssl-3.0.12.zip" -OutFile "openssl-3.0.12.zip"
           Expand-Archive "openssl-3.0.12.zip" -Force
-          cd .\openssl-3.0.12\openssl-3.0.12\
+          cd .\openssl-3.0.12\openssl-openssl-3.0.12\
           perl Configure VC-WIN64A
           nmake
           nmake install
