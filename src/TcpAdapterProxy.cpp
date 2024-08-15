@@ -344,7 +344,6 @@ namespace aws { namespace iot { namespace securedtunneling {
         }
         BOOST_LOG_SEV(log, debug) << "Handling explicit reset by closing TCP for service id: " << service_id << " connection id: " << connection_id;
 
-        connection->socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive);
         std::shared_ptr<bool> web_socket_write_buffer_drain_complete = std::make_shared<bool>(false);
         std::shared_ptr<bool> tcp_write_buffer_drain_complete = std::make_shared<bool>(false);
 
@@ -378,7 +377,14 @@ namespace aws { namespace iot { namespace securedtunneling {
             {
                 tcp_connection::pointer connection_to_reset = get_tcp_connection(tac, service_id, connection_id);
                 BOOST_LOG_SEV(this->log, trace) << "Post-reset TCP drain complete. Closing TCP socket for service id " << service_id << " connection id " << connection_id;
-                BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << connection_to_reset->socket().remote_endpoint();
+                try
+                {
+                    BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << connection_to_reset->socket().remote_endpoint();
+                }
+                catch (std::exception& e)
+                {
+                    BOOST_LOG_SEV(this->log, info) << "Disconnecting... remote endpoint not found due to TCP connection already terminated";
+                }
                 connection_to_reset->socket_.close();
                 delete_tcp_socket(tac, service_id, connection_id);
                 *tcp_write_buffer_drain_complete = true;
@@ -417,7 +423,14 @@ namespace aws { namespace iot { namespace securedtunneling {
             {
                 tcp_connection::pointer connection_to_reset = get_tcp_connection(tac, service_id, connection_id);
                 BOOST_LOG_SEV(this->log, trace) << "Post-reset TCP drain complete. Closing TCP socket for service id " << service_id << " connection id " << connection_id;
-                BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << connection_to_reset->socket().remote_endpoint();
+                try
+                {
+                    BOOST_LOG_SEV(this->log, info) << "Disconnected from: " << connection_to_reset->socket().remote_endpoint();
+                }
+                catch (std::exception& e)
+                {
+                    BOOST_LOG_SEV(this->log, info) << "Disconnecting... remote endpoint not found due to TCP connection already terminated";
+                }
                 connection_to_reset->socket_.close();
                 delete_tcp_socket(tac, service_id, connection_id);
             };
@@ -508,11 +521,11 @@ namespace aws { namespace iot { namespace securedtunneling {
         }
         catch (std::exception& e)
         {
-            BOOST_LOG_SEV(this->log, info) << "Disconnecting... remote endpoint not found";
+            BOOST_LOG_SEV(this->log, info) << "Disconnecting... remote endpoint not found due to TCP connection already terminated";
         }
         connection->tcp_write_buffer_.consume(connection->tcp_write_buffer_.max_size());
         // this works on Linux x86_64 but causes a bus error on Darwin arm64, commenting it out
-        //connection->socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive);
+        // connection->socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive);
         connection->socket_.close();
 
         connection->on_web_socket_write_buffer_drain_complete = [&, service_id, connection_id]()
