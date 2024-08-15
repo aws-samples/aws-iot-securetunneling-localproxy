@@ -62,7 +62,6 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROJECT_SOURCE_DIR}/resources/Mess
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
 
-### Uncomment below 3 lines to enable static linking
 include_directories(${OPENSSL_INCLUDE_DIR})
 string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_SSL_LIBRARY ${OPENSSL_SSL_LIBRARY})
 string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_CRYPTO_LIBRARY ${OPENSSL_CRYPTO_LIBRARY})
@@ -118,7 +117,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${CMAKE_THREAD_LIBS_INIT})
 # target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} OpenSSL::SSL)
 # target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} OpenSSL::Crypto)
-### uncomment below 2 lines and remove above 2 lines to enable static linking
+### uncomment above 2 lines and remove below 2 lines to link against OpenSSL shared libs
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${OpenSSL_STATIC_SSL_LIBRARY})
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${OpenSSL_STATIC_CRYPTO_LIBRARY})
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${Boost_STATIC_LIBRARIES})
@@ -130,7 +129,7 @@ if(BUILD_TESTS)
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${CMAKE_THREAD_LIBS_INIT})
     # target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::SSL)
     # target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::Crypto)
-    ### uncomment below 2 lines and remove above 2 lines to enable static linking
+    ### uncomment above 2 lines and remove below 2 lines to link against OpenSSL shared libs
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${OpenSSL_STATIC_SSL_LIBRARY})
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${OpenSSL_STATIC_CRYPTO_LIBRARY})
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${Boost_STATIC_LIBRARIES})
