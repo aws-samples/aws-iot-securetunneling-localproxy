@@ -169,8 +169,8 @@ Source install example:
 
 Run the ./Configure command without any arguments to check the available platform configuration options and the documentation here: https://wiki.openssl.org/index.php/Compilation_and_Installation
 
-##### Static linking OpenSSL
-In the `CMakeLists.txt`, there are marked sections with commented code that when uncommented, allow users to static compile OpenSSL libraries into their binary. Choosing to do so is completely optional depending on your own operational requirements. This is following guidance from https://github.com/aws-samples/aws-iot-securetunneling-localproxy/pull/145.
+##### Static vs. Dynamic linking OpenSSL
+In the `CMakeLists.txt`, there are marked sections with commented code that when uncommented, allow users to switch between using static vs shared OpenSSL libraries. Choosing to do so is completely optional depending on your own operational requirements. This is following guidance from https://github.com/aws-samples/aws-iot-securetunneling-localproxy/pull/145. The localproxy uses static libs by default
 
 #### 5. Download and install Catch2 test framework
 
