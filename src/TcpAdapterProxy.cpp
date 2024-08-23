@@ -1126,7 +1126,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             // backward compatibility: set is_v2_message_format to true if receives no connection id
             if (!connection_id)
             {
-                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
+                BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
                 tac.adapter_config.is_v2_message_format = true;
             }
             string service_id = message.serviceid();
@@ -1374,7 +1374,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             // backward compatibility: set is_v2_message_format to true if receives no connection id
             if (!connection_id)
             {
-                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
+                BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
                 tac.adapter_config.is_v2_message_format = true;
             }
             string service_id = message.serviceid();
@@ -1477,7 +1477,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             // backward compatibility: set is_v2_message_format to true if receives no connection id
             if (!connection_id)
             {
-                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
+                BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
                 tac.adapter_config.is_v2_message_format = true;
             }
             /**
@@ -1608,7 +1608,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                             // backward compatibility: set is_v2_message_format to true if receives no connection id
                             if (!connection_id)
                             {
-                                BOOST_LOG_SEV(log, info) << "reverting to v2 message format";
+                                BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
                                 tac.adapter_config.is_v2_message_format = true;
                             }
                             tcp_connection::pointer connection = get_tcp_connection(tac, service_id, connection_id);
