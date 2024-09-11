@@ -539,7 +539,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 BOOST_LOG_SEV(log, info) << "simultaneous connections are not enabled, sending stream reset";
                 socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
                 tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message_and_stop, this, std::ref(tac), std::placeholders::_1);
-                async_send_stream_reset(tac, service_id, connection_id);
+                async_send_stream_reset(tac, service_id);
             }
             else
             {
@@ -683,7 +683,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         async_send_message(tac, outgoing_message);
     }
 
-    void tcp_adapter_proxy::async_send_stream_reset(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id)
+    void tcp_adapter_proxy::async_send_stream_reset(tcp_adapter_context &tac, std::string const & service_id)
     {
         using namespace com::amazonaws::iot::securedtunneling;
         BOOST_LOG_SEV(log, trace) << "Send reset stream for service id: " << service_id;
@@ -706,10 +706,9 @@ namespace aws { namespace iot { namespace securedtunneling {
         std::int32_t stream_id = tac.serviceId_to_streamId_map[service_id];
         outgoing_message.set_type(Message_Type_STREAM_RESET);
         outgoing_message.set_streamid(stream_id);
-        outgoing_message.set_connectionid(connection_id);
         outgoing_message.set_ignorable(false);
         outgoing_message.clear_payload();
-        async_send_message(tac, outgoing_message, service_id, connection_id);
+        async_send_message(tac, outgoing_message);
     }
 
     void tcp_adapter_proxy::async_send_connection_reset(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id)
@@ -2094,7 +2093,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                     tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
                     tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
                     socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
-                    async_send_stream_reset(tac, service_id, connection_id);
+                    async_send_stream_reset(tac, service_id);
                 });
         }
         else {
@@ -2115,7 +2114,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                                         tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
                                         tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
                                         socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
-                                        async_send_stream_reset(tac, service_id, connection_id);
+                                        async_send_stream_reset(tac, service_id);
                                     });
             }
             else
@@ -2177,7 +2176,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                                         tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
                                         tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
                                         socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
-                                        async_send_stream_reset(tac, service_id, connection_id);
+                                        async_send_stream_reset(tac, service_id);
                                     });
             }
             else

@@ -238,7 +238,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         void async_send_message(tcp_adapter_context &tac, message const &message);
         void async_send_message(tcp_adapter_context &tac, message const &message, std::string const & service_id, uint32_t const & connection_id);
         void async_send_stream_start(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
-        void async_send_stream_reset(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
+        void async_send_stream_reset(tcp_adapter_context &tac, std::string const & service_id);
         void async_send_connection_start(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
         void async_send_connection_reset(tcp_adapter_context &tac, std::string const & service_id, uint32_t const & connection_id);
 
