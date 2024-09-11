@@ -523,15 +523,16 @@ namespace aws { namespace iot { namespace securedtunneling {
         {
             BOOST_LOG_SEV(this->log, info) << "Disconnecting... remote endpoint not found due to TCP connection already terminated";
         }
-        connection->tcp_write_buffer_.consume(connection->tcp_write_buffer_.max_size());
+        // connection->tcp_write_buffer_.consume(connection->tcp_write_buffer_.max_size());
         // this works on Linux x86_64 but causes a bus error on Darwin arm64, commenting it out
         // connection->socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive);
-        connection->socket_.close();
+        //connection->socket_.close();
 
         connection->on_web_socket_write_buffer_drain_complete = [&, service_id, connection_id]()
         {
             BOOST_LOG_SEV(this->log, trace) << "on_web_socket_write_buffer_drain_complete callback";
             tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
+            socket_connection->socket_.close();
 
             // if simultaneous connections are not enabled, then send a stream reset
             if (tac.adapter_config.is_v2_message_format || tac.adapter_config.is_v1_message_format)
@@ -2124,11 +2125,12 @@ namespace aws { namespace iot { namespace securedtunneling {
                 basic_retry_execute(log, retry_config,
                                     [this, &tac, service_id, connection_id]()
                                     {
-                                        BOOST_LOG_SEV(log, trace) << "ignoring all messages: ";
-                                        tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
-                                        tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
-                                        socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
+                                        BOOST_LOG_SEV(log, trace) << "ignoring all messages: "; // TODO: rework log
+                                        //tcp_connection::pointer socket_connection = get_tcp_connection(tac, service_id, connection_id);
+                                        //tac.serviceId_to_control_message_handler_map[service_id] = std::bind(&tcp_adapter_proxy::ignore_message, this, std::ref(tac), std::placeholders::_1);
+                                        //socket_connection->after_send_message = std::bind(&tcp_adapter_proxy::setup_tcp_socket, this, std::ref(tac), service_id);
                                         async_send_stream_reset(tac, service_id);
+                                        setup_tcp_socket(std::ref(tac), service_id);
                                     });
             }
             else
