@@ -1372,12 +1372,6 @@ namespace aws { namespace iot { namespace securedtunneling {
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            // backward compatibility: set is_v2_message_format to true if receives no connection id
-            if (!connection_id)
-            {
-                BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
-                tac.adapter_config.is_v2_message_format = true;
-            }
             string service_id = message.serviceid();
             // v1 message format does not need to validate service id. Set to the one service id stored in memory.
             if (tac.adapter_config.is_v1_message_format)
@@ -1402,11 +1396,23 @@ namespace aws { namespace iot { namespace securedtunneling {
                 return false;   //indicates we should stop reading from the web socket after processing this message
 
             case Message_Type_CONNECTION_RESET:
+                // backward compatibility: set is_v2_message_format to true if receives no connection id
+                if (!connection_id)
+                {
+                    BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
+                    tac.adapter_config.is_v2_message_format = true;
+                }
                 BOOST_LOG_SEV(log, trace) << "Connection reset received for connection id: " << connection_id;
                 tcp_socket_close(tac, service_id, connection_id);
                 return true;
 
             case Message_Type_STREAM_START: //could verify that this is a destination mode local proxy. Source mode shouldn't receive stream start
+                // backward compatibility: set is_v2_message_format to true if receives no connection id
+                if (!connection_id)
+                {
+                    BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
+                    tac.adapter_config.is_v2_message_format = true;
+                }
                 if (!stream_id)
                 {
                     throw proxy_exception("No stream ID set for stream start message!");
@@ -1428,6 +1434,12 @@ namespace aws { namespace iot { namespace securedtunneling {
                 return true;
 
             case Message_Type_CONNECTION_START:
+                // backward compatibility: set is_v2_message_format to true if receives no connection id
+                if (!connection_id)
+                {
+                    BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
+                    tac.adapter_config.is_v2_message_format = true;
+                }
                 if (!stream_id)
                 {
                     throw proxy_exception("No stream ID set for connection start message!");
