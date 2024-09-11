@@ -1157,11 +1157,11 @@ namespace aws { namespace iot { namespace securedtunneling {
             case Message_Type_STREAM_START:
                 if (is_connection_start) 
                 {
-                    BOOST_LOG_SEV(log, trace) << "Connection Start received, processing message: " << message.payload();
+                    BOOST_LOG_SEV(log, trace) << "Connection Start received, processing message: " << message.ShortDebugString();
                 }
                 else
                 {
-                    BOOST_LOG_SEV(log, trace) << "Stream Start received, processing message: " << message.payload();
+                    BOOST_LOG_SEV(log, trace) << "Stream Start received, processing message: " << message.ShortDebugString();
                 }
                 if (!stream_id)
                 {
