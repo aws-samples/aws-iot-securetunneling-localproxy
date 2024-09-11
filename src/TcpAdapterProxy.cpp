@@ -1118,7 +1118,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         bool tcp_adapter_proxy::async_wait_for_stream_start(tcp_adapter_context &tac, message const &message)
         {
             using namespace com::amazonaws::iot::securedtunneling;
-            BOOST_LOG_SEV(log, trace) << "Wait for control message stream start, receive message type:" << message.type();
+            BOOST_LOG_SEV(log, trace) << "Wait for control message stream or connection start, receive message type:" << message.type();
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
@@ -1129,6 +1129,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 tac.adapter_config.is_v2_message_format = true;
             }
             string service_id = message.serviceid();
+            bool is_connection_start = false;
             switch (message.type())
             {
             case Message_Type_SESSION_RESET:
@@ -1150,10 +1151,18 @@ namespace aws { namespace iot { namespace securedtunneling {
                 BOOST_LOG_SEV(log, trace) << "Connection reset received";
     #endif
                 return true;
+            case Message_Type_CONNECTION_START:
+                is_connection_start = true;
+          
             case Message_Type_STREAM_START:
-    #ifdef DEBUG
-                BOOST_LOG_SEV(log, debug) << "Stream start received";
-    #endif
+                if (is_connection_start) 
+                {
+                    BOOST_LOG_SEV(log, trace) << "Connection Start received, processing message: " << message;
+                }
+                else
+                {
+                    BOOST_LOG_SEV(log, trace) << "Stream Start received, processing message: " << message;
+                }
                 if (!stream_id)
                 {
                     throw proxy_exception("No stream ID set for stream start message!");
@@ -1172,13 +1181,6 @@ namespace aws { namespace iot { namespace securedtunneling {
                 tac.serviceId_to_streamId_map[service_id] = stream_id;
                 async_setup_dest_tcp_socket(tac, service_id, connection_id, true);
                 return false;
-            case Message_Type_CONNECTION_START:
-                // while waiting for stream start (destination mode implied), no TCP socket is present so these
-                // messages are no-op
-    #ifdef DEBUG
-                    BOOST_LOG_SEV(log, trace) << "Connection start received";
-    #endif
-                return true;
             case Message_Type_DATA:    //handling the following cases alleviates clang compiler warnings
                 throw std::logic_error("Data message received in control message handler");
             case Message_Type_SERVICE_IDS:
