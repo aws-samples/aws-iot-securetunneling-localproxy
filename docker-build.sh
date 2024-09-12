@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo This script is deprecated, please refer to the Docker Images section of the README for the recommended method of pulling and running images from ECR.
+
 architecture=$(uname -m)
 
 if [ "${architecture}" != aarch64 -a "${architecture}" != arm64 ]; then

@@ -20,6 +20,11 @@ This code enables tunneling of a single threaded TCP client / server socket inte
 
 ---
 
+## Quick Start for x86 Linux platforms
+
+Install Docker https://docs.docker.com/get-started/get-docker/
+`docker run --rm -it --network=host public.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin:amd64-latest`, then populate the missing required parameters.
+
 ## Building the local proxy via Docker
 
 ### Prerequisites
