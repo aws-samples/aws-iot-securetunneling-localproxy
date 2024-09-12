@@ -523,11 +523,8 @@ namespace aws { namespace iot { namespace securedtunneling {
         {
             BOOST_LOG_SEV(this->log, info) << "Disconnecting... remote endpoint not found due to TCP connection already terminated";
         }
-        // connection->tcp_write_buffer_.consume(connection->tcp_write_buffer_.max_size());
         // this works on Linux x86_64 but causes a bus error on Darwin arm64, commenting it out
         // connection->socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive);
-        //connection->socket_.close();
-
         connection->on_web_socket_write_buffer_drain_complete = [&, service_id, connection_id]()
         {
             BOOST_LOG_SEV(this->log, trace) << "on_web_socket_write_buffer_drain_complete callback";
@@ -769,9 +766,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
     void tcp_adapter_proxy::handle_web_socket_control_message(tcp_adapter_context &tac, boost::beast::websocket::frame_type ws_message_type, boost::beast::string_view payload)
     {
-#ifdef DEBUG
         BOOST_LOG_SEV(log, debug) << "Control message received enum(close=0, ping=1, pong=2): " << static_cast<std::uint32_t>(ws_message_type);
-#endif
         boost::beast::websocket::ping_data pd{ payload };
         long long now_millis = 0;
         long long pong_millis = 0;
@@ -783,9 +778,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             tcp_socket_reset_all(tac, std::bind(&tcp_adapter_proxy::web_socket_close_and_stop, this, std::ref(tac)));
             break;
         case boost::beast::websocket::frame_type::ping:
-#ifdef DEBUG
             BOOST_LOG_SEV(log, debug) << "Websocket ping received: " << pd;
-#endif
             tac.wss->async_pong(pd, [&](boost::system::error_code const &ec)
             {
                 if (ec)
@@ -814,12 +807,10 @@ namespace aws { namespace iot { namespace securedtunneling {
         {
             BOOST_LOG_SEV(log, error) << "Failed to send websocket ping: " << ping_ec.message();
         }
-#ifdef DEBUG
         else
         {
             BOOST_LOG_SEV(log, trace) << "Successfully sent websocket ping";
         }
-#endif
         ping_timer->expires_after(*ping_period);
         ping_timer->async_wait([this, &tac, ping_data, ping_period, ping_timer](boost::system::error_code const &wait_ec)
         {
@@ -1083,25 +1074,19 @@ namespace aws { namespace iot { namespace securedtunneling {
             }
             else
             {
-    #ifdef DEBUG
                 BOOST_LOG_SEV(log, debug) << "TCP socket read loop started while web socket write buffer is already full";
-    #endif
             }
         }
 
         bool tcp_adapter_proxy::ignore_message(tcp_adapter_context &tac, message const &message)
         {
-    #ifdef DEBUG
             BOOST_LOG_SEV(log, trace) << "Ignoring data message";
-    #endif
             return true;
         }
 
         bool tcp_adapter_proxy::ignore_message_and_stop(tcp_adapter_context &tac, message const &message)
         {
-    #ifdef DEBUG
             BOOST_LOG_SEV(log, trace) << "Ignoring data message and stopping web socket read loop";
-    #endif
             return false;
         }
 
@@ -1123,39 +1108,29 @@ namespace aws { namespace iot { namespace securedtunneling {
             std::int32_t stream_id = static_cast<std::int32_t>(message.streamid());
             uint32_t connection_id = static_cast<uint32_t>(message.connectionid());
 
-            // backward compatibility: set is_v2_message_format to true if receives no connection id
-            if (!connection_id)
-            {
-                BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
-                tac.adapter_config.is_v2_message_format = true;
-            }
             string service_id = message.serviceid();
             bool is_connection_start = false;
             switch (message.type())
             {
             case Message_Type_SESSION_RESET:
-    #ifdef DEBUG
                 BOOST_LOG_SEV(log, trace) << "Session reset received";
-    #endif
                 return true;
             case Message_Type_STREAM_RESET:
-                // while waiting for stream start (destination mode implied), no TCP socket is present so these
-                // messages are no-op
-    #ifdef DEBUG
-                BOOST_LOG_SEV(log, trace) << "Stream reset received";
-    #endif
+                BOOST_LOG_SEV(log, trace) << "Stream reset received while waiting for stream start (destination mode implied), no TCP socket is present so these messages are no-op";
                 return true;
             case Message_Type_CONNECTION_RESET:
-                // while waiting for stream start (destination mode implied), no TCP socket is present so these
-                // messages are no-op
-    #ifdef DEBUG
-                BOOST_LOG_SEV(log, trace) << "Connection reset received";
-    #endif
+                BOOST_LOG_SEV(log, trace) << "Connection reset received while waiting for stream start (destination mode implied), no TCP socket is present so these messages are no-op";
                 return true;
             case Message_Type_CONNECTION_START:
                 is_connection_start = true;
           
             case Message_Type_STREAM_START:
+                // backward compatibility: set is_v2_message_format to true if receives no connection id
+                if (!connection_id)
+                {
+                    BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
+                    tac.adapter_config.is_v2_message_format = true;
+                }
                 if (is_connection_start) 
                 {
                     BOOST_LOG_SEV(log, trace) << "Connection Start received, processing message...";
@@ -1382,9 +1357,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             switch (message.type())
             {
             case Message_Type_SESSION_RESET:
-    #ifdef DEBUG
                 BOOST_LOG_SEV(log, trace) << "Session reset received";
-    #endif
                 //validation has already been done on stream_id before calling this, so we can just listen
                 tcp_socket_reset_all(tac, std::bind(&tcp_adapter_proxy::setup_tcp_sockets, this, std::ref(tac)));
                 return true;   //indicates we should stop reading from the web socket after processing this message
@@ -1397,12 +1370,6 @@ namespace aws { namespace iot { namespace securedtunneling {
                 return false;   //indicates we should stop reading from the web socket after processing this message
 
             case Message_Type_CONNECTION_RESET:
-                // backward compatibility: set is_v2_message_format to true if receives no connection id
-                if (!connection_id)
-                {
-                    BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
-                    tac.adapter_config.is_v2_message_format = true;
-                }
                 BOOST_LOG_SEV(log, trace) << "Connection reset received for connection id: " << connection_id;
                 tcp_socket_close(tac, service_id, connection_id);
                 return true;
@@ -1435,12 +1402,6 @@ namespace aws { namespace iot { namespace securedtunneling {
                 return true;
 
             case Message_Type_CONNECTION_START:
-                // backward compatibility: set is_v2_message_format to true if receives no connection id
-                if (!connection_id)
-                {
-                    BOOST_LOG_SEV(log, debug) << "reverting to v2 message format";
-                    tac.adapter_config.is_v2_message_format = true;
-                }
                 if (!stream_id)
                 {
                     throw proxy_exception("No stream ID set for connection start message!");
@@ -1539,9 +1500,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             {
                 throw proxy_exception("Websocket read error", ec);
             }
-    #ifdef DEBUG
             BOOST_LOG_SEV(log, trace) << "Websocket read " << bytes_read << " bytes";
-    #endif
 
             continue_reading = process_incoming_websocket_buffer(tac, incoming_message_buffer);
 
@@ -1579,16 +1538,12 @@ namespace aws { namespace iot { namespace securedtunneling {
                         //doesn't output actual error string unless debug protobuf library is linked to
                         throw proxy_exception((boost::format("Could not parse web socket binary frame into message: %1%") % incoming_message.InitializationErrorString()).str());
                     }
-    #ifdef DEBUG
                     //BOOST_LOG_SEV(log, trace) << "Message received:\n" << message.DebugString(); //re-add when linked to protobuf instead of protobuf-lite
                     BOOST_LOG_SEV(log, trace) << "Message parsed successfully , type :" << incoming_message.type();
-    #endif
                     if (!is_valid_stream_id(tac, incoming_message))
                     {
                         continue_reading = true;
-    #ifdef DEBUG
                         BOOST_LOG_SEV(log, trace) << "Stale message received. Dropping";
-    #endif
                     }
                     else
                     {
@@ -1671,9 +1626,6 @@ namespace aws { namespace iot { namespace securedtunneling {
             else if (tac.is_web_socket_reading)
             {
                 BOOST_LOG_SEV(log, debug) << "Starting web socket read loop while web socket is already reading. Ignoring...";
-    #ifdef DEBUG
-                BOOST_LOG_SEV(log, debug) << "Starting web socket read loop while web socket is already reading. Ignoring...";
-    #endif
             }
             else
             {
@@ -1700,9 +1652,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             }
             if (tac.is_web_socket_reading)
             {
-#ifdef DEBUG
                 BOOST_LOG_SEV(log, debug) << "Starting web socket read loop while web socket is already reading. Ignoring...";
-#endif
             }
             else
             {
@@ -1757,9 +1707,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                     bool has_space_after = tcp_has_enough_write_buffer_space(socket_write_connection);
                     if (!had_space_before && has_space_after)
                     {
-    #ifdef DEBUG
                         BOOST_LOG_SEV(log, debug) << "Just cleared enough buffer space in tcp write buffer. Re-starting async web socket read loop";
-    #endif
                         async_web_socket_read_loop(tac);
                     }
                     if (socket_write_connection->tcp_write_buffer_.size() > 0)
@@ -1775,9 +1723,6 @@ namespace aws { namespace iot { namespace securedtunneling {
                             invoke_and_clear_handler(socket_write_connection->on_tcp_write_buffer_drain_complete);
                         }
                         BOOST_LOG_SEV(log, trace) << "TCP write buffer drain complete";
-    #ifdef DEBUG
-                        BOOST_LOG_SEV(log, trace) << "TCP write buffer drain complete";
-    #endif
                     }
                     BOOST_LOG_SEV(log, trace) << "Done writing for: " << service_id << ", connection id: " << connection_id;
                 }
