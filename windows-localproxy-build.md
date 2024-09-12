@@ -28,7 +28,7 @@
           * https://community.chocolatey.org/packages/openssl
     * Download and install catch2
       * Use Visual Studio native tool command prompt in admin mode.
-      * `git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git`
+      * `git clone --branch v3.7.0 https://github.com/catchorg/Catch2.git`
       * `cd Catch2`
       * `mkdir build`
       * `cd build`

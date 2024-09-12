@@ -182,7 +182,7 @@ In the `CMakeLists.txt`, there are marked sections with commented code that when
 
 #### 5. Download and install Catch2 test framework
 
-    git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git
+    git clone --branch v3.7.0 https://github.com/catchorg/Catch2.git
     cd Catch2
     mkdir build
     cd build
