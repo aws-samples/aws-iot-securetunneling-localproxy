@@ -1,12 +1,12 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 
 #include <TcpAdapterProxy.h>
 #include <ProxySettings.h>
 #include <config/ConfigFile.h>
 #include <iostream>
+#include <fstream>
 #include <unordered_set>
 #include <string>
 #include <cstdio>

@@ -72,7 +72,7 @@ string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} Ope
 #########################################
 #probably comment out for cross compiler as Catch2 is really just a header library
 if(BUILD_TESTS)
-    find_package(Catch2 REQUIRED)
+    find_package(Catch2 3 REQUIRED)
 endif(BUILD_TESTS)
 
 #########################################
@@ -103,6 +103,7 @@ if(BUILD_TESTS)
     file(GLOB TEST_CODE ${PROJECT_SOURCE_DIR}/test/*.cpp)
     set(TEST_SOURCES ${TEST_CODE} ${CORE_SOURCES} ${UTIL_SOURCE})
     add_executable(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${TEST_SOURCES})
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} Catch2::Catch2WithMain)
 endif(BUILD_TESTS)
 
 #libatomic ensured for all platforms except OSX and WINDOWS
