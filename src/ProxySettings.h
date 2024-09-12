@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include <cstdint>
 #include <boost/property_tree/ptree.hpp>
 namespace aws { namespace iot { namespace securedtunneling { namespace settings {
     using boost::property_tree::ptree;
