@@ -2103,7 +2103,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             string endpoint = tac.adapter_config.serviceId_to_endpoint_map[service_id];
             BOOST_LOG_SEV(log, error) << (boost::format("Could not resolve endpoint %1%. Error message: %2%") % endpoint % ec.message()).str();
             basic_retry_execute(log, retry_config,
-                [this, &tac, service_id, connection_id]()
+                [this, &tac, service_id]()
                 {
                     BOOST_LOG_SEV(log, trace) << "resetting stream for service id:" << service_id << ", then listen for stream start";
                     async_send_stream_reset(tac, service_id);
@@ -2122,7 +2122,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             {
                 BOOST_LOG_SEV(log, error) << (boost::format("Could not connect to destination %1%:%2% -- %3%") % dst_host % dst_port % ec.message()).str();
                 basic_retry_execute(log, retry_config,
-                                    [this, &tac, service_id, connection_id]()
+                                    [this, &tac, service_id]()
                                     {
                                         BOOST_LOG_SEV(log, trace) << "resetting stream for service id:" << service_id << ", then listen for stream start";
                                         async_send_stream_reset(tac, service_id);
@@ -2183,7 +2183,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             {
                 BOOST_LOG_SEV(log, error) << (boost::format("Could not resolve bind address: %1% -- %2%") % tac.adapter_config.bind_address.get() % ec.message()).str();
                 basic_retry_execute(log, retry_config,
-                                    [this, &tac, service_id, connection_id]()
+                                    [this, &tac, service_id]()
                                     {
                                         BOOST_LOG_SEV(log, trace) << "resetting stream for service id:" << service_id << ", then listen for stream start";
                                         async_send_stream_reset(tac, service_id);

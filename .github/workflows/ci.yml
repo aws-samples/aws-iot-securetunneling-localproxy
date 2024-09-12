@@ -169,7 +169,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DBUILD_TESTS=OFF -DBOOST_PKG_VERSION=1.84.0 -DWIN32_WINNT=0x0601 -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 16 2019" -A x64 ..\
+          cmake -DBUILD_TESTS=OFF -DLINK_STATIC_OPENSSL=OFF -DBOOST_PKG_VERSION=1.84.0 -DWIN32_WINNT=0x0601 -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 16 2019" -A x64 ..\
           msbuild localproxy.vcxproj -p:Configuration=Release
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
