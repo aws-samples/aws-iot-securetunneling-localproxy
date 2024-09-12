@@ -44,7 +44,7 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/p
 	make install
 
 WORKDIR /home/dependencies
-RUN git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git && \
+RUN git clone --branch v3.7.0 https://github.com/catchorg/Catch2.git && \
 	cd Catch2 && \
 	mkdir build && \
 	cd build && \

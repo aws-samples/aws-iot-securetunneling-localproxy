@@ -4,7 +4,8 @@ set(AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME localproxy)
 set(AWS_TUNNEL_LOCAL_PROXY_LIB_NAME lproxy)
 project(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} CXX)
 
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
+option(LINK_STATIC_OPENSSL "Use static openssl libs" ON)
 if(BUILD_TESTS)
     set(AWS_TUNNEL_LOCAL_PROXY_TEST_NAME localproxytest)
     project(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} CXX)
@@ -62,16 +63,18 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROJECT_SOURCE_DIR}/resources/Mess
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
 
-include_directories(${OPENSSL_INCLUDE_DIR})
-string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_SSL_LIBRARY ${OPENSSL_SSL_LIBRARY})
-string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_CRYPTO_LIBRARY ${OPENSSL_CRYPTO_LIBRARY})
+if(LINK_STATIC_OPENSSL)
+    include_directories(${OPENSSL_INCLUDE_DIR})
+    string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_SSL_LIBRARY ${OPENSSL_SSL_LIBRARY})
+    string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_CRYPTO_LIBRARY ${OPENSSL_CRYPTO_LIBRARY})
+endif()
 
 #########################################
 # Test framework dependency             #
 #########################################
 #probably comment out for cross compiler as Catch2 is really just a header library
 if(BUILD_TESTS)
-    find_package(Catch2 REQUIRED)
+    find_package(Catch2 3 REQUIRED)
 endif(BUILD_TESTS)
 
 #########################################
@@ -102,6 +105,7 @@ if(BUILD_TESTS)
     file(GLOB TEST_CODE ${PROJECT_SOURCE_DIR}/test/*.cpp)
     set(TEST_SOURCES ${TEST_CODE} ${CORE_SOURCES} ${UTIL_SOURCE})
     add_executable(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${TEST_SOURCES})
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} Catch2::Catch2WithMain)
 endif(BUILD_TESTS)
 
 #libatomic ensured for all platforms except OSX and WINDOWS
@@ -115,9 +119,13 @@ endif()
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${CMAKE_THREAD_LIBS_INIT})
-# target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} OpenSSL::SSL)
-# target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} OpenSSL::Crypto)
-### uncomment above 2 lines and remove below 2 lines to link against OpenSSL shared libs
+if(LINK_STATIC_OPENSSL)
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${OpenSSL_STATIC_SSL_LIBRARY})
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${OpenSSL_STATIC_CRYPTO_LIBRARY})
+else()
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} OpenSSL::SSL)
+    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} OpenSSL::Crypto)
+endif()
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${OpenSSL_STATIC_SSL_LIBRARY})
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${OpenSSL_STATIC_CRYPTO_LIBRARY})
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${Boost_STATIC_LIBRARIES})
@@ -127,9 +135,13 @@ set_property(TARGET ${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} APPEND_STRING PROPERTY
 
 if(BUILD_TESTS)
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${CMAKE_THREAD_LIBS_INIT})
-    # target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::SSL)
-    # target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::Crypto)
-    ### uncomment above 2 lines and remove below 2 lines to link against OpenSSL shared libs
+    if(LINK_STATIC_OPENSSL)
+        target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${OpenSSL_STATIC_SSL_LIBRARY})
+        target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${OpenSSL_STATIC_CRYPTO_LIBRARY})
+    else()
+        target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::SSL)
+        target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::Crypto)
+    endif()
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${OpenSSL_STATIC_SSL_LIBRARY})
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${OpenSSL_STATIC_CRYPTO_LIBRARY})
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${Boost_STATIC_LIBRARIES})

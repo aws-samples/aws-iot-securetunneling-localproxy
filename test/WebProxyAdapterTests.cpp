@@ -6,11 +6,12 @@
 #include "WebProxyAdapter.h"
 #include "WebSocketStream.h"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <boost/asio.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
+#include <fstream>
 #include <thread>
 #include <chrono>
 

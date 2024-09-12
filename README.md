@@ -20,6 +20,11 @@ This code enables tunneling of a single threaded TCP client / server socket inte
 
 ---
 
+## Quick Start for x86 Linux platforms
+
+Install Docker https://docs.docker.com/get-started/get-docker/
+`docker run --rm -it --network=host public.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin:amd64-latest`, then populate the missing required parameters.
+
 ## Building the local proxy via Docker
 
 ### Prerequisites
@@ -173,11 +178,11 @@ Source install example:
 Run the ./Configure command without any arguments to check the available platform configuration options and the documentation here: https://wiki.openssl.org/index.php/Compilation_and_Installation
 
 ##### Static vs. Dynamic linking OpenSSL
-In the `CMakeLists.txt`, there are marked sections with commented code that when uncommented, allow users to switch between using static vs shared OpenSSL libraries. Choosing to do so is completely optional depending on your own operational requirements. This is following guidance from https://github.com/aws-samples/aws-iot-securetunneling-localproxy/pull/145. The localproxy uses static libs by default
+In the `CMakeLists.txt`, we provide a parameter -DLINK_STATIC_OPENSSL which by default is set to ON. You may link against shared libraries on your system by setting the value to OFF. Choosing to do so is completely optional depending on your own operational requirements. This is following guidance from https://github.com/aws-samples/aws-iot-securetunneling-localproxy/pull/145.
 
 #### 5. Download and install Catch2 test framework
 
-    git clone --branch v2.13.6 https://github.com/catchorg/Catch2.git
+    git clone --branch v3.7.0 https://github.com/catchorg/Catch2.git
     cd Catch2
     mkdir build
     cd build
