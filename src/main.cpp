@@ -158,6 +158,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     options_description cliargs_desc("Allowed options");
     cliargs_desc.add_options()
         ("help,h", "Show help message")
+        ("version", "Show version")
         ("access-token,t", value<string>()->required(), "Client access token")
         ("client-token,i", value<string>(), "Optional Client Token")
         ("proxy-endpoint,e", value<string>(), "Endpoint of proxy server with port (if not default 443). Example: data.tunneling.iot.us-east-1.amazonaws.com:443")
@@ -177,6 +178,11 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
         ;
     store(parse_command_line(argc, argv, cliargs_desc), vm);
 
+    if (vm.count("version"))
+    {
+        std::cerr << "3.1.2" << "\n"; // hardcoding this as a temporary measure
+        return false;
+    }
     if (vm.count("help"))
     {
         std::cerr << cliargs_desc << "\n";
