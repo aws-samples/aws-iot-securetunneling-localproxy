@@ -17,7 +17,7 @@ endif(BUILD_TESTS)
 #########################################
 find_package(Git)
 include(CMakeLists.txt.versioning)
-# Now we inject the version information into a header that is accessible from the device client executable
+# Now we inject the version information into a header that is accessible from the local proxy executable
 configure_file("src/Version.h.in" "${PROJECT_BINARY_DIR}/Version.h")
 
 ######################################
