@@ -20,4 +20,5 @@ namespace aws { namespace iot { namespace securedtunneling { namespace config_fi
             unordered_set<string> const & service_ids,
             unordered_map<string, string> & serviceId_to_endpoint_mapping);
     void update_port_mapping(const string & cli_input, unordered_map<string, string> & serviceId_to_endpoint_mapping);
+    std::string PrintVersion();
 }}}}

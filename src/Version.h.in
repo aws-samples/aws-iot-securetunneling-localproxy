@@ -1,0 +1,14 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * CMake will inject version information into this file at compile time, and will
+ * make it accessible to our source code as "Version.h"
+ */
+#ifndef AWS_IOT_SECURE_TUNNELING_LOCAL_PROXY_VERSION_H
+#define AWS_IOT_SECURE_TUNNELING_LOCAL_PROXY_VERSION_H
+
+#define LOCAL_PROXY_VERSION_FULL "${${PROJECT_NAME}_VERSION_STRING_FULL}"
+#define LOCAL_PROXY_VERSION "${${PROJECT_NAME}_VERSION_STRING}"
+
+#endif // AWS_IOT_SECURE_TUNNELING_LOCAL_PROXY_VERSION_H
