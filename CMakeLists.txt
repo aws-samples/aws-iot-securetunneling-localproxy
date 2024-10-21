@@ -6,10 +6,19 @@ project(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} CXX)
 
 option(BUILD_TESTS "Build tests" OFF)
 option(LINK_STATIC_OPENSSL "Use static openssl libs" ON)
+option(GIT_VERSION "Updates the version number using the Git commit history" ON)
 if(BUILD_TESTS)
     set(AWS_TUNNEL_LOCAL_PROXY_TEST_NAME localproxytest)
     project(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} CXX)
 endif(BUILD_TESTS)
+
+#########################################
+# Generate Version Information from Git #
+#########################################
+find_package(Git)
+include(CMakeLists.txt.versioning)
+# Now we inject the version information into a header that is accessible from the local proxy executable
+configure_file("src/Version.h.in" "${PROJECT_BINARY_DIR}/Version.h")
 
 ######################################
 # Section : Disable in-source builds #

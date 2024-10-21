@@ -29,6 +29,7 @@
 #include "TcpAdapterProxy.h"
 #include "config/ConfigFile.h"
 #include "LocalproxyConfig.h"
+#include "./config/ConfigFile.h"
 
 using std::uint16_t;
 using std::endl;
@@ -50,6 +51,7 @@ using aws::iot::securedtunneling::tcp_adapter_proxy;
 using aws::iot::securedtunneling::proxy_mode;
 using aws::iot::securedtunneling::get_region_endpoint;
 using aws::iot::securedtunneling::settings::apply_region_overrides;
+using aws::iot::securedtunneling::config_file::PrintVersion;
 
 char const * const ACCESS_TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_ACCESS_TOKEN";
 char const * const CLIENT_TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_CLIENT_TOKEN";
@@ -158,7 +160,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     options_description cliargs_desc("Allowed options");
     cliargs_desc.add_options()
         ("help,h", "Show help message")
-        ("version", "Show version")
+        ("version", "Show current version of Local Proxy")
         ("access-token,t", value<string>()->required(), "Client access token")
         ("client-token,i", value<string>(), "Optional Client Token")
         ("proxy-endpoint,e", value<string>(), "Endpoint of proxy server with port (if not default 443). Example: data.tunneling.iot.us-east-1.amazonaws.com:443")
@@ -180,8 +182,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
 
     if (vm.count("version"))
     {
-        std::cerr << "3.1.2" << "\n"; // hardcoding this as a temporary measure
-        return false;
+        PrintVersion();
     }
     if (vm.count("help"))
     {
@@ -431,6 +432,10 @@ int main(int argc, char ** argv)
 {
     try
     {
+        
+        std::string version = PrintVersion();
+        std::cout << "Running AWS IoT Secure Tunneling Local Proxy version: " << version << std::endl;    
+
         LocalproxyConfig cfg;
         ptree settings;
         std::uint16_t logging_level;
