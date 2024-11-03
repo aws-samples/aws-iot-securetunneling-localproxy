@@ -1,4 +1,3 @@
-
 ## As of 3.1.2 May 2024 Update, `--destination-client-type V1` will be a required parameter when connecting with the following:
 - AWS IoT Device Client
 - AWS IoT Secure Tunneling Component
@@ -627,3 +626,25 @@ There are limits on the maximum streams that can be multiplexed on a tunnel conn
 
 #### Load balancing in multiplexed streams  
 If more than one stream is transferred at the same time, local proxy will not load balance between these streams. If you have one stream that is dominating the bandwidth, the other streams sharing the same tunnel connection may see latency of data packet delivery. 
+
+### Troubleshooting
+
+#### SSL Handshake Issues
+
+If you encounter SSL handshake issues, follow these steps to troubleshoot:
+
+1. **Check SSL Certificates**: Ensure that the SSL certificates are correctly installed and configured on your system. Verify that the certificate chain is complete and trusted.
+
+2. **Verify Network Configuration**: Check your network configuration to ensure that there are no firewall rules or network policies blocking the SSL handshake.
+
+3. **Enable Detailed Logging**: Enable detailed logging in the localproxy to capture SSL handshake errors. Use the `-v` option with a higher verbosity level (e.g., `-v 6`) to get more detailed logs.
+
+4. **Retry Mechanism**: The localproxy includes a retry mechanism for SSL handshake. If the handshake fails, the localproxy will automatically retry the handshake. Ensure that the retry mechanism is enabled in the configuration.
+
+5. **Disable SSL Verification**: As a last resort, you can disable SSL verification if the handshake continues to fail. Use the `--no-ssl-host-verify` option to disable SSL host verification. Note that this should only be used for troubleshooting purposes and not in production environments.
+
+6. **Check System Environment**: The issue may be specific to your system environment. Ensure that the localproxy works on other systems to rule out any system-specific issues.
+
+7. **Update Dependencies**: Ensure that you are using the latest versions of the dependencies (e.g., OpenSSL, Boost) required by the localproxy. Outdated dependencies may cause SSL handshake issues.
+
+8. **Consult Documentation**: Refer to the official documentation and troubleshooting guides provided by the localproxy project for additional troubleshooting steps and best practices.
