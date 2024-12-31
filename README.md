@@ -1,9 +1,9 @@
 
 ## As of 3.1.2 May 2024 Update, `--destination-client-type V1` will be a required parameter when connecting with the following:
 - AWS IoT Device Client
-- AWS IoT Secure Tunneling Component
+- AWS IoT Secure Tunneling Component OR Greengrass V2 Secure Tunneling Component
 - Browser-based Secure Tunneling from the AWS Console
-- any Secure Tunneling demo code written before 2022
+- Any Secure Tunneling demo code written before 2022
 - 1.x versions of the localproxy
 
 # AWS IoT Secure Tunneling Local Proxy Reference Implementation C++
@@ -52,6 +52,10 @@ You can find them at:
 The release images are minimum size images that include a pre-built binary with only the necessary shared libs installed. To use the release images, simply pass the localproxy CLI args into the docker run command. Example:
 
 `docker run --rm -it --network=host public.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin:amd64-latest --region us-east-1 -s 5555 -t <ACCESS_TOKEN>`
+
+Sometimes there may be minute differences between the Ubuntu images depending on the arch, which may not end up giving openssl enough context about which cert stores to use for verifying server certificates. In such cases to avoid the SSL handshake failure we can provide the ssl certs path as well (`-c /etc/ssl/certs`). Example:
+
+`sudo docker run --rm -it --network=host public.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin:arm64-latest --region us-west-2 -s 5555  -c /etc/ssl/certs -t <ACCESS_TOKEN>`
 
 On MacOS, --network=host does not work the way you expect it would. instead, do `docker run --rm -it -p 5555:5555 public.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin:amd64-latest --region us-east-1 -b 0.0.0.0 -s 5555 -t <ACCESS_TOKEN>`
 
@@ -258,16 +262,35 @@ Source local proxy: local proxy that runs in source mode.
 
 Destination local proxy:  local proxy that runs in destination mode.
 
+
+### As of December 2024, the following software distributions only support the V1 protocol:
+- AWS IoT Device Client
+- AWS IoT Secure Tunneling Component OR Greengrass V2 Secure Tunneling Component
+- Browser-based Secure Tunneling from the AWS Console
+- Any Secure Tunneling demo code written before 2022
+- 1.x versions of the localproxy
+
+**Hence a device using any of the above mentioned variations as one end of the secure tunnel is actually using the V1 protocol for connection to the tunnel.**
+
 ### Multi-port tunneling feature support
-Multi-port tunneling feature allows more than one stream multiplexed on same tunnel. 
-This feature is only supported with V2 local proxy. If you have some devices that on V1 local proxy, some on V2 local proxy, simply upgrade the local proxy on the source device to V2 local proxy. When V2 local proxy talks to V1 local proxy, the backward compatibility is maintained. For more details, please refer to section [backward compatibility](#backward-compatibility)
+Multi-port tunneling feature allows more than one data stream multiplexed on same tunnel. 
+This feature is only supported with V2 (and V3) local proxy. If you have a device at one end of the tunnel using V1 local proxy, and the device at the other end using V2 local proxy, i.e. when V2 local proxy talks to V1 local proxy, the backward compatibility is maintained. For more details, please refer to section [backward compatibility](#backward-compatibility)
+and 
+[devices supporting V1 protocol](#as-of-december-2024-the-following-software-distributions-only-support-the-v1-protocol).
+
+Note that eventhough backward compatibility is maintained here, this connection is only viable **given you are trying to establish only a single stream over single service connection over the tunnel.**
 
 ### Simultaneous TCP connections feature support
 Simultaneous TCP is a feature that allows application layer (e.g. HTTP) protocols to open multiple TCP connections over a single stream.
-This feature is only supported with V3 local proxy. If you have some devices that on V1/V2 local proxy, some on V3 local proxy, simply upgrade the local proxy on the source device to V3 local proxy. When V3 local proxy talks to V1/V2 local proxy, the backward compatibility is maintained as long as users specify `V1` or `V2` as the value for `destination-client-type`. For more details, please refer to section [backward compatibility](#backward-compatibility)
+This feature is only supported with V3 local proxy. If you have some device using V1/V2 local proxy, and the other end device using  V3 local proxy, i.e. when V3 local proxy talks to V1/V2 local proxy, the backward compatibility is maintained as long as users specify `V1` or `V2` as the value for `destination-client-type`. For more details, please refer to section [backward compatibility](#backward-compatibility)
+and 
+[devices supporting V1 protocol](#as-of-december-2024-the-following-software-distributions-only-support-the-v1-protocol).
+
+Note that eventhough backward compatibility is maintained here, this connection is only viable **given you are trying to establish only a single stream over single service connection over the tunnel in case of V3 talking to V1 protocol OR you are trying to establish multiple services connections (each with single stream only) in case of V3 talking to V2 protocol.**
 
 ### Service identifier (Service ID)
 If you need to use multi-port tunneling feature, service ID is needed to start local proxy. A service identifier will be used as the new format to specify the source listening port or destination service when start local proxy. The identifier is like an alias for the source listening port or destination service. For the format requirement of service ID, please refer to AWS public doc [services in DestinationConfig ](https://docs.aws.amazon.com/iot/latest/apireference/API_iot-secure-tunneling_DestinationConfig.html). There is no restriction on how this service ID should be named, as long as it can help uniquely identifying a connection or stream. 
+A maximum of 3 service IDs can be configured while creating a Secure Tunnel (as of December 2024).
 
 Example 1: _SSH1_
 
@@ -623,7 +646,9 @@ Follow instructions in [here](windows-localproxy-build.md) to build a local prox
 If the tunnel multi-port feature is enabled, multiplexed tunnels have the same bandwidth limit as non-multiplexed tunnels. This limit is mentioned in [AWS public doc](https://docs.aws.amazon.com/general/latest/gr/iot_device_management.html) section **AWS IoT Secure Tunneling**, row _Maximum bandwidth per tunnel_. The bandwidth for a multiplexed tunnel is the bandwidth consumed by all active streams that transfer data over the tunnel connection. If you need this limit increased, please reach out to AWS support and ask for a limit increase. 
 
 #### Service ID limits 
-There are limits on the maximum streams that can be multiplexed on a tunnel connection. This limit is mentioned in [AWS public doc](https://docs.aws.amazon.com/general/latest/gr/iot_device_management.html) section **AWS IoT Secure Tunneling**, row _Maximum services per tunnel_. If you need this limit increased, please reach out to AWS support and ask for a limit increase.	
+There are limits on the maximum streams that can be multiplexed on a tunnel connection. This limit is mentioned in [AWS public doc](https://docs.aws.amazon.com/general/latest/gr/iot_device_management.html) section **AWS IoT Secure Tunneling**, row _Maximum services per tunnel_. 
+As of December 2024, this limit is set to 3 Service IDs per tunnel.
+If you need this limit increased, please reach out to AWS support and ask for a limit increase.	
 
 #### Load balancing in multiplexed streams  
 If more than one stream is transferred at the same time, local proxy will not load balance between these streams. If you have one stream that is dominating the bandwidth, the other streams sharing the same tunnel connection may see latency of data packet delivery. 
