@@ -55,7 +55,7 @@ The release images are minimum size images that include a pre-built binary with 
 
 Sometimes there may be minute differences between the Ubuntu images depending on the arch, which may not end up giving openssl enough context about which cert stores to use for verifying server certificates. In such cases to avoid the SSL handshake failure we can provide the ssl certs path as well (`-c /etc/ssl/certs`). Example:
 
-`sudo docker run --rm -it --network=host public.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin:arm64-latest --region us-west-2 -s 5555  -c /etc/ssl/certs --destination-client -t <ACCESS_TOKEN>`
+`sudo docker run --rm -it --network=host public.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin:arm64-latest --region us-west-2 -s 5555  -c /etc/ssl/certs -t <ACCESS_TOKEN>`
 
 On MacOS, --network=host does not work the way you expect it would. instead, do `docker run --rm -it -p 5555:5555 public.ecr.aws/aws-iot-securetunneling-localproxy/ubuntu-bin:amd64-latest --region us-east-1 -b 0.0.0.0 -s 5555 -t <ACCESS_TOKEN>`
 
