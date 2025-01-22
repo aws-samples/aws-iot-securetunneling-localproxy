@@ -16,7 +16,7 @@
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/websocket/ssl.hpp>
 #include <boost/asio.hpp>
-#include <boost/asio/ssl/rfc2818_verification.hpp>
+#include <boost/asio/ssl/host_name_verification.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/format.hpp>
 #include <boost/property_tree/ptree.hpp>

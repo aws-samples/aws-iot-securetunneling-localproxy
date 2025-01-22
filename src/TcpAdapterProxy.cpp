@@ -6,7 +6,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/asio.hpp>
-#include <boost/asio/ssl/rfc2818_verification.hpp>
+#include <boost/asio/ssl/host_name_verification.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/endian/conversion.hpp>
@@ -923,7 +923,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 if (!localproxy_config.no_ssl_host_verify)
                 {
                     tac.wss->set_ssl_verify_mode(boost::asio::ssl::verify_peer | boost::asio::ssl::verify_fail_if_no_peer_cert);
-                    tac.wss->set_verify_callback(boost::asio::ssl::rfc2818_verification(tac.adapter_config.proxy_host));
+                    tac.wss->set_verify_callback(boost::asio::ssl::host_name_verification(tac.adapter_config.proxy_host));
                 }
                 else
                 {
@@ -974,7 +974,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             }
             else
             {
-                BOOST_LOG_SEV(log, debug) << "Resolved proxy server IP: " << results->endpoint().address();
+                BOOST_LOG_SEV(log, debug) << "Resolved proxy server IP: " << results.begin()->endpoint().address();
                 //next connect tcp
                 tac.wss->lowest_layer().async_connect(*results.begin(), on_tcp_connect);
             }
@@ -986,8 +986,8 @@ namespace aws { namespace iot { namespace securedtunneling {
                 BOOST_LOG_SEV(log, error) << (boost::format("Could not resolve DNS hostname of Web proxy: %1% - %2%") % tac.adapter_config.web_proxy_host % ec.message()).str();
                 basic_retry_execute(log, retry_config, [&]() { std::bind(&tcp_adapter_proxy::web_socket_close_and_stop, this, std::ref(tac)); });
             } else {
-                BOOST_LOG_SEV(log, debug) << "Resolved Web proxy IP: " << results->endpoint().address();
-                web_proxy_adapter.async_connect(on_tcp_connect, tac.wss, results->endpoint());
+                BOOST_LOG_SEV(log, debug) << "Resolved Web proxy IP: " << results.begin()->endpoint().address();
+                web_proxy_adapter.async_connect(on_tcp_connect, tac.wss, results.begin()->endpoint());
             }
         };
 
@@ -1935,17 +1935,17 @@ namespace aws { namespace iot { namespace securedtunneling {
                 }
                 else
                 {
-                    BOOST_LOG_SEV(log, debug) << "Resolved bind IP: " << results->endpoint().address().to_string();
+                    BOOST_LOG_SEV(log, debug) << "Resolved bind IP: " << results.begin()->endpoint().address().to_string();
                     boost::system::error_code bind_ec;
-                    server->acceptor_.open(results->endpoint().protocol());
+                    server->acceptor_.open(results.begin()->endpoint().protocol());
                     if (port_to_connect)
                     {   //if data port is 0 (means pick an empheral port), then don't set this option
                         server->acceptor_.set_option(reuse_addr_option);
                     }
-                    server->acceptor_.bind(results->endpoint(), bind_ec);
+                    server->acceptor_.bind(results.begin()->endpoint(), bind_ec);
                     if (bind_ec)
                     {
-                        BOOST_LOG_SEV(log, error) << (boost::format("Could not bind to address: %1%:%2% -- %3%") % results->endpoint().address().to_string() % results->endpoint().port() % bind_ec.message()).str();
+                        BOOST_LOG_SEV(log, error) << (boost::format("Could not bind to address: %1%:%2% -- %3%") % results.begin()->endpoint().address().to_string() % results.begin()->endpoint().port() % bind_ec.message()).str();
                         basic_retry_execute(log, retry_config,
                             []() { throw proxy_exception(SOURCE_LOCAL_PROXY_PORT_BIND_EXCEPTION); });
                     }
@@ -1958,7 +1958,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                         if (listen_ec)
                         {
                             BOOST_LOG_SEV(log, error) << (boost::format("Could not listen on bind address: %1%:%2% -- %3%")
-                                % results->endpoint().address().to_string() % local_port % listen_ec.message()).str();
+                                % results.begin()->endpoint().address().to_string() % local_port % listen_ec.message()).str();
                             basic_retry_execute(log, retry_config,
                                 []() { throw proxy_exception(SOURCE_LOCAL_PROXY_PORT_BIND_EXCEPTION); });
                         }
@@ -2057,8 +2057,8 @@ namespace aws { namespace iot { namespace securedtunneling {
         }
         else {
             tcp_client::pointer client = tac.serviceId_to_tcp_client_map[service_id];
-            std::string dst_host = results->endpoint().address().to_string();
-            unsigned short dst_port = results->endpoint().port();
+            std::string dst_host = results.begin()->endpoint().address().to_string();
+            unsigned short dst_port = results.begin()->endpoint().port();
             BOOST_LOG_SEV(log, debug) << "Resolved destination host to IP: " << dst_host << ", connecting ...";
 
             boost::system::error_code connect_ec;
@@ -2137,7 +2137,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             }
             else
             {
-                BOOST_LOG_SEV(log, debug) << "Resolved bind IP: " << results->endpoint().address().to_string();
+                BOOST_LOG_SEV(log, debug) << "Resolved bind IP: " << results.begin()->endpoint().address().to_string();
 
                 tuple<string, string> endpoint_to_connect = tcp_adapter_proxy::get_host_and_port(endpoint, tac.adapter_config.bind_address.get());
                 std::string dst_host = std::get<0>(endpoint_to_connect);

@@ -163,7 +163,7 @@ namespace aws {
                 }
             }
 
-            void WebSocketStream::set_verify_callback(const ssl::rfc2818_verification &callback) {
+            void WebSocketStream::set_verify_callback(const ssl::host_name_verification &callback) {
                 if (localproxyConfig.is_web_proxy_using_tls) {
                     BOOST_LOG_SEV(*log, trace) << "Calling set_verify_callback with type: double_ssl_stream";
                     return double_ssl_stream->set_verify_callback(callback);
