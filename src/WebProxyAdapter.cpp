@@ -52,7 +52,7 @@ namespace aws {
             void WebProxyAdapter::async_ssl_handshake() {
                 if (!localproxy_config.no_ssl_host_verify) {
                     websocket_stream->get_web_proxy_ssl_stream()->set_verify_mode(ssl::verify_peer | ssl::verify_fail_if_no_peer_cert);
-                    websocket_stream->get_web_proxy_ssl_stream()->set_verify_callback(boost::asio::ssl::rfc2818_verification(localproxy_config.web_proxy_host));
+                    websocket_stream->get_web_proxy_ssl_stream()->set_verify_callback(boost::asio::ssl::host_name_verification(localproxy_config.web_proxy_host));
                 }
                 websocket_stream->get_web_proxy_ssl_stream()->async_handshake(ssl::stream_base::client, [this](error_code const &ec) {
                     if (ec) {

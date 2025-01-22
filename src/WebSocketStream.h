@@ -142,7 +142,7 @@ namespace aws {
                  * proxy server and the localproxy.
                  * @param callback the SSL callback.
                  */
-                void set_verify_callback(const ssl::rfc2818_verification &callback);
+                void set_verify_callback(const ssl::host_name_verification &callback);
 
                 /**
                  * Performs the SSL handshake between the localproxy and the proxy server asynchronously.
