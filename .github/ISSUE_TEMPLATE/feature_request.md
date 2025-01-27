@@ -25,8 +25,8 @@ How would this feature impact the project? Who would benefit from this feature?
 **Implementation ideas (optional)**
 If you have any ideas on how this could be implemented, please share them here.
 
-> Go over all the following points, and put an `x` in all the boxes that apply.
-> If you're unsure about any of these, don't hesitate to ask. We're here to help!
+<!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
+<!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
 
 **Are you willing to work on this feature?**
 - [ ] Yes, I'm willing to submit a PR for this feature
