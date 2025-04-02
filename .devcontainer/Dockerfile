@@ -21,7 +21,11 @@ RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
 
 # [Optional] Uncomment this section to install additional packages.
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends libssl-dev zlib1g
+    && apt-get -y install --no-install-recommends \
+        # For cross-compiling to ARMv7 architecture which includes the Cortex-A8 processors used in our EDGs.
+        gcc-arm-linux-gnueabihf \
+        libssl-dev
+        zlib1g
 
 # Install Boost library
 RUN curl -sL "https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_$(echo ${BOOST_VERSION} | sed 's/\./_/g').tar.gz/download" | tar xzv -C /tmp/ \
