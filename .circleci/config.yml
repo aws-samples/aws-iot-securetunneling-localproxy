@@ -35,14 +35,15 @@ workflows:
       - build:
           context: dockerhub
           matrix:
+            alias: build-linux
             parameters:
               platform:
-                - linux/arm64,linux/arm/v7
-                - linux/amd64
+                - "linux/arm64,linux/arm/v7"
+                - "linux/amd64"
               resource_class:
                 - arm.large
                 - large
             # Build optimization: don't build ARM images with x86_64 runners and vice versa
             exclude:
-              - linux/arm64,linux/arm/v7: large
-              - linux/amd64: arm.large
+              - "linux/arm64,linux/arm/v7": large
+              - "linux/amd64": arm.large
