@@ -5,11 +5,11 @@ orbs:
 
 jobs:
   build-linux:
-    executor:
-      name: docker/machine
-      resource-class: large
+    executor: docker/docker
+    resource_class: large
     steps:
       - checkout
+      - setup_remote_docker
       - run:
           name: Set up Docker Buildx
           # docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
