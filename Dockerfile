@@ -13,7 +13,7 @@ WORKDIR /tmp
 # CPU Architecture: Cortex-A8
 # SIMD Coprocessor: NEON
 # Floating Point ABI: Hard (generates floating-point instructions with FPU-specific calling conventions)
-RUN if [ "${TARGETARCH}" = "arm"]; then \
+RUN if [ "${TARGETARCH}" = "arm" ]; then \
         export CFLAGS="-march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -pipe"; \
         export CXXFLAGS="-march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -pipe"; \
     fi && \
