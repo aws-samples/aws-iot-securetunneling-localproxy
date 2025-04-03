@@ -13,7 +13,7 @@ jobs:
       - docker/build:
           image: verdigristech/localproxy
           use-buildkit: true
-          extra_build_args: --platform=linux/amd64,linux/arm64,linux/arm --sbom=true --provenance=true --progress=plain
+          extra_build_args: --platform=linux/amd64,linux/arm64,linux/arm --sbom=true --progress=plain
 
 workflows:
   release:
