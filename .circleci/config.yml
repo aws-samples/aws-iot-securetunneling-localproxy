@@ -1,0 +1,21 @@
+version: 2.1
+
+orbs:
+  docker: circleci/docker@2.8.2
+
+jobs:
+  build-linux:
+    executor: docker/docker
+    resource_class: large
+    steps:
+      - checkout
+      - setup_remote_docker
+      - docker/build:
+          image: verdigristech/localproxy
+          use-buildkit: true
+          extra_build_args: --platform=linux/amd64,linux/arm64,linux/arm --sbom=true --provenance=true --progress=plain
+
+workflow:
+  release:
+    jobs:
+      - build-linux
