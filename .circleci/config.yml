@@ -34,17 +34,16 @@ workflows:
     jobs:
       - build-linux:
           context: dockerhub
-          matrix:
-            parameters:
-              architecture:
-                - "arm64"
-                - "arm/v7"
-                - "amd64"
-              resource-class:
-                - arm.large
-                - large
-            # Build optimization: don't build ARM images with x86_64 runners and vice versa
-            exclude:
-              - arm64: large
-              - arm/v7: large
-              - amd64": arm.large
+          name: build-linux-amd64
+          architecture: amd64
+          resource-class: large
+      - build-linux:
+          context: dockerhub
+          name: build-linux-arm64
+          architecture: arm64
+          resource-class: arm.large
+      - build-linux:
+          context: dockerhub
+          name: build-linux-armv7
+          architecture: arm/v7
+          resource-class: arm.large
