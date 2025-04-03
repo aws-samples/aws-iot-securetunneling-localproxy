@@ -10,7 +10,6 @@ jobs:
       resource-class: large
     steps:
       - checkout
-      - setup_remote_docker
       - docker/build:
           image: verdigristech/localproxy
           use-buildkit: true
