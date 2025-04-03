@@ -32,10 +32,9 @@ jobs:
 workflows:
   release:
     jobs:
-      - build:
+      - build-linux:
           context: dockerhub
           matrix:
-            alias: build-linux
             parameters:
               architecture:
                 - "arm64"
