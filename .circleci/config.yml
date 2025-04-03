@@ -7,7 +7,7 @@ jobs:
   build-linux:
     executor:
       name: docker/machine
-      resource_class: large
+      resource-class: large
     steps:
       - checkout
       - setup_remote_docker
