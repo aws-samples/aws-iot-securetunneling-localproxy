@@ -4,16 +4,16 @@ orbs:
   docker: circleci/docker@2.8.2
 
 jobs:
-  build:
+  build-linux:
     parameters:
-      platform:
+      architecture:
         type: string
-        default: linux/amd64
-      resource_class:
+        default: amd64
+      resource-class:
         type: string
         default: medium
     executor: docker/docker
-    resource_class: << parameters.resource_class >>
+    resource_class: << parameters.resource-class >>
     steps:
       - checkout
       - setup_remote_docker:
@@ -27,7 +27,7 @@ jobs:
       - docker/build:
           image: verdigristech/localproxy
           use-buildkit: true
-          extra_build_args: --platform=<< parameters.platform >> --progress=plain
+          extra_build_args: --platform=linux/<< parameters.architecture >> --progress=plain
 
 workflows:
   release:
@@ -37,13 +37,15 @@ workflows:
           matrix:
             alias: build-linux
             parameters:
-              platform:
-                - "linux/arm64,linux/arm/v7"
-                - "linux/amd64"
-              resource_class:
+              architecture:
+                - "arm64"
+                - "arm/v7"
+                - "amd64"
+              resource-class:
                 - arm.large
                 - large
             # Build optimization: don't build ARM images with x86_64 runners and vice versa
             exclude:
-              - "linux/arm64,linux/arm/v7": large
-              - "linux/amd64": arm.large
+              - arm64: large
+              - arm/v7: large
+              - amd64": arm.large
