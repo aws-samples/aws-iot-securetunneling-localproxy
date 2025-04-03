@@ -42,6 +42,7 @@ workflows:
               resource_class:
                 - arm.large
                 - large
+            # Build optimization: don't build ARM images with x86_64 runners and vice versa
             exclude:
               - linux/arm64,linux/arm/v7: large
               - linux/amd64: arm.large
