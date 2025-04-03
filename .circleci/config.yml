@@ -4,9 +4,16 @@ orbs:
   docker: circleci/docker@2.8.2
 
 jobs:
-  build-linux:
+  build:
+    parameters:
+      platform:
+        type: string
+        default: linux/amd64
+      resource_class:
+        type: string
+        default: medium
     executor: docker/docker
-    resource_class: large
+    resource_class: << parameters.resource_class >>
     steps:
       - checkout
       - setup_remote_docker:
@@ -20,10 +27,21 @@ jobs:
       - docker/build:
           image: verdigristech/localproxy
           use-buildkit: true
-          extra_build_args: --platform=linux/amd64,linux/arm64,linux/arm --progress=plain
+          extra_build_args: --platform=<< parameters.platform >> --progress=plain
 
 workflows:
   release:
     jobs:
-      - build-linux:
+      - build:
           context: dockerhub
+          matrix:
+            parameters:
+              platform:
+                - linux/arm64,linux/arm/v7
+                - linux/amd64
+              resource_class:
+                - arm.large
+                - large
+            exclude:
+              - linux/arm64,linux/arm/v7: large
+              - linux/amd64: arm.large
