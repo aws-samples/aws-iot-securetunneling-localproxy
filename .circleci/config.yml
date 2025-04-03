@@ -15,7 +15,7 @@ jobs:
           use-buildkit: true
           extra_build_args: --platform=linux/amd64,linux/arm64,linux/arm --sbom=true --provenance=true --progress=plain
 
-workflow:
+workflows:
   release:
     jobs:
       - build-linux
