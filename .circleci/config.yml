@@ -18,17 +18,15 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+      - run:
+          name: Set up Docker Buildx context
+          command: docker buildx create --name crossbuilder --use
       - docker/check:
           docker-username: DOCKER_USERNAME
       - docker/build:
           image: verdigristech/localproxy
-          use-remote-docker: true
           use-buildkit: true
           extra_build_args: --platform=linux/<< parameters.architecture >> --progress=plain
-          before_build:
-            - run:
-                name: Set up Docker Buildx context
-                command: docker buildx create --name crossbuilder --use
 
 workflows:
   release:
