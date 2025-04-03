@@ -5,8 +5,9 @@ orbs:
 
 jobs:
   build-linux:
-    executor: docker/docker
-    resource_class: large
+    executor:
+      docker/machine:
+        resource_class: large
     steps:
       - checkout
       - setup_remote_docker
