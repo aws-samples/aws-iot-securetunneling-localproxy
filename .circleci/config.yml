@@ -16,6 +16,8 @@ jobs:
           # docker buildx inspect --bootstrap
           command: |
             docker buildx create --name crossbuilder --use
+      - docker/check:
+          docker-username: DOCKER_USERNAME
       - docker/build:
           image: verdigristech/localproxy
           use-buildkit: true
@@ -24,4 +26,5 @@ jobs:
 workflows:
   release:
     jobs:
-      - build-linux
+      - build-linux:
+          context: dockerhub
