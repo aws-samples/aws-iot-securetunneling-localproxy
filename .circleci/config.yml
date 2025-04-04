@@ -12,12 +12,21 @@ jobs:
       resource-class:
         type: string
         default: medium
+      local-cache-prefix:
+        type: string
+        default: docker-buildx-localproxy
+      local-cache-path:
+        type: string
+        default: /tmp/buildx-cache
     executor: docker/docker
     resource_class: << parameters.resource-class >>
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - << parameters.local-cache-prefix >>-{{ arch }}-{{ .Branch }}
+            - << parameters.local-cache-prefix >>-{{ arch }}-
       - run:
           name: Set up Docker Buildx context
           command: docker buildx create --name crossbuilder --use
@@ -26,7 +35,15 @@ jobs:
       - docker/build:
           image: verdigristech/localproxy
           use-buildkit: true
-          extra_build_args: --platform=linux/<< parameters.architecture >> --progress=plain
+          extra_build_args: |
+            --platform=linux/<< parameters.architecture >> \
+            --progress=plain \
+            --cache-from=type=local,src=<< parameters.local-cache-path >> \
+            --cache-to=type=local,mode=max,dest=<< parameters.local-cache-path >>
+      - save_cache:
+          paths:
+            - << parameters.local-cache-path >>
+          key: << parameters.local-cache-prefix >>-{{ arch }}-{{ .Branch }}-{{ checksum "<< parameters.local-cache-path >>/index.json" }}
 
 workflows:
   release:
