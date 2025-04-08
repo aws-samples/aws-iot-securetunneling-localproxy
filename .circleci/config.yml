@@ -91,5 +91,8 @@ workflows:
           variant: v7
           resource-class: arm.large
       - create-github-release:
+          context: github
           requires:
-            - build-linux
+            - build-linux-amd64
+            - build-linux-arm64
+            - build-linux-armv7
