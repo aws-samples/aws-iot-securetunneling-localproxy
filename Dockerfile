@@ -27,10 +27,13 @@ RUN if [ "${TARGETARCH}" = "arm" ] && [ "${TARGETVARIANT}" = "v7" ]; then \
     cp bin/localproxy /usr/local/bin/localproxy && \
     cd /tmp
 
+# Copy the shared libraries required by localproxy
+RUN ldd /usr/local/bin/localproxy | grep -o '/[^ ]*' | sort -u | xargs -I {} cp {} /usr/local/lib
+
 # Keep the final image minimal; we only need the statically compiled localproxy binary
 FROM scratch
 
 COPY --from=builder /usr/local/bin/localproxy /usr/local/bin/localproxy
-COPY --from=builder /lib /lib
+COPY --from=builder /usr/local/lib /lib
 
 CMD ["/usr/local/bin/localproxy"]
