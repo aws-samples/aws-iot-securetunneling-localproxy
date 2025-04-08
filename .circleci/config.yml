@@ -45,7 +45,8 @@ jobs:
           image: verdigristech/localproxy
           use-buildkit: true
           extra_build_args: |
-            --platform="linux/$(printf '%s%s' "${ARCH}" "${VARIANT:+/$VARIANT}")" --progress=plain --cache-from=type=local,src=<< parameters.local-cache-path >> --cache-to=type=local,mode=max,dest=<< parameters.local-cache-path >> --output=type=tar,dest=localproxy-linux-${ARCH}${VARIANT}.tar
+            --platform="linux/$(printf '%s%s' "${ARCH}" "${VARIANT:+/$VARIANT}")"
+            --progress=plain --cache-from=type=local,src=<< parameters.local-cache-path >> --cache-to=type=local,mode=max,dest=<< parameters.local-cache-path >> --output=type=tar,dest=localproxy-linux-${ARCH}${VARIANT}.tar
       - run:
           name: Compress the tarball into xz
           command: |
@@ -70,6 +71,7 @@ jobs:
       - attach_workspace:
           at: /tmp
       - github/install
+
 
 workflows:
   release:
