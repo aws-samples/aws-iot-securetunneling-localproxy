@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   docker: circleci/docker@2.8.2
+  github: circleci/github-cli@2.7.0
 
 jobs:
   build-linux:
@@ -60,6 +61,16 @@ jobs:
           paths:
             - localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar.xz
 
+  create-github-release:
+    docker:
+      - image: cimg/base:stable
+    resource_class: small
+    working_directory: /tmp
+    steps:
+      - attach_workspace:
+          at: /tmp
+      - github/install
+
 workflows:
   release:
     jobs:
@@ -79,3 +90,6 @@ workflows:
           architecture: arm
           variant: v7
           resource-class: arm.large
+      - create-github-release:
+          depends_on:
+            - build-linux
