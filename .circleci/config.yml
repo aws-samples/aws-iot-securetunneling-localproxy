@@ -11,6 +11,7 @@ jobs:
         default: amd64
       variant:
         type: string
+        default: ""
       resource-class:
         type: string
         default: medium
