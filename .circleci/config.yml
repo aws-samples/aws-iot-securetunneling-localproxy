@@ -36,7 +36,7 @@ jobs:
           image: verdigristech/localproxy
           use-buildkit: true
           extra_build_args: |
-            --platform=linux/<< parameters.architecture >> --progress=plain --cache-from=type=local,src=<< parameters.local-cache-path >> --cache-to=type=local,mode=max,dest=<< parameters.local-cache-path >> --output type=tar,dest=localproxy-linux-<< parameters.architecture >>.tar
+            --platform=linux/<< parameters.architecture >> --progress=plain --cache-from=type=local,src=<< parameters.local-cache-path >> --cache-to=type=local,mode=max,dest=<< parameters.local-cache-path >> --output=type=tar,dest=localproxy-linux-<< parameters.architecture >>.tar
       - save_cache:
           paths:
             - << parameters.local-cache-path >>
