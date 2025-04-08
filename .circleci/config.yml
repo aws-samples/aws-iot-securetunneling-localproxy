@@ -33,8 +33,8 @@ jobs:
       - run:
           name: Set up environment variables
           command: |
-            printf 'export ARCH="<< parameters.architecture >>"' >> $BASH_ENV
-            printf 'export VARIANT="<< parameters.variant >>"' >> $BASH_ENV
+            printf 'export ARCH="%s"\n' "<< parameters.architecture >>" >> $BASH_ENV
+            printf 'export VARIANT="%s"\n' "<< parameters.variant >>" >> $BASH_ENV
       - run:
           name: Set up Docker Buildx context
           command: docker buildx create --name crossbuilder --use
