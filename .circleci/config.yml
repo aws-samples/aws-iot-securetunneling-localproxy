@@ -91,5 +91,5 @@ workflows:
           variant: v7
           resource-class: arm.large
       - create-github-release:
-          depends_on:
+          requires:
             - build-linux
