@@ -25,9 +25,9 @@ RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.
 	make install
 
 WORKDIR /home/dependencies
-RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.84.0/source/boost_1_84_0.tar.gz -O /tmp/boost.tar.gz && \
-	tar xzvf /tmp/boost.tar.gz && \
-	cd boost_1_84_0 && \
+RUN wget https://sourceforge.net/projects/boost/files/boost/1.87.0/boost_1_87_0.tar.gz/download -O /tmp/boost_1_87_0.tar.gz && \
+	tar xzvf /tmp/boost_1_87_0.tar.gz && \
+	cd boost_1_87_0 && \
 	./bootstrap.sh && \
     ./b2 install link=static
 
