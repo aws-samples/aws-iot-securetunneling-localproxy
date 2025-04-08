@@ -49,7 +49,7 @@ jobs:
           paths:
             - << parameters.local-cache-path >>
           key: << parameters.local-cache-prefix >>-{{ arch }}-{{ .Branch }}-{{ checksum "<< parameters.local-cache-path >>/index.json" }}
-      - store_artifact:
+      - store_artifacts:
           path: localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar
 
 workflows:
