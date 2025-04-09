@@ -91,7 +91,7 @@ jobs:
             cd /tmp/protobuf-3.17.3
             mkdir build_make
             cd build_make
-            cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ../cmake
+            cmake ../cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_SYSTEM_NAME=Darwin -DCMAKE_SYSTEM_PROCESSOR=aarch64
             make
             sudo make install
       - run:
@@ -107,7 +107,7 @@ jobs:
           command: |
             mkdir build
             cd build
-            cmake .. -DBUILD_TESTS=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1/1.1.1u/ -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl@1.1/1.1.1u/lib/
+            cmake .. -DBUILD_TESTS=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1/1.1.1u/ -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl@1.1/1.1.1u/lib/ -DCMAKE_SYSTEM_NAME=Darwin -DCMAKE_SYSTEM_PROCESSOR=aarch64
             make
       - store_artifacts:
           path: build
@@ -121,7 +121,12 @@ jobs:
       - attach_workspace:
           at: /tmp
       - github/install
-
+      - run:
+          name: Extract localproxy version
+          command: |
+            tar -xJf localproxy-linux-amd64.tar.xz
+            cd localproxy-linux-amd64
+            ./usr/local/bin/localproxy --version
 
 workflows:
   release:
