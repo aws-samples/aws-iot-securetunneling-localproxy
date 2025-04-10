@@ -164,6 +164,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
         ("access-token,t", value<string>()->required(), "Client access token")
         ("client-token,i", value<string>(), "Optional Client Token")
         ("proxy-endpoint,e", value<string>(), "Endpoint of proxy server with port (if not default 443). Example: data.tunneling.iot.us-east-1.amazonaws.com:443")
+        ("endpoint-path,p", value<string>()->default_value("/tunnel"), "Endpoint path of proxy server if need extra path. Example: reverse-proxy.domain.com/aws-data-service/tunnel, so you connect with -e reverse-proxy.domain.com -p /aws-data-service/tunnel")
         ("region,r", value<string>(), "Endpoint region where tunnel exists. Mutually exclusive flag with --proxy-endpoint")
         ("source-listen-port,s", value<string>(), "Sets the mappings between source listening ports and service identifier. Example: SSH1=5555 or 5555")
         ("destination-app,d", value<string>(), "Sets the mappings between the endpoint(address:port/port) and service identifier. Example: SSH1=127.0.0.1:22 or 22")
@@ -208,7 +209,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
         store(parse_config_file(vm["config"].as<string>().c_str(), cliargs_desc), vm);
     }
     //either way, parse from environment
-    store(parse_environment(cliargs_desc, 
+    store(parse_environment(cliargs_desc,
         [](std::string name) -> std::string
         {
             if (name == ACCESS_TOKEN_ENV_VARIABLE)
@@ -242,6 +243,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
         BOOST_LOG_TRIVIAL(warning) << "Found access token supplied via CLI arg. Consider using environment variable " << ACCESS_TOKEN_ENV_VARIABLE << " instead";
     }
     cfg.access_token = vm["access-token"].as<string>();
+    cfg.url_path = vm["endpoint-path"].as<string>();
 
     if (vm.count("client-token") != 0)
     {
