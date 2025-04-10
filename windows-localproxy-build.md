@@ -47,8 +47,7 @@
         * `nmake`
         * `nmake install` ( install protobuf inside C:\Program Files (x86)\ )
     * Download and install boost
-        * Download from https://sourceforge.net/projects/boost/files/boost/1.87.0/boost_1_87_0.zip/download
-
+        * Download from https://archives.boost.io/release/1.87.0/source/boost_1_87_0.zip
         * Extract boost_1_87_0.tar.gz
         * Use Visual Studio native tool command prompt
         * `cd path/to/boost_1_87_0`

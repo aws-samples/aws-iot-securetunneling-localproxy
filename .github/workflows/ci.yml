@@ -155,7 +155,7 @@ jobs:
           $env:Path += ";C:\Program Files (x86)\zlib\bin"
       - name: Install boost
         run: |
-          Invoke-WebRequest "https://sourceforge.net/projects/boost/files/boost/1.87.0/boost_1_87_0.zip/download" -OutFile "boost_1_87_0.zip"
+          Invoke-WebRequest "https://archives.boost.io/release/1.87.0/source/boost_1_87_0.zip" -OutFile "boost_1_87_0.zip"
           Expand-Archive "boost_1_87_0.zip" -Force
           cd .\boost_1_87_0\boost_1_87_0\
           .\bootstrap.bat
