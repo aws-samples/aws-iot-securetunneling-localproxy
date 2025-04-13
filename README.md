@@ -142,7 +142,7 @@ Fedora example:
 
 #### 2. Download and install Boost dependency
 
-    wget https://sourceforge.net/projects/boost/files/boost/1.87.0/boost_1_87_0.tar.gz/download -O /tmp/boost_1_87_0.tar.gz
+    wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O /tmp/boost_1_87_0.tar.gz
     tar xzvf /tmp/boost_1_87_0.tar.gz
     cd boost_1_87_0
     ./bootstrap.sh
