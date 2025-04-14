@@ -28,7 +28,7 @@ jobs:
       - name: Install boost
         working-directory: ${{ github.workspace }}
         run: |
-          wget https://sourceforge.net/projects/boost/files/boost/1.87.0/boost_1_87_0.tar.gz/download -O /tmp/boost_1_87_0.tar.gz
+          wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O /tmp/boost_1_87_0.tar.gz
           tar xzvf /tmp/boost_1_87_0.tar.gz
           cd boost_1_87_0
           ./bootstrap.sh --with-toolset=clang
@@ -75,7 +75,7 @@ jobs:
       - name: Install boost
         working-directory: ${{ github.workspace }}
         run: |
-          wget https://sourceforge.net/projects/boost/files/boost/1.87.0/boost_1_87_0.tar.gz/download -O /tmp/boost_1_87_0.tar.gz
+          wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O /tmp/boost_1_87_0.tar.gz
           tar xzvf /tmp/boost_1_87_0.tar.gz
           cd boost_1_87_0
           ./bootstrap.sh
