@@ -25,7 +25,7 @@ RUN wget https://github.com/madler/zlib/archive/v1.2.13.tar.gz -O /tmp/zlib-1.2.
 	make install
 
 WORKDIR /home/dependencies
-RUN wget https://sourceforge.net/projects/boost/files/boost/1.87.0/boost_1_87_0.tar.gz/download -O /tmp/boost_1_87_0.tar.gz && \
+RUN wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O /tmp/boost_1_87_0.tar.gz && \
 	tar xzvf /tmp/boost_1_87_0.tar.gz && \
 	cd boost_1_87_0 && \
 	./bootstrap.sh && \
