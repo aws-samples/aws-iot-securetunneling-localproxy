@@ -2,12 +2,16 @@ name: GitHub Issue notifications
 
 on: [issue_comment,issues]
 
+
+permissions:
+  contents: read
+  issues: read
+
 env:
   ACTION_NAME: ${{ github.event.action }}
   EVENT_NAME: ${{ github.event_name }}
   ISSUE_NUMBER: ${{ github.event.issue.number }}
   ISSUE_TITLE: ${{ github.event.issue.title }}
-
 
 jobs:
   issue-notification:
