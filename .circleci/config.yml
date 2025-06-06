@@ -53,7 +53,7 @@ jobs:
       - run:
           name: Compress the tarball into xz
           command: |
-            tar -cJf localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar.xz localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar
+            xz -c localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar
       - save_cache:
           paths:
             - << parameters.local-cache-path >>
