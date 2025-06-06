@@ -124,13 +124,8 @@ jobs:
       - run:
           name: Extract localproxy version
           command: |
-            for arch in amd64 arm64 armv7; do
-              mkdir -p "localproxy-linux-${arch}"
-              tar -xvJf "localproxy-linux-${arch}.tar.xz" -C "localproxy-linux-${arch}" &
-            done
-            wait
-            cd localproxy-linux-amd64
-            ./usr/local/bin/localproxy --version
+            sudo tar -xvJf "localproxy-linux-${arch}.tar.xz" -C /
+            localproxy --version
 
 workflows:
   release:
