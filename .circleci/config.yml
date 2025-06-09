@@ -125,7 +125,8 @@ jobs:
           name: Extract localproxy version
           command: |
             sudo tar -xvJf "localproxy-linux-amd64.tar.xz" -C /
-            localproxy --version
+            version=$(localproxy --version -h | sed -nE 's/.*version: ([^ ]+).*/\1/p')
+            echo "Extracted version: $version"
 
 workflows:
   release:
