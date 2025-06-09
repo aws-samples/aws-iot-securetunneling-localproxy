@@ -114,7 +114,7 @@ jobs:
 
   create-github-release:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:current
     resource_class: small
     working_directory: /tmp
     steps:
