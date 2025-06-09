@@ -1,0 +1,107 @@
+# This is an example nfpm configuration file.
+# Make sure to check the documentation at https://nfpm.goreleaser.com
+#
+# The lines below are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/need to use them.
+# yaml-language-server: $schema=https://nfpm.goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+# Name. (required)
+name: localproxy
+
+# Architecture. (required)
+# This will expand any env var you set in the field, e.g. arch: ${GOARCH}
+# The architecture is specified using Go nomenclature (GOARCH) and translated
+# to the platform specific equivalent. In order to manually set the architecture
+# to a platform specific value, set `{format}.arch`.
+# Examples: `all`, `amd64`, `386`, `arm5`, `arm6`, `arm7`, `arm64`, `mips`,
+# `mipsle`, `mips64le`, `ppc64le`, `s390`
+arch: ${GOARCH}
+
+# Platform.
+# This will expand any env var you set in the field, e.g. platform: ${GOOS}
+# This is only used by the rpm and deb packagers.
+# Examples: `linux` (default), `darwin`
+platform: linux
+
+# Version. (required)
+# This will expand any env var you set in the field, e.g. version: ${SEMVER}
+# Some package managers, like deb, require the version to start with a digit.
+# Hence, you should not prefix the version with 'v'.
+version: ${VERSION}
+
+# Section.
+# This is only used by the deb packager.
+# See: https://www.debian.org/doc/debian-policy/ch-archive.html#sections
+section: net
+
+# Priority.
+# Defaults to `optional` on deb
+# Defaults to empty on rpm and apk
+# See: https://www.debian.org/doc/debian-policy/ch-archive.html#priorities
+priority: optional
+
+# Maintainer. (required)
+# This will expand any env var you set in the field, e.g. maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
+# Defaults to empty on rpm and apk
+# Leaving the 'maintainer' field unset will not be allowed in a future version
+maintainer: "Verdigris Technologies, Inc. <cloud@verdigris.co>"
+
+# Description.
+# This will expand any env var you set in the field, e.g. description: ${DESCRIPTION}
+# Defaults to `no description given`.
+# Most packagers call for a one-line synopsis of the package. Some (like deb)
+# also call for a multi-line description starting on the second line.
+description: |
+  AWS IoT Localproxy
+    Enables tunneling of a single threaded TCP client / server socket
+    interaction through the IoT Secure Tunneling service.
+
+# Vendor.
+# This will expand any env var you set in the field, e.g. vendor: ${VENDOR}
+# This is only used by the rpm packager.
+vendor: "Verdigris Technologies, Inc."
+
+# Package's homepage.
+# This will expand any env var you set in the field, e.g. homepage: ${CI_PROJECT_URL}
+homepage: "https://github.com/VerdigrisTech/localproxy"
+
+# License.
+license: "Apache-2.0"
+
+# Packages it replaces. (overridable)
+# This will expand any env var you set in the field, e.g. ${REPLACE_BLA}
+# the env var approach can be used to account for differences in platforms
+replaces: []
+
+# Packages it provides. (overridable)
+# This will expand any env var you set in the field, e.g. ${PROVIDES_BLA}
+# the env var approach can be used to account for differences in platforms
+provides: []
+
+# Dependencies. (overridable)
+# This will expand any env var you set in the field, e.g. ${DEPENDS_NGINX}
+# the env var approach can be used to account for differences in platforms
+# e.g. rhel needs nginx >= 1:1.18 and deb needs nginx (>= 1.18.0)
+depends: []
+
+# Recommended packages. (overridable)
+# This will expand any env var you set in the field, e.g. ${RECOMMENDS_BLA}
+# the env var approach can be used to account for differences in platforms
+recommends: []
+
+# Suggested packages. (overridable)
+# This will expand any env var you set in the field, e.g. ${SUGGESTS_BLA}
+# the env var approach can be used to account for differences in platforms
+suggests: []
+
+# Packages it conflicts with. (overridable)
+# This will expand any env var you set in the field, e.g. ${CONFLICTS_BLA}
+# the env var approach can be used to account for differences in platforms
+conflicts: []
+
+# changelog: "changelog.yml"
+contents:
+  - src: ./dist/localproxy-linux-${ARCH}/usr/local/bin/localproxy
+    dst: /usr/bin/localproxy
+    expand: true
