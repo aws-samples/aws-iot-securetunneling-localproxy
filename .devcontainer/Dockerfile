@@ -43,8 +43,9 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         libtool-bin \
         libncurses-dev \
         # For building Debian packages
-        dpkg-dev \
         debhelper \
+        dpkg-dev \
+        dh-make \
         lintian
 
 # Install Boost library
