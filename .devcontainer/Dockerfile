@@ -41,7 +41,11 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         patch \
         make \
         libtool-bin \
-        libncurses-dev
+        libncurses-dev \
+        # For building Debian packages
+        dpkg-dev \
+        debhelper \
+        lintian
 
 # Install Boost library
 RUN curl -sL "https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_$(echo ${BOOST_VERSION} | sed 's/\./_/g').tar.gz/download" | tar xz -C /tmp/ \
