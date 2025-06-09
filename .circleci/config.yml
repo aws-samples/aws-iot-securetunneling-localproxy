@@ -124,7 +124,7 @@ jobs:
       - run:
           name: Extract localproxy version
           command: |
-            sudo tar -xvJf "localproxy-linux-${arch}.tar.xz" -C /
+            sudo tar -xvJf "localproxy-linux-amd64.tar.xz" -C /
             localproxy --version
 
 workflows:
