@@ -30,6 +30,9 @@ RUN if [ "${TARGETARCH}" = "arm" ] && [ "${TARGETVARIANT}" = "v7" ]; then \
 # Copy the shared libraries required by localproxy
 RUN ldd /usr/local/bin/localproxy | grep -o '/[^ ]*' | sort -u | xargs -I {} cp {} /usr/local/lib
 
+# Strip the localproxy binary to reduce its size
+RUN strip --strip-unneeded /usr/local/bin/localproxy
+
 # Keep the final image minimal; we only need the statically compiled localproxy binary
 FROM scratch
 
