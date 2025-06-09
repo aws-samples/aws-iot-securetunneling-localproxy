@@ -138,6 +138,7 @@ jobs:
               else
                 GOARCH="$ARCH"
               fi
+              export ARCH GOARCH
               nfpm pkg --packager deb --target debian/
             done
       - store_artifacts:
