@@ -91,6 +91,7 @@ jobs:
           root: .
           paths:
             - localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar.xz
+            - debian/
 
   build-mac:
     macos:
