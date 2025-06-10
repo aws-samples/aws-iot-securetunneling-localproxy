@@ -65,6 +65,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y nfpm
             export ARCH=<< parameters.architecture >><< parameters.variant >>
+
             # Override GOARCH so armv7 builds use GOARCH=arm7 instead of GOARCH=armv7
             if [ "$ARCH" = "armv7" ]; then
               GOARCH="arm7"
@@ -72,8 +73,14 @@ jobs:
               GOARCH="$ARCH"
             fi
             export GOARCH
+
+            # Use the latest git tag as the version with v stripped out.
+            # Some package managers, like deb, require the version to start with a digit.
+            export VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+
             mkdir -p debian
             mkdir -p dist/localproxy-linux-${ARCH}
+
             tar -xvf localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar -C debian/localproxy-linux-${ARCH}
             nfpm pkg --packager deb --target debian/
       - store_artifacts:
