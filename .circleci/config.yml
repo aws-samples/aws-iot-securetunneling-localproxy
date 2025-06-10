@@ -141,10 +141,6 @@ jobs:
           path: build
 
   publish:
-    parameters:
-      distro-version:
-        type: string
-        default: debian/bullseye
     docker:
       - image: cimg/ruby:3.4
     resource_class: small
@@ -156,7 +152,9 @@ jobs:
           command: gem install package_cloud
       - run:
           name: Publish to Package Cloud
-          command: find /tmp/workspace/debian -type f -name "*.deb" | xargs -I {} package_cloud push verdigris/packages/<< parameters.distro-version >> {}
+          command: |
+            distro_versions="debian/jessie debian/buster debian/bullseye debian/bookworm debian/trixie debian/forky"
+            echo $distro_versions | tr ' ' '\n' | parallel 'echo "Pushing packages for {}..." && find /tmp/workspace/debian -type f -name "*.deb" | xargs -I {} package_cloud push verdigris/packages/"{}" {}'
 
   # create-github-release:
   #   docker:
@@ -204,19 +202,3 @@ workflows:
             - build-linux-amd64
             - build-linux-arm64
             - build-linux-armv7
-          matrix:
-            parameters:
-              distro-version:
-                - debian/jessie
-                - debian/buster
-                - debian/bullseye
-                - debian/bookworm
-                - debian/trixie
-                - debian/forky
-
-      # - create-github-release:
-      #     context: github
-      #     requires:
-      #       - build-linux-amd64
-      #       - build-linux-arm64
-      #       - build-linux-armv7
