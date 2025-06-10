@@ -81,7 +81,7 @@ jobs:
             mkdir -p debian
             mkdir -p dist/localproxy-linux-${ARCH}
 
-            tar -xvf localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar -C debian/localproxy-linux-${ARCH}
+            tar -xvf localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar -C dist/localproxy-linux-${ARCH}
             nfpm pkg --packager deb --target debian/
       - store_artifacts:
           path: localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar.xz
