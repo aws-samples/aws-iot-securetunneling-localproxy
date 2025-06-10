@@ -154,7 +154,7 @@ jobs:
           name: Publish to Package Cloud
           command: |
             distro_versions="debian/jessie debian/buster debian/bullseye debian/bookworm debian/trixie debian/forky"
-            echo $distro_versions | tr ' ' '\n' | parallel 'echo "Pushing packages for {}..." && find /tmp/workspace/debian -type f -name "*.deb" | xargs -I {} package_cloud push verdigris/packages/"{}" {}'
+            echo $distro_versions | tr ' ' '\n' | parallel 'echo "Pushing packages for {}..." && find /tmp/workspace/debian -type f -name "*.deb" | xargs -I @ package_cloud push verdigris/packages/{} @'
 
   # create-github-release:
   #   docker:
@@ -197,7 +197,9 @@ workflows:
       # - build-mac
 
       - publish:
-          context: packagecloud
+          context:
+            - packagecloud
+            - github
           requires:
             - build-linux-amd64
             - build-linux-arm64
