@@ -9,17 +9,21 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /tmp
 
+# Hardening flags for Debian builds
+# These flags help to ensure that the build process is secure and that the resulting binaries are hardened against common vulnerabilities.
+ENV DEB_BUILD_HARDENING=1
+
 # If we're building for ARMv7, enable compiler optimizations for the TI Sitara AM335x processor
 # CPU Type: ARMv7-A
 # CPU Architecture: Cortex-A8
 # SIMD Coprocessor: NEON
 # Floating Point ABI: Hard (generates floating-point instructions with FPU-specific calling conventions)
 RUN if [ "${TARGETARCH}" = "arm" ] && [ "${TARGETVARIANT}" = "v7" ]; then \
-      export CFLAGS="-O2 -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -pipe"; \
-      export CXXFLAGS="-O2 -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -pipe"; \
+      export CFLAGS="-O2 -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -pipe -fstack-protector-strong -Wformat -Werror=format-security"; \
+      export CXXFLAGS="-O2 -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -pipe -fstack-protector-strong -Wformat -Werror=format-security"; \
     else \
-      export CFLAGS="-O2 -pipe"; \
-      export CXXFLAGS="-O2 -pipe"; \
+      export CFLAGS="-O2 -pipe -fstack-protector-strong -Wformat -Werror=format-security"; \
+      export CXXFLAGS="-O2 -pipe -fstack-protector-strong -Wformat -Werror=format-security"; \
     fi && \
     git clone https://github.com/VerdigrisTech/localproxy && \
     cd localproxy && \
