@@ -139,6 +139,8 @@ jobs:
                 GOARCH="$ARCH"
               fi
               export ARCH GOARCH
+              mkdir -p dist/localproxy-linux-$ARCH
+              tar -xvJf dist/localproxy-linux-$ARCH.tar.xz -C dist/localproxy-linux-$ARCH
               nfpm pkg --packager deb --target debian/
             done
       - store_artifacts:
