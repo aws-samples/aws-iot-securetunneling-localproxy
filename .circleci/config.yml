@@ -165,25 +165,9 @@ jobs:
           condition: << pipeline.git.tag >>
           steps:
             - run:
-                name: Publish to Package Cloud
+                name: Publish to Package Cloud (Dry Run)
                 command: |
                   echo $distro_versions | tr ' ' '\n' | parallel 'echo "Pushing packages for {}..." && find /tmp/workspace/debian -type f -name "*.deb" | xargs -I @ echo "package_cloud push verdigris/packages/{} @"'
-
-  # create-github-release:
-  #   docker:
-  #     - image: cimg/base:current
-  #   resource_class: small
-  #   working_directory: /tmp
-  #   steps:
-  #     - attach_workspace:
-  #         at: /tmp
-  #     - github/install
-  #     - run:
-  #         name: Extract localproxy version
-  #         command: |
-  #           sudo tar -xvJf "localproxy-linux-amd64.tar.xz" -C /
-  #           version=$(localproxy --version -h | sed -nE 's/.*version: ([^ ]+).*/\1/p')
-  #           echo "Extracted version: $version"
 
 workflows:
   release:
