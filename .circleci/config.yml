@@ -148,13 +148,26 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - run:
+          name: Set up environment variables
+          command: |
+            echo 'distro_versions="debian/jessie debian/buster debian/bullseye debian/bookworm debian/trixie debian/forky"' >> $BASH_ENV
+      - run:
           name: Install Package Cloud CLI
           command: gem install package_cloud
-      - run:
-          name: Publish to Package Cloud
-          command: |
-            distro_versions="debian/jessie debian/buster debian/bullseye debian/bookworm debian/trixie debian/forky"
-            echo $distro_versions | tr ' ' '\n' | parallel 'echo "Pushing packages for {}..." && find /tmp/workspace/debian -type f -name "*.deb" | xargs -I @ package_cloud push verdigris/packages/{} @'
+      - when:
+          condition: << pipeline.git.tag >>
+          steps:
+            - run:
+                name: Publish to Package Cloud
+                command: |
+                  echo $distro_versions | tr ' ' '\n' | parallel 'echo "Pushing packages for {}..." && find /tmp/workspace/debian -type f -name "*.deb" | xargs -I @ package_cloud push verdigris/packages/{} @'
+      - unless:
+          condition: << pipeline.git.tag >>
+          steps:
+            - run:
+                name: Publish to Package Cloud
+                command: |
+                  echo $distro_versions | tr ' ' '\n' | parallel 'echo "Pushing packages for {}..." && find /tmp/workspace/debian -type f -name "*.deb" | xargs -I @ echo "package_cloud push verdigris/packages/{} @"'
 
   # create-github-release:
   #   docker:
