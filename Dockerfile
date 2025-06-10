@@ -15,8 +15,11 @@ WORKDIR /tmp
 # SIMD Coprocessor: NEON
 # Floating Point ABI: Hard (generates floating-point instructions with FPU-specific calling conventions)
 RUN if [ "${TARGETARCH}" = "arm" ] && [ "${TARGETVARIANT}" = "v7" ]; then \
-      export CFLAGS="-march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -pipe"; \
-      export CXXFLAGS="-march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -pipe"; \
+      export CFLAGS="-O2 -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -pipe"; \
+      export CXXFLAGS="-O2 -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -pipe"; \
+    else \
+      export CFLAGS="-O2 -pipe"; \
+      export CXXFLAGS="-O2 -pipe"; \
     fi && \
     git clone https://github.com/VerdigrisTech/localproxy && \
     cd localproxy && \
