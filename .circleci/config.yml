@@ -140,39 +140,23 @@ jobs:
       - store_artifacts:
           path: build
 
-  package-debian:
+  publish:
+    parameters:
+      distro-version:
+        type: string
+        default: debian/bullseye
     docker:
-      - image: cimg/base:current
+      - image: cimg/ruby:3.4
     resource_class: small
     steps:
-      - checkout
       - attach_workspace:
-          at: dist
+          at: /tmp/workspace
       - run:
-          name: Install nFPM
-          command: |
-            echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
-            sudo apt-get update
-            sudo apt-get install -y nfpm
+          name: Install Package Cloud CLI
+          command: gem install package_cloud
       - run:
-          name: Build Debian package for each architecture
-          command: |
-            mkdir -p debian
-            for ARCH in amd64 arm64 armv7; do
-              echo "Building Debian package for architecture: $ARCH"
-              # Override GOARCH so armv7 builds use GOARCH=arm7 instead of GOARCH=armv7
-              if [ "$ARCH" = "armv7" ]; then
-                GOARCH="arm7"
-              else
-                GOARCH="$ARCH"
-              fi
-              export ARCH GOARCH
-              mkdir -p dist/localproxy-linux-$ARCH
-              tar -xvJf dist/localproxy-linux-$ARCH.tar.xz -C dist/localproxy-linux-$ARCH
-              nfpm pkg --packager deb --target debian/
-            done
-      - store_artifacts:
-          path: debian
+          name: Publish to Package Cloud
+          command: find /tmp/workspace/debian -type f -name "*.deb" | xargs -I {} package_cloud push verdigris/packages/<< parameters.distro-version >> {}
 
   # create-github-release:
   #   docker:
@@ -214,12 +198,21 @@ workflows:
       # TODO: macOS build is not working yet
       # - build-mac
 
-      # - package-debian:
-      #     context: github
-      #     requires:
-      #       - build-linux-amd64
-      #       - build-linux-arm64
-      #       - build-linux-armv7
+      - publish:
+          context: packagecloud
+          requires:
+            - build-linux-amd64
+            - build-linux-arm64
+            - build-linux-armv7
+          matrix:
+            parameters:
+              distro-version:
+                - debian/jessie
+                - debian/buster
+                - debian/bullseye
+                - debian/bookworm
+                - debian/trixie
+                - debian/forky
 
       # - create-github-release:
       #     context: github
