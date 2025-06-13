@@ -178,17 +178,26 @@ workflows:
           name: build-linux-amd64
           architecture: amd64
           resource-class: large
+          filters:
+            tags:
+              only: /.*/
       - build-linux:
           context: dockerhub
           name: build-linux-arm64
           architecture: arm64
           resource-class: arm.large
+          filters:
+            tags:
+              only: /.*/
       - build-linux:
           context: dockerhub
           name: build-linux-armv7
           architecture: arm
           variant: v7
           resource-class: arm.large
+          filters:
+            tags:
+              only: /.*/
 
       # TODO: macOS build is not working yet
       # - build-mac
@@ -201,3 +210,6 @@ workflows:
             - build-linux-amd64
             - build-linux-arm64
             - build-linux-armv7
+          filters:
+            tags:
+              only: /.*/
