@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM debian:buster-slim
 
 # TARGETARCH is filled in by Docker Buildx
 ARG TARGETARCH
@@ -23,7 +23,7 @@ RUN apt-get update && \
         zlib1g-dev \
         libtool-bin \
         unzip \
-        which \
+        # which \
         curl \
         pkg-config \
         libatomic1 && \
