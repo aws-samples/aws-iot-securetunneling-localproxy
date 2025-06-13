@@ -46,3 +46,27 @@ RUN if [ "${TARGETARCH}" = "arm" ]; then \
     ./b2 install link=static && \
     cd /tmp/ \
     && rm -rf ${BOOST_PREFIX}
+
+# Build zlib 1.2.13
+RUN cd /tmp && \
+    curl -sSLO https://github.com/madler/zlib/releases/download/v1.2.13/zlib-1.2.13.tar.gz && \
+    tar xzvf /tmp/zlib-1.2.13.tar.gz && \
+    cd zlib-1.2.13 && \
+    ./configure --static && \
+    make && \
+    make install
+
+# Build Protobuf 3.17.3
+RUN cd /tmp && \
+    curl -sSLO https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz && \
+    tar xzvf /tmp/protobuf-all-3.17.3.tar.gz && \
+    cd protobuf-3.17.3 && \
+    mkdir build && \
+    cd build && \
+    cmake ../cmake \
+        -DBUILD_SHARED_LIBS=OFF \
+        -Dprotobuf_BUILD_SHARED_LIBS=OFF \
+        -Dprotobuf_BUILD_PROTOC_BINARIES=ON \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
+    make && \
+    make install
