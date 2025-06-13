@@ -1,4 +1,4 @@
-FROM verdigristech/boost:1.87.0 AS builder
+FROM verdigristech/boost:1.87.0-buster AS builder
 
 # TARGETARCH is filled in by Docker Buildx
 ARG TARGETARCH
