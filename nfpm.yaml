@@ -83,7 +83,8 @@ provides: []
 # This will expand any env var you set in the field, e.g. ${DEPENDS_NGINX}
 # the env var approach can be used to account for differences in platforms
 # e.g. rhel needs nginx >= 1:1.18 and deb needs nginx (>= 1.18.0)
-depends: []
+depends:
+  - ca-certificates (>= 20200601~deb10u2)
 
 # Recommended packages. (overridable)
 # This will expand any env var you set in the field, e.g. ${RECOMMENDS_BLA}
