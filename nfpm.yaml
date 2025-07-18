@@ -108,4 +108,4 @@ contents:
     expand: true
 
 scripts:
-   postinstall: ./postinst
+   postinstall: ./debian/post-install
