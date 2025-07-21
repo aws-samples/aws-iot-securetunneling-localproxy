@@ -106,3 +106,6 @@ contents:
   - src: ./dist/localproxy-linux-${ARCH}/usr/local/bin/localproxy
     dst: /usr/bin/localproxy
     expand: true
+
+scripts:
+   postinstall: ./debian/post-install
