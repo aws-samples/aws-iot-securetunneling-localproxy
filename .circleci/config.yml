@@ -82,7 +82,7 @@ jobs:
             mkdir -p dist/localproxy-linux-${ARCH}
 
             tar -xvf localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar -C dist/localproxy-linux-${ARCH}
-            nfpm pkg --packager deb --target debian/<< parameters.architecture >><< parameters.variant >>
+            nfpm pkg --packager deb --target debian/localproxy_${VERSION}_${ARCH}.deb
       - store_artifacts:
           path: localproxy-linux-<< parameters.architecture >><< parameters.variant >>.tar.xz
       - store_artifacts:
