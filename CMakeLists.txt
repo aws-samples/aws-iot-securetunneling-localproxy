@@ -74,8 +74,25 @@ find_package(OpenSSL REQUIRED)
 
 if(LINK_STATIC_OPENSSL)
     include_directories(${OPENSSL_INCLUDE_DIR})
-    get_target_property(SSL_LOCATION OpenSSL::SSL IMPORTED_LOCATION_RELEASE)
-    get_target_property(CRYPTO_LOCATION OpenSSL::Crypto IMPORTED_LOCATION_RELEASE)
+    
+    # Check SSL library location
+    get_target_property(SSL_LOCATION OpenSSL::SSL IMPORTED_LOCATION)
+    if(SSL_LOCATION STREQUAL "SSL_LOCATION-NOTFOUND")
+        get_target_property(SSL_LOCATION OpenSSL::SSL IMPORTED_LOCATION_RELEASE)
+        if(SSL_LOCATION STREQUAL "SSL_LOCATION-NOTFOUND")
+            message(FATAL_ERROR "Could not find OpenSSL SSL library location")
+        endif()
+    endif()
+    
+    # Check Crypto library location
+    get_target_property(CRYPTO_LOCATION OpenSSL::Crypto IMPORTED_LOCATION)
+    if(CRYPTO_LOCATION STREQUAL "CRYPTO_LOCATION-NOTFOUND")
+        get_target_property(CRYPTO_LOCATION OpenSSL::Crypto IMPORTED_LOCATION_RELEASE)
+        if(CRYPTO_LOCATION STREQUAL "CRYPTO_LOCATION-NOTFOUND")
+            message(FATAL_ERROR "Could not find OpenSSL Crypto library location")
+        endif()
+    endif()
+    
     string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_SSL_LIBRARY ${SSL_LOCATION})
     string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_CRYPTO_LIBRARY ${CRYPTO_LOCATION})
 endif()
