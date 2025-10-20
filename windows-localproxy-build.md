@@ -24,7 +24,7 @@
         * `nmake`
         * `nmake install` (installs OpenSSL inside C:\Program Files\)
         * Update PATH environment variable to add the dll for openssl which is inside C:\Program Files\OpenSSL\bin
-        * Note: In some x86_64 windows configurations, compiling for a 64 bit target may fail. You may instead install openssl through Chocolatey.
+        * Note: In some x86_64 windows configurations, compiling for a 64 bit target may fail. You may instead install openssl through Chocolatey. The installation folder name might be OpenSSL-Win64. The project build command below should be changed correspondingly.
           * https://community.chocolatey.org/packages/openssl
     * Download and install catch2
       * Use Visual Studio native tool command prompt in admin mode.
@@ -52,22 +52,27 @@
         * Use Visual Studio native tool command prompt
         * `cd path/to/boost_1_87_0`
         * `bootstrap.bat`
-        * `.\b2 toolset=msvc address-model={32 | 64} install define=BOOST_WINAPI_VERSION_WIN10` ( installs boost inside C:\)
-            * Replace `BOOST_WINAPI_VERSION_WIN10` with the appropriate macro from [here](https://www.boost.org/doc/libs/develop/libs/winapi/doc/html/winapi/config.html)
+        * `.\b2 toolset=msvc address-model={32 | 64} install define=BOOST_USE_WINAPI_VERSION=\<hex value> . ( installs boost inside C:\)
+            * Replace \<hex value> with the appropriate macro from [here](https://learn.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers?redirectedfrom=MSDN#macros-for-conditional-declarations)
+                * Example: 0x0A00 is for Win10, 0x0602 is for Win8
     * Download and build aws-iot-securetunneling-localproxy
         * Use Visual Studio native tool command prompt in admin mode
         * `git clone https://github.com/aws-samples/aws-iot-securetunneling-localproxy.git`
         * `cd aws-iot-securetunneling-localproxy`
         * `mkdir build`
         * `cd build`
-        * Build the cmake project. Replace <_WIN32_WINNT> with the appropriate value based on [your OS from here](https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019)
+        * Build the cmake project. Replace \<hex value> with the appropriate value based on [your OS from here](https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019), (e.g. 0x0A00 for Win10, 0x00602 for Win8). This value should be the same value used to build the Boost libraries.
+            * For visual studio 2022
+            ```
+            cmake -DWIN32_WINNT=<hex value> -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 17 2022" -A x64 ..\
+            ```
             * For visual studio 2019
             ```
-            cmake -DWIN32_WINNT=<_WIN32_WINNT> -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 16 2019" -A x64 ..\
+            cmake -DWIN32_WINNT=<hex value> -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 16 2019" -A x64 ..\
             ```
             * for visual studio 2017
             ```
-            cmake -DWIN32_WINNT=<_WIN32_WINNT> -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 15 2017 <Win64/Win32>" ..\
+            cmake -DWIN32_WINNT=<hex value> -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 15 2017 <Win64/Win32>" ..\
             ```
         * `msbuild localproxy.vcxproj -p:Configuration=Release` ( builds localproxy.exe inside bin\Release folder )
     * Follow [instructions](https://github.com/aws-samples/aws-iot-securetunneling-localproxy) under heading `Security Considerations` to run local proxy on a window OS.

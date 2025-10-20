@@ -45,7 +45,7 @@ jobs:
           cd protobuf-3.17.3
           mkdir build_make
           cd build_make
-          cmake ../cmake
+          cmake ../cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           make
           sudo make install
       - name: Building localproxy
@@ -118,13 +118,12 @@ jobs:
           name: localproxy-ubuntu
           path: ${{ github.workspace }}/build/bin/localproxy
   windows:
-    runs-on: windows-2019
+    runs-on: windows-2022
     if: (github.event_name == 'push') || ((github.event_name == 'pull_request') && (github.event.pull_request.head.repo.full_name != github.repository))
     steps:
       - name: Setup developer command prompt
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          toolset: 14.2
           arch: x64
       - name: Install OpenSSL
         run: |
@@ -163,7 +162,7 @@ jobs:
           Expand-Archive "boost_1_87_0.zip" -Force
           cd .\boost_1_87_0\boost_1_87_0\
           .\bootstrap.bat
-          .\b2 toolset=msvc-14.2 address-model=64 install define=_WIN32_WINNT=0x0601 define=BOOST_WINAPI_VERSION_WIN7 link=static
+          .\b2 toolset=msvc address-model=64 install define=_WIN32_WINNT=0x0A00 define=BOOST_WINAPI_VERSION_WIN10 link=static
       - name: Install protobuf
         run: |
           cd \
@@ -172,7 +171,7 @@ jobs:
           cd .\protobuf-all-3.17.3\protobuf-3.17.3\cmake\
           mkdir build
           cd build
-          cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -Dprotobuf_MSVC_STATIC_RUNTIME=OFF ../
+          cmake -G "NMake Makefiles" -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -Dprotobuf_MSVC_STATIC_RUNTIME=OFF ../
           nmake
           nmake install
           $env:Path += ";C:\Program Files (x86)\protobuf\bin"
@@ -188,7 +187,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DBUILD_TESTS=OFF -DLINK_STATIC_OPENSSL=OFF -DBOOST_PKG_VERSION=1.84.0 -DWIN32_WINNT=0x0601 -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 16 2019" -A x64 ..\
+          cmake -DBUILD_TESTS=OFF -DLINK_STATIC_OPENSSL=OFF -DBOOST_PKG_VERSION=1.87.0 -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON -DCMAKE_PREFIX_PATH="C:\Boost;C:\Program Files (x86)\Catch2;C:\Program Files (x86)\protobuf;C:\Program Files\OpenSSL" -G "Visual Studio 17 2022" -A x64 ..\
           msbuild localproxy.vcxproj -p:Configuration=Release
       - name: Upload Artifact
         uses: actions/upload-artifact@v4

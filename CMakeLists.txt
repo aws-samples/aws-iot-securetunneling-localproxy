@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
 set(AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME localproxy)
 set(AWS_TUNNEL_LOCAL_PROXY_LIB_NAME lproxy)
@@ -74,8 +74,27 @@ find_package(OpenSSL REQUIRED)
 
 if(LINK_STATIC_OPENSSL)
     include_directories(${OPENSSL_INCLUDE_DIR})
-    string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_SSL_LIBRARY ${OPENSSL_SSL_LIBRARY})
-    string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_CRYPTO_LIBRARY ${OPENSSL_CRYPTO_LIBRARY})
+    
+    # Check SSL library location
+    get_target_property(SSL_LOCATION OpenSSL::SSL IMPORTED_LOCATION)
+    if(SSL_LOCATION STREQUAL "SSL_LOCATION-NOTFOUND")
+        get_target_property(SSL_LOCATION OpenSSL::SSL IMPORTED_LOCATION_RELEASE)
+        if(SSL_LOCATION STREQUAL "SSL_LOCATION-NOTFOUND")
+            message(FATAL_ERROR "Could not find OpenSSL SSL library location")
+        endif()
+    endif()
+    
+    # Check Crypto library location
+    get_target_property(CRYPTO_LOCATION OpenSSL::Crypto IMPORTED_LOCATION)
+    if(CRYPTO_LOCATION STREQUAL "CRYPTO_LOCATION-NOTFOUND")
+        get_target_property(CRYPTO_LOCATION OpenSSL::Crypto IMPORTED_LOCATION_RELEASE)
+        if(CRYPTO_LOCATION STREQUAL "CRYPTO_LOCATION-NOTFOUND")
+            message(FATAL_ERROR "Could not find OpenSSL Crypto library location")
+        endif()
+    endif()
+    
+    string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_SSL_LIBRARY ${SSL_LOCATION})
+    string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} OpenSSL_STATIC_CRYPTO_LIBRARY ${CRYPTO_LOCATION})
 endif()
 
 #########################################
