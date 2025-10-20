@@ -124,7 +124,6 @@ jobs:
       - name: Setup developer command prompt
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          toolset: 14.3
           arch: x64
       - name: Install OpenSSL
         run: |
