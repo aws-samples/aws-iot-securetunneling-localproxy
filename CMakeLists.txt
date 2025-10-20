@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
 set(AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME localproxy)
 set(AWS_TUNNEL_LOCAL_PROXY_LIB_NAME lproxy)
