@@ -1,0 +1,150 @@
+name: Build Multi-Platform Binaries
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+            boost_version: 1.87.0
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            boost_version: 1.87.0
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      
+      - name: Install dependencies
+        run: |
+          BOOST_VER_UNDERSCORE=$(echo ${{ matrix.boost_version }} | tr . _)
+          sudo apt-get update && sudo apt-get install -y build-essential cmake wget git libssl-dev zlib1g-dev
+          mkdir -p dependencies && cd dependencies
+          wget -q https://archives.boost.io/release/${{ matrix.boost_version }}/source/boost_${BOOST_VER_UNDERSCORE}.tar.gz -O boost.tar.gz
+          tar xzf boost.tar.gz && cd boost_${BOOST_VER_UNDERSCORE} && ./bootstrap.sh && sudo ./b2 install link=static -j$(nproc)
+          cd .. && wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
+          tar xzf protobuf.tar.gz && cd protobuf-3.17.3 && mkdir -p build && cd build && cmake ../cmake && make -j$(nproc) && sudo make install
+      
+      - name: Build
+        run: |
+          mkdir -p build && cd build && cmake .. && make -j$(nproc)
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: localproxy-linux-${{ matrix.arch }}
+          path: build/bin/localproxy
+
+  build-macos:
+    permissions:
+      contents: read
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      
+      - name: Install system dependencies
+        run: brew install cmake openssl@3 zlib
+      
+      - name: Install Boost
+        run: |
+          mkdir -p $HOME/dependencies
+          cd $HOME/dependencies
+          wget -q https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O boost.tar.gz
+          tar xzf boost.tar.gz
+          cd boost_1_87_0
+          ./bootstrap.sh
+          sudo ./b2 install link=static -j$(sysctl -n hw.ncpu)
+      
+      - name: Install Protobuf
+        run: |
+          cd $HOME/dependencies
+          wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
+          tar xzf protobuf.tar.gz
+          cd protobuf-3.17.3
+          mkdir -p build
+          cd build
+          cmake ../cmake -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3)
+          make -j$(sysctl -n hw.ncpu)
+          sudo make install
+      
+      - name: Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3)
+          make -j$(sysctl -n hw.ncpu)
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: localproxy-macos-arm64
+          path: build/bin/localproxy
+
+  build-windows:
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        arch: [x64, ARM64]
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+      
+      - name: Install Boost dependencies
+        run: |
+          vcpkg install boost-asio:${{ matrix.arch }}-windows boost-bind:${{ matrix.arch }}-windows boost-log:${{ matrix.arch }}-windows boost-program-options:${{ matrix.arch }}-windows boost-system:${{ matrix.arch }}-windows
+        shell: pwsh
+      
+      - name: Install Protobuf
+        run: |
+          vcpkg install protobuf:${{ matrix.arch }}-windows
+        shell: pwsh
+      
+      - name: Install OpenSSL
+        run: |
+          vcpkg install openssl:${{ matrix.arch }}-windows
+        shell: pwsh
+      
+      - name: Install Zlib
+        run: |
+          vcpkg install zlib:${{ matrix.arch }}-windows
+        shell: pwsh
+      
+      - name: Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -A ${{ matrix.arch == 'x64' && 'x64' || 'ARM64' }}
+          cmake --build . --config Release -j
+        shell: pwsh
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: localproxy-windows-${{ matrix.arch }}
+          path: build/bin/Release/localproxy.exe
