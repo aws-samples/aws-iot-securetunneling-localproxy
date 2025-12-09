@@ -34,12 +34,15 @@ jobs:
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            /usr/local/lib/libboost_*
-            /usr/local/include/boost
-            /usr/local/lib/libprotobuf*
-            /usr/local/include/google
+          path: ~/deps-cache
           key: linux-${{ matrix.arch }}-deps-boost-${{ matrix.boost_version }}-protobuf-3.17.3
+      
+      - name: Restore cached dependencies
+        run: |
+          if [ -d ~/deps-cache/lib ]; then
+            sudo cp -r ~/deps-cache/lib/* /usr/local/lib/
+            sudo cp -r ~/deps-cache/include/* /usr/local/include/
+          fi
       
       - name: Install dependencies
         run: |
@@ -50,6 +53,14 @@ jobs:
           tar xzf boost.tar.gz && cd boost_${BOOST_VER_UNDERSCORE} && ./bootstrap.sh && sudo ./b2 install link=static -j$(nproc)
           cd .. && wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
           tar xzf protobuf.tar.gz && cd protobuf-3.17.3 && mkdir -p build && cd build && cmake ../cmake && make -j$(nproc) && sudo make install
+      
+      - name: Save dependencies to cache
+        run: |
+          mkdir -p ~/deps-cache/lib ~/deps-cache/include
+          cp -r /usr/local/lib/libboost_* ~/deps-cache/lib/ 2>/dev/null || true
+          cp -r /usr/local/lib/libprotobuf* ~/deps-cache/lib/ 2>/dev/null || true
+          cp -r /usr/local/include/boost ~/deps-cache/include/ 2>/dev/null || true
+          cp -r /usr/local/include/google ~/deps-cache/include/ 2>/dev/null || true
       
       - name: Build
         run: |
@@ -73,12 +84,15 @@ jobs:
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            /usr/local/lib/libboost_*
-            /usr/local/include/boost
-            /usr/local/lib/libprotobuf*
-            /usr/local/include/google
+          path: ~/deps-cache
           key: macos-arm64-deps-boost-1.87.0-protobuf-3.17.3
+      
+      - name: Restore cached dependencies
+        run: |
+          if [ -d ~/deps-cache/lib ]; then
+            sudo cp -r ~/deps-cache/lib/* /usr/local/lib/
+            sudo cp -r ~/deps-cache/include/* /usr/local/include/
+          fi
       
       - name: Install system dependencies
         run: brew install cmake openssl@3 zlib
@@ -99,11 +113,20 @@ jobs:
           wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
           tar xzf protobuf.tar.gz
           cd protobuf-3.17.3
-          mkdir -p build
+          rm -rf build
+          mkdir build
           cd build
-          cmake ../cmake -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3)
+          cmake ../cmake -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3) -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           make -j$(sysctl -n hw.ncpu)
           sudo make install
+      
+      - name: Save dependencies to cache
+        run: |
+          mkdir -p ~/deps-cache/lib ~/deps-cache/include
+          cp -r /usr/local/lib/libboost_* ~/deps-cache/lib/ 2>/dev/null || true
+          cp -r /usr/local/lib/libprotobuf* ~/deps-cache/lib/ 2>/dev/null || true
+          cp -r /usr/local/include/boost ~/deps-cache/include/ 2>/dev/null || true
+          cp -r /usr/local/include/google ~/deps-cache/include/ 2>/dev/null || true
       
       - name: Build
         run: |
@@ -143,32 +166,21 @@ jobs:
             ${{ env.VCPKG_ROOT }}/packages
           key: windows-${{ matrix.arch }}-vcpkg-boost-protobuf-openssl-zlib-v1
       
-      - name: Install Boost dependencies
+      - name: Install dependencies via vcpkg
         run: |
-          vcpkg install boost-asio:${{ matrix.arch }}-windows boost-bind:${{ matrix.arch }}-windows boost-log:${{ matrix.arch }}-windows boost-program-options:${{ matrix.arch }}-windows boost-system:${{ matrix.arch }}-windows
-        shell: pwsh
-      
-      - name: Install Protobuf
-        run: |
-          vcpkg install protobuf:${{ matrix.arch }}-windows
-        shell: pwsh
-      
-      - name: Install OpenSSL
-        run: |
-          vcpkg install openssl:${{ matrix.arch }}-windows
-        shell: pwsh
-      
-      - name: Install Zlib
-        run: |
-          vcpkg install zlib:${{ matrix.arch }}-windows
+          $triplet = if ("${{ matrix.arch }}" -eq "x64") { "x64-windows" } else { "arm64-windows" }
+          vcpkg install boost-asio:$triplet boost-bind:$triplet boost-log:$triplet boost-program-options:$triplet boost-system:$triplet protobuf:$triplet openssl:$triplet zlib:$triplet
+          vcpkg integrate install
         shell: pwsh
       
       - name: Build
         run: |
-          mkdir -p build
+          $triplet = if ("${{ matrix.arch }}" -eq "x64") { "x64-windows" } else { "arm64-windows" }
+          $platform = if ("${{ matrix.arch }}" -eq "x64") { "x64" } else { "ARM64" }
+          mkdir build -Force
           cd build
-          cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -A ${{ matrix.arch == 'x64' && 'x64' || 'ARM64' }}
-          cmake --build . --config Release -j
+          cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -A $platform -DVCPKG_TARGET_TRIPLET=$triplet
+          cmake --build . --config Release --parallel
         shell: pwsh
       
       - name: Upload artifact
