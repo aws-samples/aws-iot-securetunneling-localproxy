@@ -72,6 +72,43 @@ jobs:
           name: localproxy-linux-${{ matrix.arch }}
           path: build/bin/localproxy
 
+  build-linux-arm32:
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm
+      
+      - name: Build in ARM32 container
+        run: |
+          docker run --rm --platform linux/arm/v7 \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            arm32v7/ubuntu:22.04 bash -c '
+            apt-get update && apt-get install -y build-essential cmake wget git libssl-dev zlib1g-dev
+            BOOST_VER=1.87.0
+            BOOST_VER_UNDERSCORE=$(echo $BOOST_VER | tr . _)
+            mkdir -p dependencies && cd dependencies
+            wget -q https://archives.boost.io/release/$BOOST_VER/source/boost_${BOOST_VER_UNDERSCORE}.tar.gz -O boost.tar.gz
+            tar xzf boost.tar.gz && cd boost_${BOOST_VER_UNDERSCORE} && ./bootstrap.sh && ./b2 install link=static -j$(nproc)
+            cd .. && wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
+            tar xzf protobuf.tar.gz && cd protobuf-3.17.3 && mkdir -p build && cd build && cmake ../cmake && make -j$(nproc) && make install
+            cd /workspace && mkdir -p build && cd build && cmake .. && make -j$(nproc)
+          '
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: localproxy-linux-armv7
+          path: build/bin/localproxy
+
   build-macos:
     permissions:
       contents: read
