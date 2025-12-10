@@ -11,7 +11,6 @@ on:
   pull_request:
     branches: ['base-images', 'docker-builds']
     types: [opened, closed]
-
 env:
   PACKAGE_NAME: aws-iot-securetunneling-localproxy
   ECR_ACCOUNT_URL: public.ecr.aws
