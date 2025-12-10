@@ -262,7 +262,7 @@ jobs:
           file: .github/docker-images/bin-images/amazonlinux/Dockerfile
           build-args: |
             OS=amazonlinux:2023
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:arm64-latest
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:arm64
           context: .
           push: true
           tags: |
@@ -339,6 +339,7 @@ jobs:
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:arm64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:arm64-latest
           platforms: linux/arm64
+  # Note: Since we only build a single image for fedora (amd64) we can tag with 'latest' in this step
   build-docker-image-fedora-amd64:
     runs-on: ubuntu-latest
     permissions:
@@ -373,6 +374,7 @@ jobs:
           tags: |
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:amd64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:amd64-latest
+            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:latest
           platforms: linux/amd64
   build-image-manifest-ubuntu:
     runs-on: ubuntu-latest
@@ -397,7 +399,6 @@ jobs:
           ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:arm64-latest
           ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBUNTU }}:armv7-latest
         shell: bash
-
   build-image-manifest-ubi8:
     runs-on: ubuntu-latest
     needs:
@@ -413,7 +414,7 @@ jobs:
       - name: Login to ECR
         run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Create multi-image manifest
-        run: ddocker buildx imagetools create --tag  ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:latest
+        run: docker buildx imagetools create --tag  ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:latest
           ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:amd64-latest
           ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_UBI8 }}:arm64-latest
   build-image-manifest-amazonlinux:
