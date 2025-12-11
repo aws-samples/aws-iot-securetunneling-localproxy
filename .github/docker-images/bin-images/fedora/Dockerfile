@@ -11,7 +11,7 @@ RUN mkdir -p /root/aws-iot-securetunneling-localproxy/build \
     && cmake .. \
     && make
 
-FROM amazonlinux:2023 AS minimum_size
+FROM fedora:latest AS minimum_size
 
 COPY --from=deploy /root/aws-iot-securetunneling-localproxy/build/bin/localproxy /root/bin/localproxy
 
@@ -24,7 +24,8 @@ RUN HOME_DIR=/root \
     && rm -rf ${HOME_DIR}/oss-compliance*
 
 # OS-specific commands
-RUN yum check-update; yum upgrade -y && \
-	yum install -y libatomic libicu
+RUN dnf -y update; dnf -y install && \
+	libatomic libicu ca-certificates && \
+    update-ca-trust extract
 
 ENTRYPOINT ["/root/bin/localproxy"]
