@@ -262,7 +262,7 @@ jobs:
           file: .github/docker-images/bin-images/amazonlinux/Dockerfile
           build-args: |
             OS=amazonlinux:2023
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:arm64
+            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_AMAZONLINUX }}:arm64-latest
           context: .
           push: true
           tags: |
