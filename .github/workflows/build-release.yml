@@ -43,7 +43,7 @@ jobs:
       
       - name: Build
         run: |
-          mkdir -p build && cd build && cmake .. && make -j$(nproc)
+          mkdir -p build && cd build && cmake .. -DLINK_STATIC_OPENSSL=OFF && make -j$(nproc)
       
       - name: Upload artifact
         uses: actions/upload-artifact@v5
@@ -79,7 +79,7 @@ jobs:
             tar xzf boost.tar.gz && cd boost_${BOOST_VER_UNDERSCORE} && ./bootstrap.sh && ./b2 install link=static -j$(nproc)
             cd .. && wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
             tar xzf protobuf.tar.gz && cd protobuf-3.17.3 && mkdir -p build && cd build && cmake ../cmake && make -j$(nproc) && make install
-            cd /workspace && mkdir -p build && cd build && cmake .. && make -j$(nproc)
+            cd /workspace && mkdir -p build && cd build && cmake .. -DLINK_STATIC_OPENSSL=OFF && make -j$(nproc)
           '
       
       - name: Upload artifact
@@ -127,7 +127,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3)
+          cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3) -DLINK_STATIC_OPENSSL=OFF
           make -j$(sysctl -n hw.ncpu)
       
       # Note: Binary is not code-signed. macOS users may need to run:
@@ -177,7 +177,7 @@ jobs:
           $platform = if ("${{ matrix.arch }}" -eq "x64") { "x64" } else { "ARM64" }
           mkdir build -Force
           cd build
-          cmake .. -DCMAKE_TOOLCHAIN_FILE="$Env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -A $platform -DVCPKG_TARGET_TRIPLET=$triplet
+          cmake .. -DCMAKE_TOOLCHAIN_FILE="$Env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -A $platform -DVCPKG_TARGET_TRIPLET=$triplet -DLINK_STATIC_OPENSSL=OFF
           cmake --build . --config Release --parallel
         shell: pwsh
       
