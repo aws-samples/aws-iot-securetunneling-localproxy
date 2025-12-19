@@ -183,7 +183,21 @@ Source install example:
 Run the ./Configure command without any arguments to check the available platform configuration options and the documentation here: https://wiki.openssl.org/index.php/Compilation_and_Installation
 
 ##### Static vs. Dynamic linking OpenSSL
-In the `CMakeLists.txt`, we provide a parameter -DLINK_STATIC_OPENSSL which by default is set to ON. You may link against shared libraries on your system by setting the value to OFF. Choosing to do so is completely optional depending on your own operational requirements. This is following guidance from https://github.com/aws-samples/aws-iot-securetunneling-localproxy/pull/145.
+In the `CMakeLists.txt`, we provide a parameter `-DLINK_STATIC_OPENSSL` which by default is set to ON (static linking). You may link against shared libraries on your system by setting the value to OFF:
+
+**Static OpenSSL (default):**
+```bash
+cmake ../
+make
+```
+
+**Dynamic OpenSSL:**
+```bash
+cmake ../ -DLINK_STATIC_OPENSSL=OFF
+make
+```
+
+Choosing to use dynamic linking is completely optional depending on your own operational requirements.
 
 #### 5. Download and install Catch2 test framework
 
