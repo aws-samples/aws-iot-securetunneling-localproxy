@@ -20,10 +20,10 @@ jobs:
       matrix:
         include:
           - arch: x86_64
-            runner: ubuntu-24.04
+            runner: ubuntu-22.04
             boost_version: 1.87.0
           - arch: aarch64
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-22.04-arm
             boost_version: 1.87.0
     runs-on: ${{ matrix.runner }}
     steps:
@@ -54,7 +54,7 @@ jobs:
   build-linux-arm32:
     permissions:
       contents: read
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-22.04-arm
     steps:
       - uses: actions/checkout@v6
         with:
