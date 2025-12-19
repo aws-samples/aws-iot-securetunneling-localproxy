@@ -52,61 +52,55 @@ jobs:
   build-linux-arm32:
     permissions:
       contents: read
-    runs-on: ubuntu-22.04-arm
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm
-      
+
       - name: Cache ARM32 dependencies
-        uses: actions/cache@v5
+        id: cache-arm32
+        uses: actions/cache@v4
         with:
-          path: |
-            dependencies
-            arm32-prefix
-          key: arm32-deps-boost-1.87.0-protobuf-3.17.3-v3
-      
-      - name: Build in ARM32 container
+          path: arm32-deps
+          key: arm32-deps-boost1.87-protobuf3.17.3-v1
+
+      - name: Build dependencies in ARM32 container
+        if: steps.cache-arm32.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p arm32-deps
+          docker run --rm --platform linux/arm/v7 \
+            -v ${{ github.workspace }}/arm32-deps:/deps \
+            arm32v7/ubuntu:22.04 bash -c '
+              apt-get update && apt-get install -y build-essential cmake wget
+              wget -q https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O /tmp/boost.tar.gz
+              tar xzf /tmp/boost.tar.gz -C /tmp && cd /tmp/boost_1_87_0
+              ./bootstrap.sh --prefix=/deps --with-libraries=system,log,thread,program_options,date_time,filesystem,chrono
+              ./b2 install link=static -j$(nproc)
+              wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf.tar.gz
+              tar xzf /tmp/protobuf.tar.gz -C /tmp && cd /tmp/protobuf-3.17.3
+              mkdir build && cd build && cmake ../cmake -DCMAKE_INSTALL_PREFIX=/deps -Dprotobuf_BUILD_TESTS=OFF
+              make -j$(nproc) && make install
+            '
+
+      - name: Build localproxy in ARM32 container
         run: |
           docker run --rm --platform linux/arm/v7 \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
+            -v ${{ github.workspace }}:/src \
+            -v ${{ github.workspace }}/arm32-deps:/deps \
+            -w /src \
             arm32v7/ubuntu:22.04 bash -c '
-            apt-get update && apt-get install -y build-essential cmake wget git libssl-dev zlib1g-dev
-            BOOST_VER=1.87.0
-            BOOST_VER_UNDERSCORE=$(echo $BOOST_VER | tr . _)
-            PREFIX=/workspace/arm32-prefix
-            mkdir -p $PREFIX dependencies
-            
-            # Check if already built
-            if [ -f "$PREFIX/lib/libboost_system.a" ] && [ -f "$PREFIX/lib/libprotobuf.a" ]; then
-              echo "Using cached dependencies"
-            else
-              cd /workspace/dependencies
-              if [ ! -d "boost_${BOOST_VER_UNDERSCORE}" ]; then
-                wget -q https://archives.boost.io/release/$BOOST_VER/source/boost_${BOOST_VER_UNDERSCORE}.tar.gz -O boost.tar.gz
-                tar xzf boost.tar.gz
-              fi
-              cd boost_${BOOST_VER_UNDERSCORE} && ./bootstrap.sh --prefix=$PREFIX && ./b2 install link=static -j$(nproc)
-              
-              cd /workspace/dependencies
-              if [ ! -d "protobuf-3.17.3" ]; then
-                wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
-                tar xzf protobuf.tar.gz
-              fi
-              cd protobuf-3.17.3 && rm -rf build && mkdir -p build && cd build && cmake ../cmake -DCMAKE_INSTALL_PREFIX=$PREFIX && make -j$(nproc) && make install
-            fi
-            
-            cd /workspace && rm -rf build && mkdir -p build && cd build
-            cmake .. -DLINK_STATIC_OPENSSL=OFF -DCMAKE_PREFIX_PATH=$PREFIX -DProtobuf_ROOT=$PREFIX
-            make -j$(nproc)
-          '
-      
+              apt-get update && apt-get install -y build-essential cmake libssl-dev zlib1g-dev
+              mkdir -p build && cd build
+              cmake .. -DCMAKE_PREFIX_PATH=/deps -DLINK_STATIC_OPENSSL=OFF -DBOOST_PKG_VERSION="" -DPROTOBUF_PKG_VERSION=""
+              make -j$(nproc)
+            '
+
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
@@ -167,47 +161,25 @@ jobs:
   build-windows:
     permissions:
       contents: read
-    strategy:
-      matrix:
-        arch: [x64, ARM64]
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{ matrix.arch }}
-      
-      - name: Cache vcpkg dependencies
-        uses: actions/cache@v5
-        with:
-          path: |
-            ${{ env.VCPKG_ROOT }}/installed
-            ${{ env.VCPKG_ROOT }}/packages
-          key: windows-${{ matrix.arch }}-vcpkg-boost-protobuf-openssl-zlib-v1
-      
-      - name: Install dependencies via vcpkg
+
+      - name: Install dependencies
         run: |
-          $triplet = if ("${{ matrix.arch }}" -eq "x64") { "x64-windows" } else { "arm64-windows" }
-          vcpkg install boost-asio:$triplet boost-bind:$triplet boost-log:$triplet boost-program-options:$triplet boost-system:$triplet protobuf:$triplet openssl:$triplet zlib:$triplet
-          vcpkg integrate install
-        shell: pwsh
-      
+          vcpkg install openssl:x64-windows zlib:x64-windows boost:x64-windows protobuf:x64-windows
+
       - name: Build
         run: |
-          $triplet = if ("${{ matrix.arch }}" -eq "x64") { "x64-windows" } else { "arm64-windows" }
-          $platform = if ("${{ matrix.arch }}" -eq "x64") { "x64" } else { "ARM64" }
-          mkdir build -Force
+          mkdir build
           cd build
-          cmake .. -DCMAKE_TOOLCHAIN_FILE="$Env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -A $platform -DVCPKG_TARGET_TRIPLET=$triplet -DLINK_STATIC_OPENSSL=OFF
-          cmake --build . --config Release --parallel
-        shell: pwsh
-      
+          cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DLINK_STATIC_OPENSSL=OFF -DWIN32_WINNT=0x0A00 -DPROTOBUF_PKG_VERSION="" -DBOOST_PKG_VERSION="" -DCMAKE_CXX_STANDARD=17
+          cmake --build . --config Release
+
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: localproxy-windows-${{ matrix.arch }}
+          name: localproxy-windows-x64
           path: build/bin/Release/localproxy.exe
