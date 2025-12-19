@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
   pull_request:
   workflow_dispatch:
 
@@ -46,7 +44,7 @@ jobs:
           mkdir -p build && cd build && cmake .. -DLINK_STATIC_OPENSSL=OFF && make -j$(nproc)
       
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: localproxy-linux-${{ matrix.arch }}
           path: build/bin/localproxy
@@ -65,6 +63,14 @@ jobs:
         with:
           platforms: arm
       
+      - name: Cache ARM32 dependencies
+        uses: actions/cache@v5
+        with:
+          path: |
+            dependencies
+            arm32-prefix
+          key: arm32-deps-boost-1.87.0-protobuf-3.17.3-v3
+      
       - name: Build in ARM32 container
         run: |
           docker run --rm --platform linux/arm/v7 \
@@ -74,16 +80,35 @@ jobs:
             apt-get update && apt-get install -y build-essential cmake wget git libssl-dev zlib1g-dev
             BOOST_VER=1.87.0
             BOOST_VER_UNDERSCORE=$(echo $BOOST_VER | tr . _)
-            mkdir -p dependencies && cd dependencies
-            wget -q https://archives.boost.io/release/$BOOST_VER/source/boost_${BOOST_VER_UNDERSCORE}.tar.gz -O boost.tar.gz
-            tar xzf boost.tar.gz && cd boost_${BOOST_VER_UNDERSCORE} && ./bootstrap.sh && ./b2 install link=static -j$(nproc)
-            cd .. && wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
-            tar xzf protobuf.tar.gz && cd protobuf-3.17.3 && mkdir -p build && cd build && cmake ../cmake && make -j$(nproc) && make install
-            cd /workspace && mkdir -p build && cd build && cmake .. -DLINK_STATIC_OPENSSL=OFF && make -j$(nproc)
+            PREFIX=/workspace/arm32-prefix
+            mkdir -p $PREFIX dependencies
+            
+            # Check if already built
+            if [ -f "$PREFIX/lib/libboost_system.a" ] && [ -f "$PREFIX/lib/libprotobuf.a" ]; then
+              echo "Using cached dependencies"
+            else
+              cd /workspace/dependencies
+              if [ ! -d "boost_${BOOST_VER_UNDERSCORE}" ]; then
+                wget -q https://archives.boost.io/release/$BOOST_VER/source/boost_${BOOST_VER_UNDERSCORE}.tar.gz -O boost.tar.gz
+                tar xzf boost.tar.gz
+              fi
+              cd boost_${BOOST_VER_UNDERSCORE} && ./bootstrap.sh --prefix=$PREFIX && ./b2 install link=static -j$(nproc)
+              
+              cd /workspace/dependencies
+              if [ ! -d "protobuf-3.17.3" ]; then
+                wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
+                tar xzf protobuf.tar.gz
+              fi
+              cd protobuf-3.17.3 && rm -rf build && mkdir -p build && cd build && cmake ../cmake -DCMAKE_INSTALL_PREFIX=$PREFIX && make -j$(nproc) && make install
+            fi
+            
+            cd /workspace && rm -rf build && mkdir -p build && cd build
+            cmake .. -DLINK_STATIC_OPENSSL=OFF -DCMAKE_PREFIX_PATH=$PREFIX -DProtobuf_ROOT=$PREFIX
+            make -j$(nproc)
           '
       
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: localproxy-linux-armv7
           path: build/bin/localproxy
@@ -134,7 +159,7 @@ jobs:
       # xattr -d com.apple.quarantine localproxy-macos-arm64
       # Or right-click the binary and select "Open" to bypass Gatekeeper
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: localproxy-macos-arm64
           path: build/bin/localproxy
@@ -157,7 +182,7 @@ jobs:
           arch: ${{ matrix.arch }}
       
       - name: Cache vcpkg dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ env.VCPKG_ROOT }}/installed
@@ -182,7 +207,7 @@ jobs:
         shell: pwsh
       
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: localproxy-windows-${{ matrix.arch }}
           path: build/bin/Release/localproxy.exe
