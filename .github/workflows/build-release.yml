@@ -65,7 +65,7 @@ jobs:
 
       - name: Cache ARM32 dependencies
         id: cache-arm32
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: arm32-deps
           key: arm32-deps-boost1.87-protobuf3.17.3-v1
@@ -162,20 +162,29 @@ jobs:
     permissions:
       contents: read
     runs-on: windows-2025
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg-cache
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
+      - name: Cache vcpkg packages
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}\vcpkg-cache
+          key: vcpkg-windows-x64-v1
+
       - name: Install dependencies
         run: |
+          New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
           vcpkg install openssl:x64-windows zlib:x64-windows boost:x64-windows protobuf:x64-windows
 
       - name: Build
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DLINK_STATIC_OPENSSL=OFF -DWIN32_WINNT=0x0A00 -DPROTOBUF_PKG_VERSION="" -DBOOST_PKG_VERSION="" -DCMAKE_CXX_STANDARD=17
+          cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DLINK_STATIC_OPENSSL=OFF -DWIN32_WINNT=0x0A00 -DPROTOBUF_PKG_VERSION="" -DBOOST_PKG_VERSION="" -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_FLAGS="/std:c++17"
           cmake --build . --config Release
 
       - name: Upload artifact
