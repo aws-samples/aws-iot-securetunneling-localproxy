@@ -57,9 +57,13 @@ jobs:
           cmake ../ && make -j$(nproc) && sudo make install
 
       - name: Build
-        run: |
-          mkdir -p build && cd build && cmake .. -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF && make -j$(nproc)
-          strip bin/localproxy
+        run: mkdir -p build && cd build && cmake .. -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF && make -j$(nproc)
+
+      - name: Run tests
+        run: ./build/bin/localproxytest
+
+      - name: Strip binary
+        run: strip build/bin/localproxy
       
       - name: Upload artifact
         uses: actions/upload-artifact@v6
@@ -131,8 +135,25 @@ jobs:
               mkdir -p build && cd build
               cmake .. -DBUILD_TESTS=ON -DCMAKE_PREFIX_PATH=/deps -DLINK_STATIC_OPENSSL=OFF -DBOOST_PKG_VERSION="" -DPROTOBUF_PKG_VERSION=""
               make -j$(nproc)
-              strip bin/localproxy
             '
+
+      - name: Run tests in ARM32 container
+        run: |
+          docker run --rm --platform linux/arm/v7 \
+            -v ${{ github.workspace }}:/src \
+            -v ${{ github.workspace }}/arm32-deps:/deps \
+            -w /src \
+            arm32v7/ubuntu:22.04 bash -c '
+              apt-get update && apt-get install -y libssl-dev
+              ./build/bin/localproxytest
+            '
+
+      - name: Strip binary in ARM32 container
+        run: |
+          docker run --rm --platform linux/arm/v7 \
+            -v ${{ github.workspace }}:/src \
+            -w /src \
+            arm32v7/ubuntu:22.04 strip build/bin/localproxy
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
@@ -188,7 +209,12 @@ jobs:
           cd build
           cmake .. -DBUILD_TESTS=ON -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3) -DLINK_STATIC_OPENSSL=OFF
           make -j$(sysctl -n hw.ncpu)
-          strip bin/localproxy
+
+      - name: Run tests
+        run: ./build/bin/localproxytest
+
+      - name: Strip binary
+        run: strip build/bin/localproxy
       
       # Note: Binary is not code-signed. macOS users may need to run:
       # xattr -d com.apple.quarantine localproxy-macos-arm64
@@ -221,9 +247,9 @@ jobs:
         with:
           arch: x64
 
-      - name: Restore Windows dependencies cache
+      - name: Cache Windows dependencies
         id: cache-windows-deps
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.DEPS_DIR }}
           key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
@@ -286,13 +312,6 @@ jobs:
           nmake
           nmake install
 
-      - name: Save Windows dependencies cache
-        if: always() && steps.cache-windows-deps.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ env.DEPS_DIR }}
-          key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
-
       - name: Build
         run: |
           mkdir build
@@ -300,6 +319,12 @@ jobs:
           $prefixPath = "$env:DEPS_DIR\boost;$env:DEPS_DIR\protobuf;$env:DEPS_DIR\openssl;$env:DEPS_DIR\zlib;$env:DEPS_DIR\catch2"
           cmake -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF "-DBOOST_PKG_VERSION=$env:BOOST_VERSION" -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON "-DCMAKE_PREFIX_PATH=$prefixPath" -G "Visual Studio 17 2022" -A x64 ..
           msbuild localproxy.vcxproj -p:Configuration=Release
+
+      - name: Build tests
+        run: msbuild build\localproxytest.vcxproj -p:Configuration=Release
+
+      - name: Run tests
+        run: .\build\bin\Release\localproxytest.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
