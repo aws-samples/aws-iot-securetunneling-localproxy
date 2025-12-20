@@ -54,6 +54,9 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-22.04
+    env:
+      BOOST_VERSION: "1.87.0"
+      PROTOBUF_VERSION: "3.17.3"
     steps:
       - uses: actions/checkout@v6
         with:
@@ -69,22 +72,28 @@ jobs:
         uses: actions/cache@v5
         with:
           path: arm32-deps
-          key: arm32-deps-boost1.87-protobuf3.17.3-v1
+          key: arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-v1
 
       - name: Build dependencies in ARM32 container
         if: steps.cache-arm32.outputs.cache-hit != 'true'
+        env:
+          BOOST_VER_UNDERSCORE: ${{ env.BOOST_VERSION }}
         run: |
+          BOOST_VER_UNDERSCORE=$(echo ${{ env.BOOST_VERSION }} | tr . _)
           mkdir -p arm32-deps
           docker run --rm --platform linux/arm/v7 \
             -v ${{ github.workspace }}/arm32-deps:/deps \
+            -e BOOST_VERSION=${{ env.BOOST_VERSION }} \
+            -e BOOST_VER_UNDERSCORE=$BOOST_VER_UNDERSCORE \
+            -e PROTOBUF_VERSION=${{ env.PROTOBUF_VERSION }} \
             arm32v7/ubuntu:22.04 bash -c '
               apt-get update && apt-get install -y build-essential cmake wget
-              wget -q https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O /tmp/boost.tar.gz
-              tar xzf /tmp/boost.tar.gz -C /tmp && cd /tmp/boost_1_87_0
+              wget -q https://archives.boost.io/release/$BOOST_VERSION/source/boost_$BOOST_VER_UNDERSCORE.tar.gz -O /tmp/boost.tar.gz
+              tar xzf /tmp/boost.tar.gz -C /tmp && cd /tmp/boost_$BOOST_VER_UNDERSCORE
               ./bootstrap.sh --prefix=/deps --with-libraries=system,log,thread,program_options,date_time,filesystem,chrono
               ./b2 install link=static -j$(nproc)
-              wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf.tar.gz
-              tar xzf /tmp/protobuf.tar.gz -C /tmp && cd /tmp/protobuf-3.17.3
+              wget -q https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOBUF_VERSION/protobuf-all-$PROTOBUF_VERSION.tar.gz -O /tmp/protobuf.tar.gz
+              tar xzf /tmp/protobuf.tar.gz -C /tmp && cd /tmp/protobuf-$PROTOBUF_VERSION
               mkdir build && cd build && cmake ../cmake -DCMAKE_INSTALL_PREFIX=/deps -Dprotobuf_BUILD_TESTS=OFF
               make -j$(nproc) && make install
             '
@@ -164,31 +173,92 @@ jobs:
   build-windows:
     permissions:
       contents: read
-    runs-on: windows-2025
+      actions: write
+    runs-on: windows-2022
     env:
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg-cache
+      DEPS_DIR: ${{ github.workspace }}\deps
+      OPENSSL_VERSION: "3.0.12"
+      BOOST_VERSION: "1.87.0"
+      PROTOBUF_VERSION: "3.17.3"
+      ZLIB_VERSION: "1.2.13"
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Cache vcpkg packages
-        uses: actions/cache@v5
+      - name: Setup developer command prompt
+        uses: ilammy/msvc-dev-cmd@v1
         with:
-          path: ${{ github.workspace }}\vcpkg-cache
-          key: vcpkg-windows-x64-v1
+          arch: x64
 
-      - name: Install dependencies
+      - name: Restore Windows dependencies cache
+        id: cache-windows-deps
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.DEPS_DIR }}
+          key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-v1
+
+      - name: Install OpenSSL
+        if: steps.cache-windows-deps.outputs.cache-hit != 'true'
         run: |
-          New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
-          vcpkg install openssl:x64-windows zlib:x64-windows boost:x64-windows protobuf:x64-windows
+          New-Item -ItemType Directory -Force -Path $env:DEPS_DIR
+          Invoke-WebRequest "https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/win64/nasm-2.15.05-win64.zip" -OutFile "nasm-2.15.05-win64.zip"
+          Expand-Archive "nasm-2.15.05-win64.zip" -Force -DestinationPath "C:\NASM"
+          $env:Path += ";C:\NASM\nasm-2.15.05\"
+          Invoke-WebRequest "https://github.com/openssl/openssl/archive/refs/tags/openssl-$env:OPENSSL_VERSION.zip" -OutFile "openssl.zip"
+          Expand-Archive "openssl.zip" -Force
+          cd .\openssl\openssl-openssl-$env:OPENSSL_VERSION\
+          perl Configure VC-WIN64A --prefix="$env:DEPS_DIR\openssl" --openssldir="$env:DEPS_DIR\openssl\ssl"
+          nmake
+          nmake install_sw
+
+      - name: Install zlib
+        if: steps.cache-windows-deps.outputs.cache-hit != 'true'
+        run: |
+          git clone -b v$env:ZLIB_VERSION https://github.com/madler/zlib.git
+          cd zlib
+          mkdir build
+          cd build
+          cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$env:DEPS_DIR\zlib" ../
+          nmake
+          nmake install
+
+      - name: Install boost
+        if: steps.cache-windows-deps.outputs.cache-hit != 'true'
+        run: |
+          $boostUnderscore = $env:BOOST_VERSION -replace '\.',  '_'
+          Invoke-WebRequest "https://archives.boost.io/release/$env:BOOST_VERSION/source/boost_$boostUnderscore.zip" -OutFile "boost.zip"
+          Expand-Archive "boost.zip" -Force
+          cd .\boost\boost_$boostUnderscore\
+          .\bootstrap.bat
+          .\b2 toolset=msvc address-model=64 --prefix="$env:DEPS_DIR\boost" install define=_WIN32_WINNT=0x0A00 define=BOOST_WINAPI_VERSION_WIN10 link=static
+
+      - name: Install protobuf
+        if: steps.cache-windows-deps.outputs.cache-hit != 'true'
+        run: |
+          Invoke-WebRequest "https://github.com/protocolbuffers/protobuf/releases/download/v$env:PROTOBUF_VERSION/protobuf-all-$env:PROTOBUF_VERSION.zip" -OutFile "protobuf.zip"
+          Expand-Archive "protobuf.zip" -Force
+          cd .\protobuf\protobuf-$env:PROTOBUF_VERSION\cmake\
+          mkdir build
+          cd build
+          cmake -G "NMake Makefiles" -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -DCMAKE_INSTALL_PREFIX="$env:DEPS_DIR\protobuf" ../
+          nmake
+          nmake install
+
+      - name: Save Windows dependencies cache
+        if: always() && steps.cache-windows-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.DEPS_DIR }}
+          key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-v1
 
       - name: Build
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DLINK_STATIC_OPENSSL=OFF -DWIN32_WINNT=0x0A00 -DPROTOBUF_PKG_VERSION="" -DBOOST_PKG_VERSION="" -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_FLAGS="/std:c++17"
-          cmake --build . --config Release
+          $prefixPath = "$env:DEPS_DIR\boost;$env:DEPS_DIR\protobuf;$env:DEPS_DIR\openssl;$env:DEPS_DIR\zlib"
+          cmake -DBUILD_TESTS=OFF -DLINK_STATIC_OPENSSL=OFF "-DBOOST_PKG_VERSION=$env:BOOST_VERSION" -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON "-DCMAKE_PREFIX_PATH=$prefixPath" -G "Visual Studio 17 2022" -A x64 ..
+          msbuild localproxy.vcxproj -p:Configuration=Release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
