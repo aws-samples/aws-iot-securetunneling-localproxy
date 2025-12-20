@@ -42,6 +42,7 @@ jobs:
       - name: Build
         run: |
           mkdir -p build && cd build && cmake .. -DLINK_STATIC_OPENSSL=OFF && make -j$(nproc)
+          strip bin/localproxy
       
       - name: Upload artifact
         uses: actions/upload-artifact@v6
@@ -99,6 +100,7 @@ jobs:
               mkdir -p build && cd build
               cmake .. -DCMAKE_PREFIX_PATH=/deps -DLINK_STATIC_OPENSSL=OFF -DBOOST_PKG_VERSION="" -DPROTOBUF_PKG_VERSION=""
               make -j$(nproc)
+              strip bin/localproxy
             '
 
       - name: Upload artifact
@@ -148,6 +150,7 @@ jobs:
           cd build
           cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3) -DLINK_STATIC_OPENSSL=OFF
           make -j$(sysctl -n hw.ncpu)
+          strip bin/localproxy
       
       # Note: Binary is not code-signed. macOS users may need to run:
       # xattr -d com.apple.quarantine localproxy-macos-arm64
