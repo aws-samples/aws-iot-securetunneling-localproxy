@@ -96,6 +96,9 @@ jobs:
           path: arm32-deps
           key: arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
 
+      # GitHub Actions uses 'docker run --rm' removing containers after each step. (--rm is required for cleanup)
+      # Only way to reuse the container would be docker create ->start ->exec -> cleanup. 
+      # Current approach for easy dependency caching;
       - name: Build dependencies in ARM32 container
         if: steps.cache-arm32.outputs.cache-hit != 'true'
         env:
@@ -124,7 +127,7 @@ jobs:
               cmake ../ -DCMAKE_INSTALL_PREFIX=/deps && make -j$(nproc) && make install
             '
 
-      - name: Build localproxy in ARM32 container
+      - name: Build in ARM32 container
         run: |
           docker run --rm --platform linux/arm/v7 \
             -v ${{ github.workspace }}:/src \
@@ -153,7 +156,10 @@ jobs:
           docker run --rm --platform linux/arm/v7 \
             -v ${{ github.workspace }}:/src \
             -w /src \
-            arm32v7/ubuntu:22.04 strip build/bin/localproxy
+            arm32v7/ubuntu:22.04 bash -c '
+              apt-get update && apt-get install -y binutils
+              strip build/bin/localproxy
+            '
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6

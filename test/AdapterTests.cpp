@@ -213,8 +213,8 @@ TEST_CASE( "Test source mode", "[source]") {
     thread ws_server_thread{[&ws_server]() { ws_server.run(); } };
     thread tcp_adapter_thread{[&proxy]() { proxy.run_proxy(); } };
 
-    // Verify web socket handshake request from local proxy
-    this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
+    // Wait for web socket handshake to complete
+    ws_server.wait_for_handshake();
     CHECK( ws_server.get_handshake_request().method() == boost::beast::http::verb::get );
     CHECK( ws_server.get_handshake_request().target() == "/tunnel?local-proxy-mode=source" );
     CHECK( ws_server.get_handshake_request().base()["sec-websocket-protocol"] == "aws.iot.securetunneling-3.0" );
@@ -312,8 +312,8 @@ TEST_CASE( "Test source mode with client token", "[source]") {
     thread ws_server_thread{[&ws_server]() { ws_server.run(); } };
     thread tcp_adapter_thread{[&proxy]() { proxy.run_proxy(); } };
 
-    // Verify web socket handshake request from local proxy
-    this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
+    // Wait for web socket handshake to complete
+    ws_server.wait_for_handshake();
     CHECK( ws_server.get_handshake_request().method() == boost::beast::http::verb::get );
     CHECK( ws_server.get_handshake_request().target() == "/tunnel?local-proxy-mode=source" );
     CHECK( ws_server.get_handshake_request().base()["sec-websocket-protocol"] == "aws.iot.securetunneling-3.0" );
@@ -407,7 +407,6 @@ TEST_CASE( "Test destination mode", "[destination]") {
     //start web socket server thread and tcp adapter threads
     thread ws_server_thread{[&ws_server]() { ws_server.run(); } };
     std::cout << "Test server listening on address: " << ws_address.address() << " and port: " << ws_address.port() << endl;
-    this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
 
     LocalproxyConfig adapter_cfg;
     apply_test_config(adapter_cfg, ws_address);
@@ -422,9 +421,9 @@ TEST_CASE( "Test destination mode", "[destination]") {
     tcp_adapter_proxy proxy{ settings, adapter_cfg };
 
     thread tcp_adapter_thread{[&proxy]() { proxy.run_proxy(); } };
-    this_thread::sleep_for(chrono::milliseconds(IO_PAUSE_MS));
 
-    // Verify web socket handshake request from local proxy
+    // Wait for web socket handshake to complete
+    ws_server.wait_for_handshake();
     CHECK( ws_server.get_handshake_request().method() == boost::beast::http::verb::get );
     CHECK( ws_server.get_handshake_request().target() == "/tunnel?local-proxy-mode=destination" );
     CHECK( ws_server.get_handshake_request().base()["sec-websocket-protocol"] == "aws.iot.securetunneling-3.0" );

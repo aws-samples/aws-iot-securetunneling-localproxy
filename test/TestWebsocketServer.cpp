@@ -59,6 +59,11 @@ void TestWebsocketServer::run()
         throw std::runtime_error((boost::format("Accept handshake error: %1%") % ec.message()).str().c_str());
     }
     ws.binary(true);
+    {
+        std::lock_guard<std::mutex> lock(handshake_mutex);
+        handshake_complete = true;
+    }
+    handshake_cv.notify_all();
     //async for reading 
     ws.async_read_some(incoming_message_buffer, incoming_message_buffer.max_size() - incoming_message_buffer.size(),
         std::bind(&TestWebsocketServer::on_read_complete, this, std::ref(ws),
@@ -193,6 +198,12 @@ void TestWebsocketServer::close_client(std::string const& close_reason, boost::b
                     this->io_ctx.stop();
                 });
         });
+}
+
+void TestWebsocketServer::wait_for_handshake()
+{
+    std::unique_lock<std::mutex> lock(handshake_mutex);
+    handshake_cv.wait(lock, [this]{ return handshake_complete; });
 }
 
 void TestWebsocketServer::expect_next_message(std::function<bool(message const &)> predicate)
