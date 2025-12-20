@@ -20,28 +20,45 @@ jobs:
           - arch: x86_64
             runner: ubuntu-22.04
             boost_version: 1.87.0
+            protobuf_version: 3.17.3
           - arch: aarch64
             runner: ubuntu-22.04-arm
             boost_version: 1.87.0
+            protobuf_version: 3.17.3
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      
-      - name: Install dependencies
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake wget git libssl-dev zlib1g-dev
+
+      - name: Install Boost
         run: |
           BOOST_VER_UNDERSCORE=$(echo ${{ matrix.boost_version }} | tr . _)
-          sudo apt-get update && sudo apt-get install -y build-essential cmake wget git libssl-dev zlib1g-dev
           mkdir -p dependencies && cd dependencies
           wget -q https://archives.boost.io/release/${{ matrix.boost_version }}/source/boost_${BOOST_VER_UNDERSCORE}.tar.gz -O boost.tar.gz
-          tar xzf boost.tar.gz && cd boost_${BOOST_VER_UNDERSCORE} && ./bootstrap.sh && sudo ./b2 install link=static -j$(nproc)
-          cd .. && wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
-          tar xzf protobuf.tar.gz && cd protobuf-3.17.3 && mkdir -p build && cd build && cmake ../cmake && make -j$(nproc) && sudo make install
-      
+          tar xzf boost.tar.gz && cd boost_${BOOST_VER_UNDERSCORE}
+          ./bootstrap.sh && sudo ./b2 install link=static -j$(nproc)
+
+      - name: Install Protobuf
+        run: |
+          cd dependencies
+          wget -q https://github.com/protocolbuffers/protobuf/releases/download/v${{ matrix.protobuf_version }}/protobuf-all-${{ matrix.protobuf_version }}.tar.gz -O protobuf.tar.gz
+          tar xzf protobuf.tar.gz && cd protobuf-${{ matrix.protobuf_version }}
+          mkdir -p build && cd build && cmake ../cmake && make -j$(nproc) && sudo make install
+
+      - name: Install Catch2
+        run: |
+          cd dependencies
+          git clone --branch v3.7.0 https://github.com/catchorg/Catch2.git
+          cd Catch2 && mkdir build && cd build
+          cmake ../ && make -j$(nproc) && sudo make install
+
       - name: Build
         run: |
-          mkdir -p build && cd build && cmake .. -DLINK_STATIC_OPENSSL=OFF && make -j$(nproc)
+          mkdir -p build && cd build && cmake .. -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF && make -j$(nproc)
           strip bin/localproxy
       
       - name: Upload artifact
@@ -57,6 +74,7 @@ jobs:
     env:
       BOOST_VERSION: "1.87.0"
       PROTOBUF_VERSION: "3.17.3"
+      CATCH2_VERSION: "3.7.0"
     steps:
       - uses: actions/checkout@v6
         with:
@@ -72,7 +90,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: arm32-deps
-          key: arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-v1
+          key: arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
 
       - name: Build dependencies in ARM32 container
         if: steps.cache-arm32.outputs.cache-hit != 'true'
@@ -86,8 +104,9 @@ jobs:
             -e BOOST_VERSION=${{ env.BOOST_VERSION }} \
             -e BOOST_VER_UNDERSCORE=$BOOST_VER_UNDERSCORE \
             -e PROTOBUF_VERSION=${{ env.PROTOBUF_VERSION }} \
+            -e CATCH2_VERSION=${{ env.CATCH2_VERSION }} \
             arm32v7/ubuntu:22.04 bash -c '
-              apt-get update && apt-get install -y build-essential cmake wget
+              apt-get update && apt-get install -y build-essential cmake wget git
               wget -q https://archives.boost.io/release/$BOOST_VERSION/source/boost_$BOOST_VER_UNDERSCORE.tar.gz -O /tmp/boost.tar.gz
               tar xzf /tmp/boost.tar.gz -C /tmp && cd /tmp/boost_$BOOST_VER_UNDERSCORE
               ./bootstrap.sh --prefix=/deps --with-libraries=system,log,thread,program_options,date_time,filesystem,chrono
@@ -96,6 +115,9 @@ jobs:
               tar xzf /tmp/protobuf.tar.gz -C /tmp && cd /tmp/protobuf-$PROTOBUF_VERSION
               mkdir build && cd build && cmake ../cmake -DCMAKE_INSTALL_PREFIX=/deps -Dprotobuf_BUILD_TESTS=OFF
               make -j$(nproc) && make install
+              git clone --branch v$CATCH2_VERSION https://github.com/catchorg/Catch2.git /tmp/Catch2
+              cd /tmp/Catch2 && mkdir build && cd build
+              cmake ../ -DCMAKE_INSTALL_PREFIX=/deps && make -j$(nproc) && make install
             '
 
       - name: Build localproxy in ARM32 container
@@ -107,7 +129,7 @@ jobs:
             arm32v7/ubuntu:22.04 bash -c '
               apt-get update && apt-get install -y build-essential cmake libssl-dev zlib1g-dev
               mkdir -p build && cd build
-              cmake .. -DCMAKE_PREFIX_PATH=/deps -DLINK_STATIC_OPENSSL=OFF -DBOOST_PKG_VERSION="" -DPROTOBUF_PKG_VERSION=""
+              cmake .. -DBUILD_TESTS=ON -DCMAKE_PREFIX_PATH=/deps -DLINK_STATIC_OPENSSL=OFF -DBOOST_PKG_VERSION="" -DPROTOBUF_PKG_VERSION=""
               make -j$(nproc)
               strip bin/localproxy
             '
@@ -152,12 +174,19 @@ jobs:
           cmake ../cmake -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3) -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           make -j$(sysctl -n hw.ncpu)
           sudo make install
-      
+
+      - name: Install Catch2
+        run: |
+          cd $HOME/dependencies
+          git clone --branch v3.7.0 https://github.com/catchorg/Catch2.git
+          cd Catch2 && mkdir build && cd build
+          cmake ../ && make -j$(sysctl -n hw.ncpu) && sudo make install
+
       - name: Build
         run: |
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3) -DLINK_STATIC_OPENSSL=OFF
+          cmake .. -DBUILD_TESTS=ON -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3) -DLINK_STATIC_OPENSSL=OFF
           make -j$(sysctl -n hw.ncpu)
           strip bin/localproxy
       
@@ -181,6 +210,7 @@ jobs:
       BOOST_VERSION: "1.87.0"
       PROTOBUF_VERSION: "3.17.3"
       ZLIB_VERSION: "1.2.13"
+      CATCH2_VERSION: "3.7.0"
     steps:
       - uses: actions/checkout@v6
         with:
@@ -196,7 +226,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.DEPS_DIR }}
-          key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-v1
+          key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
 
       - name: Install OpenSSL
         if: steps.cache-windows-deps.outputs.cache-hit != 'true'
@@ -245,19 +275,30 @@ jobs:
           nmake
           nmake install
 
+      - name: Install Catch2
+        if: steps.cache-windows-deps.outputs.cache-hit != 'true'
+        run: |
+          git clone --branch v$env:CATCH2_VERSION https://github.com/catchorg/Catch2.git
+          cd Catch2
+          mkdir build
+          cd build
+          cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$env:DEPS_DIR\catch2" ../
+          nmake
+          nmake install
+
       - name: Save Windows dependencies cache
         if: always() && steps.cache-windows-deps.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: ${{ env.DEPS_DIR }}
-          key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-v1
+          key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
 
       - name: Build
         run: |
           mkdir build
           cd build
-          $prefixPath = "$env:DEPS_DIR\boost;$env:DEPS_DIR\protobuf;$env:DEPS_DIR\openssl;$env:DEPS_DIR\zlib"
-          cmake -DBUILD_TESTS=OFF -DLINK_STATIC_OPENSSL=OFF "-DBOOST_PKG_VERSION=$env:BOOST_VERSION" -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON "-DCMAKE_PREFIX_PATH=$prefixPath" -G "Visual Studio 17 2022" -A x64 ..
+          $prefixPath = "$env:DEPS_DIR\boost;$env:DEPS_DIR\protobuf;$env:DEPS_DIR\openssl;$env:DEPS_DIR\zlib;$env:DEPS_DIR\catch2"
+          cmake -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF "-DBOOST_PKG_VERSION=$env:BOOST_VERSION" -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON "-DCMAKE_PREFIX_PATH=$prefixPath" -G "Visual Studio 17 2022" -A x64 ..
           msbuild localproxy.vcxproj -p:Configuration=Release
 
       - name: Upload artifact
