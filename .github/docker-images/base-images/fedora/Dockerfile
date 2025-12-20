@@ -29,7 +29,7 @@ WORKDIR /home/dependencies
 RUN wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O /tmp/boost_1_87_0.tar.gz && \
 	tar xzvf /tmp/boost_1_87_0.tar.gz && \
 	cd boost_1_87_0 && \
-        ./bootstrap.sh && \
+        ./bootstrap.sh --with-libraries=system,log,thread,program_options,date_time,filesystem,chrono,regex,atomic && \
     ./b2 install link=static
 
 WORKDIR /home/dependencies
