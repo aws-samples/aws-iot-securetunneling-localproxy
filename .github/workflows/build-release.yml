@@ -68,7 +68,7 @@ jobs:
         run: |
           mkdir -p dependencies && cd dependencies
           git clone --branch v${{ matrix.catch2_version }} https://github.com/catchorg/Catch2.git
-          cd Catch2 && mkdir build && cd build
+          cd Catch2 && mkdir -p build && cd build
           cmake ../ -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/deps-install
           make -j$(nproc) && make install
 
@@ -222,19 +222,21 @@ jobs:
       - name: Install Protobuf
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          mkdir -p dependencies && cd dependencies
+          cd dependencies
           wget -q https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOBUF_VERSION/protobuf-all-$PROTOBUF_VERSION.tar.gz -O protobuf.tar.gz
-          tar xzf protobuf.tar.gz && cd protobuf-$PROTOBUF_VERSION
-          mkdir -p build && cd build
+          tar xzf protobuf.tar.gz
+          cd protobuf-$PROTOBUF_VERSION
+          mkdir -p proto-build
+          cd proto-build
           cmake ../cmake -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3) -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/deps-install -Dprotobuf_BUILD_TESTS=OFF
           make -j$(sysctl -n hw.ncpu) && make install
 
       - name: Install Catch2
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          mkdir -p dependencies && cd dependencies
+          cd dependencies
           git clone --branch v$CATCH2_VERSION https://github.com/catchorg/Catch2.git
-          cd Catch2 && mkdir build && cd build
+          cd Catch2 && mkdir -p build && cd build
           cmake ../ -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/deps-install
           make -j$(sysctl -n hw.ncpu) && make install
 
