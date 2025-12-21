@@ -21,10 +21,12 @@ jobs:
             runner: ubuntu-22.04
             boost_version: 1.87.0
             protobuf_version: 3.17.3
+            catch2_version: 3.7.0
           - arch: aarch64
             runner: ubuntu-22.04-arm
             boost_version: 1.87.0
             protobuf_version: 3.17.3
+            catch2_version: 3.7.0
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6
@@ -34,30 +36,47 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y build-essential cmake wget git libssl-dev zlib1g-dev
 
+      - name: Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v5
+        with:
+          path: deps-install
+          key: linux-${{ matrix.arch }}-deps-boost${{ matrix.boost_version }}-protobuf${{ matrix.protobuf_version }}-catch2${{ matrix.catch2_version }}-v1
+
       - name: Install Boost
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
           BOOST_VER_UNDERSCORE=$(echo ${{ matrix.boost_version }} | tr . _)
           mkdir -p dependencies && cd dependencies
           wget -q https://archives.boost.io/release/${{ matrix.boost_version }}/source/boost_${BOOST_VER_UNDERSCORE}.tar.gz -O boost.tar.gz
           tar xzf boost.tar.gz && cd boost_${BOOST_VER_UNDERSCORE}
-          ./bootstrap.sh && sudo ./b2 install link=static -j$(nproc)
+          ./bootstrap.sh --prefix=${{ github.workspace }}/deps-install
+          ./b2 install link=static -j$(nproc)
 
       - name: Install Protobuf
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          cd dependencies
+          mkdir -p dependencies && cd dependencies
           wget -q https://github.com/protocolbuffers/protobuf/releases/download/v${{ matrix.protobuf_version }}/protobuf-all-${{ matrix.protobuf_version }}.tar.gz -O protobuf.tar.gz
           tar xzf protobuf.tar.gz && cd protobuf-${{ matrix.protobuf_version }}
-          mkdir -p build && cd build && cmake ../cmake && make -j$(nproc) && sudo make install
+          mkdir -p build && cd build
+          cmake ../cmake -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/deps-install -Dprotobuf_BUILD_TESTS=OFF
+          make -j$(nproc) && make install
 
       - name: Install Catch2
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          cd dependencies
-          git clone --branch v3.7.0 https://github.com/catchorg/Catch2.git
+          mkdir -p dependencies && cd dependencies
+          git clone --branch v${{ matrix.catch2_version }} https://github.com/catchorg/Catch2.git
           cd Catch2 && mkdir build && cd build
-          cmake ../ && make -j$(nproc) && sudo make install
+          cmake ../ -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/deps-install
+          make -j$(nproc) && make install
 
       - name: Build
-        run: mkdir -p build && cd build && cmake .. -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF && make -j$(nproc)
+        run: |
+          mkdir -p build && cd build
+          cmake .. -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF -DCMAKE_PREFIX_PATH=${{ github.workspace }}/deps-install -DBOOST_PKG_VERSION="" -DPROTOBUF_PKG_VERSION=""
+          make -j$(nproc)
 
       - name: Run tests
         run: ./build/bin/localproxytest
@@ -171,6 +190,10 @@ jobs:
     permissions:
       contents: read
     runs-on: macos-26
+    env:
+      BOOST_VERSION: "1.87.0"
+      PROTOBUF_VERSION: "3.17.3"
+      CATCH2_VERSION: "3.7.0"
     steps:
       - uses: actions/checkout@v6
         with:
@@ -178,42 +201,47 @@ jobs:
       
       - name: Install system dependencies
         run: brew install cmake openssl@3 zlib
-      
+
+      - name: Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v5
+        with:
+          path: deps-install
+          key: macos-arm64-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
+
       - name: Install Boost
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          mkdir -p $HOME/dependencies
-          cd $HOME/dependencies
-          wget -q https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O boost.tar.gz
-          tar xzf boost.tar.gz
-          cd boost_1_87_0
-          ./bootstrap.sh
-          sudo ./b2 install link=static -j$(sysctl -n hw.ncpu)
+          BOOST_VER_UNDERSCORE=$(echo $BOOST_VERSION | tr . _)
+          mkdir -p dependencies && cd dependencies
+          wget -q https://archives.boost.io/release/$BOOST_VERSION/source/boost_${BOOST_VER_UNDERSCORE}.tar.gz -O boost.tar.gz
+          tar xzf boost.tar.gz && cd boost_${BOOST_VER_UNDERSCORE}
+          ./bootstrap.sh --prefix=${{ github.workspace }}/deps-install
+          ./b2 install link=static -j$(sysctl -n hw.ncpu)
       
       - name: Install Protobuf
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          cd $HOME/dependencies
-          wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
-          tar xzf protobuf.tar.gz
-          cd protobuf-3.17.3
-          rm -rf build
-          mkdir build
-          cd build
-          cmake ../cmake -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3) -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-          make -j$(sysctl -n hw.ncpu)
-          sudo make install
+          mkdir -p dependencies && cd dependencies
+          wget -q https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOBUF_VERSION/protobuf-all-$PROTOBUF_VERSION.tar.gz -O protobuf.tar.gz
+          tar xzf protobuf.tar.gz && cd protobuf-$PROTOBUF_VERSION
+          mkdir -p build && cd build
+          cmake ../cmake -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3) -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/deps-install -Dprotobuf_BUILD_TESTS=OFF
+          make -j$(sysctl -n hw.ncpu) && make install
 
       - name: Install Catch2
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          cd $HOME/dependencies
-          git clone --branch v3.7.0 https://github.com/catchorg/Catch2.git
+          mkdir -p dependencies && cd dependencies
+          git clone --branch v$CATCH2_VERSION https://github.com/catchorg/Catch2.git
           cd Catch2 && mkdir build && cd build
-          cmake ../ && make -j$(sysctl -n hw.ncpu) && sudo make install
+          cmake ../ -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/deps-install
+          make -j$(sysctl -n hw.ncpu) && make install
 
       - name: Build
         run: |
-          mkdir -p build
-          cd build
-          cmake .. -DBUILD_TESTS=ON -DCMAKE_PREFIX_PATH=$(brew --prefix openssl@3) -DLINK_STATIC_OPENSSL=OFF
+          mkdir -p build && cd build
+          cmake .. -DBUILD_TESTS=ON -DCMAKE_PREFIX_PATH="$(brew --prefix openssl@3);${{ github.workspace }}/deps-install" -DLINK_STATIC_OPENSSL=OFF -DBOOST_PKG_VERSION="" -DPROTOBUF_PKG_VERSION=""
           make -j$(sysctl -n hw.ncpu)
 
       - name: Run tests
