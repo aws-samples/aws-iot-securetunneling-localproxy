@@ -33,7 +33,29 @@ using aws::iot::securedtunneling::proxy_mode;
 int const               IO_PAUSE_MS = 50;
 size_t const            READ_BUFFER_SIZE = 63 * 1024;
 char const * const      LOCALHOST = "127.0.0.1";
-errc_t const            BOOST_EC_SOCKET_CLOSED = boost::system::errc::no_such_file_or_directory;
+
+/**
+ * Check if error code indicates socket was closed by peer.
+ * Different platforms return different error codes:
+ * - Windows: connection_reset (WSAECONNRESET) or connection_aborted (WSAECONNABORTED)
+ * - Unix/Linux: no_such_file_or_directory
+ */
+#ifdef _WIN32
+auto const EC_CONNECTION_RESET = boost::asio::error::connection_reset;
+auto const EC_CONNECTION_ABORTED = boost::asio::error::connection_aborted;
+
+bool is_socket_closed_error(boost::system::error_code const& ec)
+{
+    return ec == EC_CONNECTION_RESET || ec == EC_CONNECTION_ABORTED;
+}
+#else
+auto const EC_SOCKET_CLOSED = boost::system::errc::no_such_file_or_directory;
+
+bool is_socket_closed_error(boost::system::error_code const& ec)
+{
+    return ec.value() == EC_SOCKET_CLOSED;
+}
+#endif
 
 namespace aws { namespace iot { namespace securedtunneling { namespace test
 {
@@ -270,7 +292,7 @@ TEST_CASE( "Test source mode", "[source]") {
     ws_server.close_client("test_closure", boost::beast::websocket::internal_error);
     //attempt a read on the client which should now see the socket EOF (peer closed) caused by adapter
     client_socket.read_some(boost::asio::buffer(reinterpret_cast<void *>(read_buffer), READ_BUFFER_SIZE), ec);
-    CHECK( ec.value() == BOOST_EC_SOCKET_CLOSED );
+    CHECK( is_socket_closed_error(ec) );
 
     client_socket.close();
 
@@ -370,7 +392,7 @@ TEST_CASE( "Test source mode with client token", "[source]") {
     ws_server.close_client("test_closure", boost::beast::websocket::internal_error);
     //attempt a read on the client which should now see the socket EOF (peer closed) caused by adapter
     client_socket.read_some(boost::asio::buffer(reinterpret_cast<void *>(read_buffer), READ_BUFFER_SIZE), ec);
-    CHECK( ec.value() == BOOST_EC_SOCKET_CLOSED );
+    CHECK( is_socket_closed_error(ec) );
 
     client_socket.close();
 
@@ -475,7 +497,7 @@ TEST_CASE( "Test destination mode", "[destination]") {
     ws_server.close_client("test_closure", boost::beast::websocket::internal_error); //need to perform write to trigger close
     //attempt a read on the client which should now see the socket EOF (peer closed) caused by adapter
     destination_socket.read_some(boost::asio::buffer(reinterpret_cast<void *>(read_buffer), READ_BUFFER_SIZE), ec);
-    CHECK( ec.value() == BOOST_EC_SOCKET_CLOSED );
+    CHECK( is_socket_closed_error(ec) );
 
     ws_server_thread.join();
     tcp_adapter_thread.join();
