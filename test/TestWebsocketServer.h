@@ -11,6 +11,8 @@
 #include <functional>
 #include <string>
 #include <queue>
+#include <mutex>
+#include <condition_variable>
 #include "Message.pb.h"
 
 
@@ -38,6 +40,8 @@ class TestWebsocketServer
 
         boost::beast::http::request<boost::beast::http::string_body> const & get_handshake_request() { return handshake_request; }
 
+        void wait_for_handshake();
+
     protected:
         void process_input_buffer(web_socket_stream &ws, boost::beast::multi_buffer &message_buffer);
         void send_message(web_socket_stream &ws, message const &message);
@@ -62,6 +66,10 @@ class TestWebsocketServer
         boost::beast::http::request<boost::beast::http::string_body>        handshake_request;
 
         std::queue<std::function<bool(message const &)>>    expect_messages;
+
+        std::mutex                              handshake_mutex;
+        std::condition_variable                 handshake_cv;
+        bool                                    handshake_complete{false};
 };
 
 }}}}
