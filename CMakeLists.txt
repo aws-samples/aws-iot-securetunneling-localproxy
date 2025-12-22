@@ -61,7 +61,7 @@ set_property(GLOBAL PROPERTY PROTOBUF_USE_STATIC_LIBS ON)  #this flag doesn't ac
 set(PROTOBUF_PKG_VERSION "3.17.3" CACHE STRING "")
 find_package(Protobuf ${PROTOBUF_PKG_VERSION} REQUIRED)
 string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX} Protobuf_LITE_STATIC_LIBRARY ${Protobuf_LITE_LIBRARY})
-include_directories(${Protobuf_INCLUDE_DIRS})
+include_directories(SYSTEM ${Protobuf_INCLUDE_DIRS})
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}) #needed to include generated protobuf headers
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROJECT_SOURCE_DIR}/resources/Message.proto)
