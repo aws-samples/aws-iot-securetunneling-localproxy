@@ -108,9 +108,9 @@ jobs:
         with:
           platforms: arm
 
-      - name: Cache ARM32 dependencies
+      - name: Restore ARM32 dependencies cache
         id: cache-arm32
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: arm32-deps
           key: arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
@@ -145,6 +145,13 @@ jobs:
               cd /tmp/Catch2 && mkdir build && cd build
               cmake ../ -DCMAKE_INSTALL_PREFIX=/deps && make -j$(nproc) && make install
             '
+
+      - name: Save ARM32 dependencies cache
+        if: steps.cache-arm32.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: arm32-deps
+          key: arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
 
       - name: Build in ARM32 container
         run: |
@@ -283,9 +290,9 @@ jobs:
         with:
           arch: x64
 
-      - name: Cache Windows dependencies
+      - name: Restore Windows dependencies cache
         id: cache-windows-deps
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: ${{ env.DEPS_DIR }}
           key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
@@ -347,6 +354,13 @@ jobs:
           cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$env:DEPS_DIR\catch2" ../
           nmake
           nmake install
+
+      - name: Save Windows dependencies cache
+        if: steps.cache-windows-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ env.DEPS_DIR }}
+          key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
 
       - name: Build
         run: |
