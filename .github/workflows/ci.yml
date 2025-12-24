@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  flake-check:
+    name: nix flake check --no-build
+    runs-on: ubuntu-latest
+    outputs:
+      checks: ${{ steps.list-checks.outputs.checks }}
+    steps:
+      - &checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          filter: "tree:0"
+      - &install_nix
+        name: Install Nix
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf -L \
+            https://install.lix.systems/lix | sh -s -- install --no-confirm
+          sudo tee -a /etc/nix/nix.conf > /dev/null <<EOF
+          extra-substituters = https://d17qv3gttz4z4k.cloudfront.net
+          extra-trusted-public-keys = gglite-nix-cache-1:Zdz1mEqn//xa8ORxHkc76auwxmX8/6C2K/zWRjmq8Co=
+          log-lines = 0
+          EOF
+      - run: nix flake check --no-build -L
+      - id: list-checks
+        run:
+          echo "checks=$(nix eval .#checks.x86_64-linux --apply
+          builtins.attrNames --json)" >> $GITHUB_OUTPUT
+  build-checks:
+    needs: flake-check
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        check: ${{ fromJson(needs.flake-check.outputs.checks) }}
+    name: ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+      - *install_nix
+      - run: nix build -L .#checks.x86_64-linux.${{ matrix.check }}

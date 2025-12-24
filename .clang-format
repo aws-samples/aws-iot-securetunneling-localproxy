@@ -1,0 +1,26 @@
+---
+Language: Cpp
+BasedOnStyle: WebKit
+AlignAfterOpenBracket: BlockIndent
+AlignEscapedNewlines: DontAlign
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: WithoutElse
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBraces: Attach
+ColumnLimit: 80
+IncludeBlocks: Merge
+IncludeCategories:
+  - Regex: '^".*"$'
+    Priority: 1
+  - Regex: "^<std.*>$"
+    Priority: 3
+  - Regex: "^<.*>$"
+    Priority: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+PointerAlignment: Right
+QualifierAlignment: Left
+SeparateDefinitionBlocks: Always
+SpaceAfterCStyleCast: true
+PenaltyReturnTypeOnItsOwnLine: 240

@@ -1,33 +1,33 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 #include "Url.h"
-#include <string>
 #include <algorithm>
-#include <cctype>
-#include <functional>
-#include <cstdint>
-
 #include <boost/log/core.hpp>
+#include <boost/log/expressions.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/utility/setup/console.hpp>
-#include <boost/log/expressions.hpp>
+#include <cctype>
+#include <cstdint>
+#include <functional>
+#include <string>
 using namespace std;
 
 aws::iot::securedtunneling::url::url(const std::string &url_s) {
     parse(url_s);
 }
 
-void aws::iot::securedtunneling::url::parse(const string& url_s)
-{
-    auto get_substring = [](const string& s, const size_t& start, const size_t& end) {
-        return s.substr(start, end - start );
-    };
+void aws::iot::securedtunneling::url::parse(const string &url_s) {
+    auto get_substring
+        = [](const string &s, const size_t &start, const size_t &end) {
+              return s.substr(start, end - start);
+          };
 
     // parse protocol
     const string protocol_end("://");
     const size_t protocol_end_i = url_s.find(protocol_end);
     if (protocol_end_i == string::npos) {
-        BOOST_LOG_TRIVIAL(debug) << "No protocol is provided in the URL, assuming the default protocol: http.";
+        BOOST_LOG_TRIVIAL(debug) << "No protocol is provided in the URL, "
+                                    "assuming the default protocol: http.";
         protocol = "http";
     } else {
         BOOST_LOG_TRIVIAL(trace) << "Extracting protocol";
@@ -35,7 +35,9 @@ void aws::iot::securedtunneling::url::parse(const string& url_s)
         if (protocol.empty()) {
             throw invalid_argument("Invalid URL, missing protocol");
         }
-        transform(protocol.begin(), protocol.end(), protocol.begin(), ::tolower);
+        transform(
+            protocol.begin(), protocol.end(), protocol.begin(), ::tolower
+        );
         BOOST_LOG_TRIVIAL(info) << "Parsed URL protocol";
     }
 
@@ -43,22 +45,36 @@ void aws::iot::securedtunneling::url::parse(const string& url_s)
     const size_t authentication_end_i = url_s.find_last_of('@');
     const bool is_authN_included = authentication_end_i != string::npos;
     if (is_authN_included) {
-        authentication = aws::iot::securedtunneling::url::url_decode(
-                get_substring(url_s, protocol_end_i + protocol_end.size(), authentication_end_i)
-        );
+        authentication
+            = aws::iot::securedtunneling::url::url_decode(get_substring(
+                url_s,
+                protocol_end_i + protocol_end.size(),
+                authentication_end_i
+            ));
         if (authentication.empty())
-            throw invalid_argument("Empty authentication, if you don't need to authentication information, remove `@`");
+            throw invalid_argument(
+                "Empty authentication, if you don't need to authentication "
+                "information, remove `@`"
+            );
         if (authentication.find(':') == string::npos)
-            throw invalid_argument("Missing the colon between the username and password in URL.");
+            throw invalid_argument(
+                "Missing the colon between the username and password in URL."
+            );
         if (authentication.length() < 3)
-            throw invalid_argument("Invalid authentication format, missing either username or password.");
+            throw invalid_argument(
+                "Invalid authentication format, missing either username or "
+                "password."
+            );
         BOOST_LOG_TRIVIAL(debug) << "Parsed basic auth credentials for the URL";
     } else {
-        BOOST_LOG_TRIVIAL(debug) << "No authentication is found in the URL, assuming no authentication is required.";
+        BOOST_LOG_TRIVIAL(debug) << "No authentication is found in the URL, "
+                                    "assuming no authentication is required.";
     }
 
     // parse the host and port
-    const size_t host_i = is_authN_included ? authentication_end_i + 1 : protocol_end_i + protocol_end.size();
+    const size_t host_i = is_authN_included
+        ? authentication_end_i + 1
+        : protocol_end_i + protocol_end.size();
     const size_t port_i = url_s.find(':', host_i);
 
     host = get_substring(url_s, host_i, port_i);
@@ -98,8 +114,7 @@ string aws::iot::securedtunneling::url::url_decode(const string &url_s) {
                 } else {
                     throw invalid_argument("Invalid URL token");
                 }
-            }
-            else if (url_s[i] == '+') {
+            } else if (url_s[i] == '+') {
                 out += ' ';
             } else {
                 out += url_s[i];

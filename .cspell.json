@@ -1,0 +1,18 @@
+{
+  "version": "0.2",
+  "allowCompoundWords": true,
+  "dictionaryDefinitions": [
+    {
+      "name": "project",
+      "path": "misc/dictionary.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": ["project"],
+  "ignorePaths": [
+    "**/CMakeLists.txt",
+    "**/*.yml",
+    "**/*.nix",
+    "**/iwyu_mappings.yml"
+  ]
+}

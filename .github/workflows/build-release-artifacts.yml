@@ -34,14 +34,19 @@ jobs:
           fetch-depth: 0
 
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y build-essential cmake wget git libssl-dev zlib1g-dev
+        run:
+          sudo apt-get update && sudo apt-get install -y build-essential cmake
+          wget git libssl-dev zlib1g-dev
 
       - name: Cache dependencies
         id: cache-deps
         uses: actions/cache@v5
         with:
           path: deps-install
-          key: linux-${{ matrix.arch }}-deps-boost${{ matrix.boost_version }}-protobuf${{ matrix.protobuf_version }}-catch2${{ matrix.catch2_version }}-v1
+          key:
+            linux-${{ matrix.arch }}-deps-boost${{ matrix.boost_version
+            }}-protobuf${{ matrix.protobuf_version }}-catch2${{
+            matrix.catch2_version }}-v1
 
       - name: Install Boost
         if: steps.cache-deps.outputs.cache-hit != 'true'
@@ -113,7 +118,9 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: arm32-deps
-          key: arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
+          key:
+            arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{
+            env.PROTOBUF_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
 
       # GitHub Actions uses 'docker run --rm' removing containers after each step. (--rm is required for cleanup)
       # Only way to reuse the container would be docker create ->start ->exec -> cleanup.
@@ -151,7 +158,9 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: arm32-deps
-          key: arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
+          key:
+            arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{
+            env.PROTOBUF_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
 
       - name: Build in ARM32 container
         run: |
@@ -214,7 +223,9 @@ jobs:
         uses: actions/cache@v5
         with:
           path: deps-install
-          key: macos-arm64-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
+          key:
+            macos-arm64-deps-boost${{ env.BOOST_VERSION }}-protobuf${{
+            env.PROTOBUF_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
 
       - name: Install Boost
         if: steps.cache-deps.outputs.cache-hit != 'true'
@@ -295,7 +306,10 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: ${{ env.DEPS_DIR }}
-          key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
+          key:
+            windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{
+            env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{
+            env.ZLIB_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
 
       - name: Install OpenSSL
         if: steps.cache-windows-deps.outputs.cache-hit != 'true'
@@ -360,7 +374,10 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: ${{ env.DEPS_DIR }}
-          key: windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{ env.ZLIB_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
+          key:
+            windows-deps-openssl${{ env.OPENSSL_VERSION }}-boost${{
+            env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-zlib${{
+            env.ZLIB_VERSION }}-catch2${{ env.CATCH2_VERSION }}-v1
 
       - name: Build
         run: |

@@ -28,4 +28,5 @@ RUN HOME_DIR=/root \
     && bash ${HOME_DIR}/oss-compliance/generate-oss-compliance.sh ${HOME_DIR} \
     && rm -rf ${HOME_DIR}/oss-compliance*
 
+
 ENTRYPOINT ["/root/bin/localproxy"]
