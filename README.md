@@ -18,6 +18,12 @@ This library is licensed under the Apache 2.0 License.
 
 This code enables tunneling of a single threaded TCP client / server socket interaction through the IoT Secure Tunneling service. The code is targeted to run on Linux, Windows (7+), and macOS. If your device does not meet these requirements it is still possible to implement the underlying protocol documented in the protocol guide.
 
+For the pre-built windows binary from github actions, you would need to download Visual C++ as well as Openssl from below: 
+
+Visual C++: https://aka.ms/vc14/vc_redist.x86.exe; Permalink for latest supported x86 version from microsoft.
+
+OpenSSL: https://slproweb.com/products/Win32OpenSSL.html; Select `Win64 OpenSSL v3.x.x Light` or any `3.x` version you prefer.
+
 ---
 
 ## Quick Start for x86 Linux platforms
@@ -197,7 +203,7 @@ cmake ../ -DLINK_STATIC_OPENSSL=OFF
 make
 ```
 
-Choosing to use dynamic linking is completely optional depending on your own operational requirements.
+Choosing to use dynamic linking is completely optional depending on your own operational requirements.But is higly recommended to use it dynamically as it will help out with faster patches when CVEs are discovered.
 
 #### 5. Download and install Catch2 test framework
 
