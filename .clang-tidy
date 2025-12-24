@@ -1,0 +1,51 @@
+---
+FormatStyle: file
+UseColor: true
+Checks:
+  - bugprone-*
+  - concurrency-*
+  - misc-*
+  - performance-*
+  - readability-*
+  - -clang-analyzer-valist.Uninitialized
+  - -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
+  - -bugprone-easily-swappable-parameters
+  - -bugprone-multi-level-implicit-pointer-conversion
+  - -readability-identifier-length
+  - -readability-magic-numbers
+  - -misc-include-cleaner
+  - -bugprone-sizeof-container
+  - -bugprone-multiple-statement-macro
+CheckOptions:
+  - key: bugprone-argument-comment.StrictMode
+    value: true
+  - key: bugprone-not-null-terminated-result.WantToUseSafeFunctions
+    value: false
+  - key: bugprone-reserved-identifier.AllowedIdentifiers
+    value: "[^_].*"
+  - key: readability-function-cognitive-complexity.DescribeBasicIncrements
+    value: false
+  - key: readability-function-cognitive-complexity.IgnoreMacros
+    value: true
+  - key: readability-inconsistent-declaration-parameter-name.IgnoreMacros
+    value: false
+  - key: readability-inconsistent-declaration-parameter-name.Strict
+    value: true
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.ConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
