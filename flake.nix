@@ -16,12 +16,12 @@
           root = ./.;
           fileset = lib.fileset.unions [
             ./CMakeLists.txt
-            ./CMakeLists.txt.versioning
             ./src
             ./resources
             ./test
             ./.clang-tidy
             ./.version
+            ./misc
           ];
         };
 
@@ -125,6 +125,7 @@
 
             cmake-lint = pkgs: ''
               ${pkgs.cmake-format}/bin/cmake-lint \
+                -c ${filteredSrc}/.cmake-format.json \
                 ${filteredSrc}/CMakeLists.txt \
                 --suppress-decorations
             '';
@@ -132,6 +133,21 @@
             spelling = pkgs: ''
               ${pkgs.nodePackages.cspell}/bin/cspell "**" --quiet
               ${pkgs.coreutils}/bin/sort -cuf misc/dictionary.txt
+            '';
+
+            iwyu = pkgs: ''
+              set -eo pipefail
+              PATH=${lib.makeBinPath (with pkgs; [include-what-you-use fd])}:$PATH
+              white=$(printf "\e[1;37m")
+              red=$(printf "\e[1;31m")
+              clear=$(printf "\e[0m")
+              iwyu_tool.py -o clang -j $(nproc) -p ${clangBuildDir pkgs} \
+                $(fd . ${filteredSrc}/src -e cpp -e h -e hpp) -- \
+                -Xiwyu --error -Xiwyu --check_also="${filteredSrc}/*" \
+                -Xiwyu --mapping_file=${./.}/misc/iwyu_mappings.yml |\
+                { grep error: || true; } |\
+                sed 's|\(.*\)error:\(.*\)|'$white'\1'$red'error:'$white'\2'$clear'|' |\
+                sed 's|${filteredSrc}/||'
             '';
           };
 

@@ -7,6 +7,6 @@
     "first_comment_is_literal": true
   },
   "lint": {
-    "disabled_codes": ["C0103", "C0307", "E1120", "R0915"]
+    "disabled_codes": ["C0103", "C0301", "C0307", "E1120", "R0915"]
   }
 }
