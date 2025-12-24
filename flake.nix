@@ -10,8 +10,6 @@
   outputs = { flakelight, ... }@inputs: flakelight ./.
     ({ lib, config, ... }:
       let
-        inherit (lib) mapAttrsToList toUpper;
-
         filteredSrc = lib.fileset.toSource {
           root = ./.;
           fileset = lib.fileset.unions [
@@ -20,7 +18,6 @@
             ./resources
             ./test
             ./.clang-tidy
-            ./.version
             ./misc
           ];
         };
@@ -72,7 +69,7 @@
           };
 
         pname = "localproxy";
-        package = { pkgs, lib, stdenv, cmake, ninja, pkg-config, boost, protobuf, openssl, defaultMeta }:
+        package = { stdenv, cmake, ninja, pkg-config, boost, protobuf, openssl, defaultMeta }:
           stdenv.mkDerivation {
             name = "localproxy";
             src = filteredSrc;

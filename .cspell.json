@@ -13,8 +13,6 @@
     "**/CMakeLists.txt",
     "**/*.yml",
     "**/*.nix",
-    "**/dependencies/**",
-    "**/build/**",
     "**/iwyu_mappings.yml"
   ]
 }
