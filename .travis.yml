@@ -18,7 +18,9 @@ addons:
       - zlibc
       - libssl-dev
 install:
-  - wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf-all-3.17.3.tar.gz
+  - wget
+    https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz
+    -O /tmp/protobuf-all-3.17.3.tar.gz
   - tar xzf /tmp/protobuf-all-3.17.3.tar.gz
   - cd "protobuf-3.17.3"
   - mkdir -p build
@@ -34,7 +36,9 @@ install:
   - cmake ../
   - make
   - sudo make install
-  - wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz -O /tmp/boost.tar.gz
+  - wget
+    https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz
+    -O /tmp/boost.tar.gz
   - tar xzf /tmp/boost.tar.gz
   - cd boost_1_76_0
   - ./bootstrap.sh
@@ -45,4 +49,3 @@ script:
   - cd build
   - cmake ../
   - make
-
