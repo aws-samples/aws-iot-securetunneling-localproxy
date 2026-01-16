@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "capture": {
+    "build": {
+      "clean-command": "make -C build clean",
+      "build-command": "make -C build -j",
+      "parallel-translate": {
+        "enabled": true,
+        "processes": 0
+      }
+    },
+    "compiler-configuration": {
+      "cov-configure": [
+        ["--gcc"],
+        ["--comptype", "gcc", "--compiler", "/usr/bin/c++"]
+      ]
+    },
+    "encoding": "UTF-8"
+  },
+  "analyze": {
+    "aggressiveness-level": "high",
+    "checkers": {
+      "all": true
+    },
+    "cov-analyze-args": [
+      "--enable-constraint-fpp",
+      "--disable-parse-warnings"
+    ]
+  },
+  "format": {
+    "html": {
+      "output-dir": "cov-out/html",
+      "file-regex": ".*src/.*"
+    },
+    "json": {
+      "output-file": "cov-out/results.json",
+      "file-regex": ".*src/.*"
+    }
+  },
+  "commit": {
+    "local": {
+      "path": "cov-int"
+    }
+  }
+}
