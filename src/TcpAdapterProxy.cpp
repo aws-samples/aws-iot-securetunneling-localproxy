@@ -111,7 +111,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         {
             std::ostringstream request_stream;
             request_stream << request;
-            std::string unfiltered_request_string = request_stream.str(); 
+            std::string unfiltered_request_string = request_stream.str();
             std::tuple<std::size_t, std::size_t> token_filter_range = get_access_token_range(unfiltered_request_string);
             return (boost::format("%1%***ACCESS_TOKEN_REMOVED***%2%") %
                 unfiltered_request_string.substr(0, std::get<0>(token_filter_range)) %
@@ -847,13 +847,13 @@ namespace aws { namespace iot { namespace securedtunneling {
         }
         tac.wss = std::make_shared<WebSocketStream>(tac.adapter_config, &log, tac.io_ctx);
         tac.wss->control_callback(std::bind(&tcp_adapter_proxy::handle_web_socket_control_message, this, std::ref(tac), std::placeholders::_1, std::placeholders::_2));
-        
+
         static std::string user_agent_string = (boost::format("localproxy %1% %2%-bit/boost-%3%.%4%.%5%/openssl-%6%.%7%.%8%/protobuf-%9%")
             % BOOST_PLATFORM % (sizeof(void*)*8)
             % (BOOST_VERSION / 100000) % ((BOOST_VERSION / 100) % 1000) % (BOOST_VERSION % 100)
             % (OPENSSL_VERSION_NUMBER >> 28) % ((OPENSSL_VERSION_NUMBER >> 20) & 0xF) % ((OPENSSL_VERSION_NUMBER >> 12) & 0xF)
             % google::protobuf::internal::VersionString(GOOGLE_PROTOBUF_VERSION) ).str();
-        
+
         //the actual work of this function starts here
         BOOST_LOG_SEV(log, info) << "Attempting to establish web socket connection with endpoint wss://" << tac.adapter_config.proxy_host << ":" << tac.adapter_config.proxy_port;
 
@@ -945,7 +945,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                         //next do web socket upgrade - add two custom headers
 
                         tac.wss->async_handshake_ex(tac.wss_response, tac.adapter_config.proxy_host.c_str(),
-                                                    (boost::format("/tunnel?%1%=%2%")%PROXY_MODE_QUERY_PARAM % get_proxy_mode_string(tac.adapter_config.mode)).str(),
+                                                    (boost::format("%1%?%2%=%3%")% tac.adapter_config.url_path.c_str() %PROXY_MODE_QUERY_PARAM % get_proxy_mode_string(tac.adapter_config.mode)).str(),
                                                     [&](boost::beast::websocket::request_type &request)
                                                     {
                                                         request.set(boost::beast::http::field::sec_websocket_protocol, GET_SETTING(settings, WEB_SOCKET_SUBPROTOCOL));
@@ -1924,7 +1924,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         std::uint16_t port_to_connect = boost::lexical_cast<std::uint16_t>(src_port);
         BOOST_LOG_SEV(log, debug) << "Port to connect " << port_to_connect;
         server->resolver_.async_resolve(tac.bind_address_actual, src_port,
-            boost::asio::ip::resolver_base::passive, 
+            boost::asio::ip::resolver_base::passive,
             [=, &tac](boost::system::error_code const &ec, tcp::resolver::results_type results)
             {
                 if (ec)
@@ -2085,7 +2085,7 @@ namespace aws { namespace iot { namespace securedtunneling {
     void tcp_adapter_proxy::async_setup_dest_tcp_socket(tcp_adapter_context &tac, string const & service_id, uint32_t const & connection_id, bool is_first_connection)
     {
         BOOST_LOG_SEV(log, trace) << "Setup destination tcp socket for service id" << service_id;
-        std::shared_ptr<basic_retry_config> retry_config = 
+        std::shared_ptr<basic_retry_config> retry_config =
             std::make_shared<basic_retry_config>(tac.io_ctx,
                 GET_SETTING(settings, TCP_CONNECTION_RETRY_COUNT),
                 GET_SETTING(settings, TCP_CONNECTION_RETRY_DELAY_MS),

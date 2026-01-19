@@ -71,6 +71,10 @@ namespace aws {
                  * The tunnel access token which the user gets when they open the tunnel.
                  */
                 std::string                             access_token { };
+                /**
+                 * The reverse proxy tunnel endpoint path.
+                 */
+                std::string                             url_path { };
                 proxy_mode                              mode{ proxy_mode::UNKNOWN };
                 /**
                  * A unique client-token to ensure only the agent which generated the token may connect to a tunnel
