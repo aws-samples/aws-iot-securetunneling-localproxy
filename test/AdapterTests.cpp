@@ -201,6 +201,19 @@ namespace aws { namespace iot { namespace securedtunneling { namespace test { na
     }
 }}}}}
 
+TEST_CASE( "Test no_ssl_host_verify config defaults to false", "[security]") {
+    using namespace aws::iot::securedtunneling;
+    LocalproxyConfig cfg;
+    // Verify no_ssl_host_verify defaults to false (secure by default)
+    CHECK( cfg.no_ssl_host_verify == false );
+}
+
+TEST_CASE( "Test no_ssl_host_verify can be enabled", "[security]") {
+    using namespace aws::iot::securedtunneling;
+    LocalproxyConfig cfg;
+    cfg.no_ssl_host_verify = true;
+    CHECK( cfg.no_ssl_host_verify == true );
+}
 
 TEST_CASE( "Test source mode", "[source]") {
     using namespace com::amazonaws::iot::securedtunneling;
