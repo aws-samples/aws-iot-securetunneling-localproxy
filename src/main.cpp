@@ -169,7 +169,9 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
         ("destination-app,d", value<string>(), "Sets the mappings between the endpoint(address:port/port) and service identifier. Example: SSH1=127.0.0.1:22 or 22")
         ("local-bind-address,b", value(&cfg.bind_address), "Assigns a specific local address to bind to for listening in source mode or a local socket address for destination mode.")
         ("capath,c", value(&cfg.additional_ssl_verify_path), "Adds the directory containing certificate authority files to be used for performing verification")
-        ("no-ssl-host-verify,k", boost::program_options::bool_switch(&cfg.no_ssl_host_verify), "Turn off SSL host verification")
+#ifndef _AWSIOT_TUNNELING_DISABLE_NO_SSL_HOST_VERIFY
+        ("no-ssl-host-verify,k", boost::program_options::bool_switch(&cfg.no_ssl_host_verify), "[INSECURE - DEV/TEST ONLY] Turn off SSL host verification. WARNING: This disables critical security checks and should NEVER be used in production.")
+#endif
         ("export-default-settings", value<string>(), "Exports the default settings for the TCP adapter to the given file as json and exit program")
         ("settings-json", value<string>(), "Use the input JSON file to apply fine grained settings.")
         ("config", value<string>(), "Use the supplied configuration file to apply CLI args. Actual CLI args override the contents of this file")
@@ -424,6 +426,17 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     {
         BOOST_LOG_TRIVIAL(debug) << "Local proxy does not detect any port mapping configuration. Will pick up random ports to run in source mode.";
     }
+
+    // Log security warning if SSL host verification is disabled
+    if (cfg.no_ssl_host_verify)
+    {
+        BOOST_LOG_TRIVIAL(warning) << "**********************************************************************";
+        BOOST_LOG_TRIVIAL(warning) << "* SECURITY WARNING: SSL host verification is DISABLED (-k flag)     *";
+        BOOST_LOG_TRIVIAL(warning) << "* This removes critical security checks and exposes the connection  *";
+        BOOST_LOG_TRIVIAL(warning) << "* to potential man-in-the-middle attacks. DO NOT use in production! *";
+        BOOST_LOG_TRIVIAL(warning) << "**********************************************************************";
+    }
+
     return true;
 }
 

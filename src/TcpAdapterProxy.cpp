@@ -927,7 +927,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                 }
                 else
                 {
-                    BOOST_LOG_SEV(log, debug) << "SSL host verification is off";
+                    BOOST_LOG_SEV(log, warning) << "SECURITY WARNING: SSL host verification is disabled - connection is vulnerable to MITM attacks";
                 }
                 //next ssl handshake and providing host string
                 tac.wss->async_ssl_handshake(boost::asio::ssl::stream_base::client, tac.adapter_config.proxy_host.c_str(), [=, &tac](boost::system::error_code const &ec)
