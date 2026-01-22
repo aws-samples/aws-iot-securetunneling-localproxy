@@ -5,6 +5,7 @@
 #include <ProxySettings.h>
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -158,27 +159,31 @@ void TestWebsocketServer::send_message(web_socket_stream &ws, message const &mes
     //calculate total frame size
     std::size_t const frame_size = static_cast<std::size_t>(message.ByteSizeLong()) +
         adapter_settings.get<size_t>(KEY_DATA_LENGTH_SIZE);
-    boost::beast::flat_buffer outgoing_message_buffer{ frame_size };
+    // Use shared_ptr to keep buffer alive until async_write completes
+    auto outgoing_message_buffer = std::make_shared<boost::beast::flat_buffer>(frame_size);
     //get pointers to where data length and protobuf msg will be written to
-    void *frame_data = outgoing_message_buffer.prepare(frame_size).data();
+    void *frame_data = outgoing_message_buffer->prepare(frame_size).data();
     void *frame_data_msg_offset = reinterpret_cast<void *>(reinterpret_cast<std::uint8_t *>(frame_data) 
         + adapter_settings.get<size_t>(KEY_DATA_LENGTH_SIZE));
-    //get the protobuf data length and wirte it to start the frame
+    //get the protobuf data length and write it to start the frame
     std::uint16_t data_length = static_cast<std::uint16_t>(message.ByteSizeLong());
     *reinterpret_cast<std::uint16_t *>(frame_data) = boost::endian::native_to_big(data_length);
     //write the protobuf msg into the buffer next
     message.SerializeToArray(frame_data_msg_offset, static_cast<int>(adapter_settings.get<size_t>(KEY_MESSAGE_MAX_SIZE)));
     //commit the entire frame to the outgoing message buffer
-    outgoing_message_buffer.commit(frame_size);
+    outgoing_message_buffer->commit(frame_size);
     //no controls in test mode over async writes, test flow dictates this
-    ws.async_write(outgoing_message_buffer.data(),
-        std::bind(&TestWebsocketServer::on_write_complete, this, std::ref(ws),
-        std::placeholders::_1, std::placeholders::_2));
+    // Capture shared_ptr in lambda to extend buffer lifetime until write completes
+    ws.async_write(outgoing_message_buffer->data(),
+        [this, &ws, outgoing_message_buffer](boost::system::error_code const &ec, size_t bytes_written)
+        {
+            on_write_complete(ws, ec, bytes_written);
+        });
 }
 
 bool TestWebsocketServer::parse_protobuf_and_consume_input(boost::beast::multi_buffer &message_buffer, size_t data_length, message &msg)
 {
-    //copy into a continguous buffer for simplified protobuf parsing
+    //copy into a contiguous buffer for simplified protobuf parsing
     message_parse_buffer.consume(message_parse_buffer.size());
     msg.Clear();
     boost::asio::buffer_copy(message_parse_buffer.prepare(data_length), message_buffer.data(), data_length);
