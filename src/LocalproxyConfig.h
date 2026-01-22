@@ -87,6 +87,12 @@ namespace aws {
                 boost::optional<std::string>            additional_ssl_verify_path;
                 /**
                  * Turn off SSL host verification
+                 *
+                 * WARNING: SECURITY RISK - Disabling SSL host verification removes a critical
+                 * security check that validates the identity of the remote server. This can
+                 * allow man-in-the-middle attacks where an attacker could intercept and modify
+                 * traffic. This option should ONLY be used for development/testing purposes
+                 * and NEVER in production environments.
                  */
                 bool                                    no_ssl_host_verify {false};
                 std::function<void(const std::uint16_t &, const std::string &)> on_listen_port_assigned;
