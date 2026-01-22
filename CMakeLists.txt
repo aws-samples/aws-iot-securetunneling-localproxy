@@ -134,8 +134,9 @@ endforeach()
 # Target : Build aws-tunnel-local-proxy #
 #########################################
 file(GLOB ALL_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+include_directories(${PROJECT_SOURCE_DIR}/src)
 
-set(UTIL_SOURCE ${PROJECT_SOURCE_DIR}/src/config/ConfigFile.cpp ${PROJECT_SOURCE_DIR}/src/Url.cpp)
+set(UTIL_SOURCE ${PROJECT_SOURCE_DIR}/src/config/ConfigFile.cpp ${PROJECT_SOURCE_DIR}/src/Url.cpp ${PROJECT_SOURCE_DIR}/src/InputValidation.cpp)
 set(CORE_SOURCES ${PROJECT_SOURCE_DIR}/src/TcpAdapterProxy.cpp ${PROJECT_SOURCE_DIR}/src/ProxySettings.cpp ${PROJECT_SOURCE_DIR}/src/WebProxyAdapter.cpp ${PROTO_HDRS} ${PROTO_SRCS} ${PROJECT_SOURCE_DIR}/src/WebSocketStream.cpp)
 set(MAIN_SOURCES ${PROJECT_SOURCE_DIR}/src/main.cpp ${CORE_SOURCES} ${UTIL_SOURCE})
 add_executable(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${MAIN_SOURCES})
@@ -154,8 +155,6 @@ elseif(NOT APPLE AND NOT MSVC AND BUILD_TESTS)
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} atomic)
     target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} atomic)
 endif()
-
-include_directories(${PROJECT_SOURCE_DIR}/src)
 
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${CMAKE_THREAD_LIBS_INIT})
 if(LINK_STATIC_OPENSSL)
