@@ -15,7 +15,6 @@ set -e
 
 chmod +x ${LINUX_PACKAGES}/yum-packages.sh
 chmod +x ${LINUX_PACKAGES}/dpkg-packages.sh
-chmod +x ${LINUX_PACKAGES}/dnf-packages.sh
 
 if [[ $PRETTY_NAME == *"Ubuntu"* || $PRETTY_NAME == *"Debian"* ]]; then
   ${LINUX_PACKAGES}/dpkg-packages.sh
@@ -23,10 +22,6 @@ fi
 
 if [[ $PRETTY_NAME == *"Amazon Linux"* || $PRETTY_NAME == *"Red Hat Enterprise Linux"* ]]; then
   ${LINUX_PACKAGES}/yum-packages.sh
-fi
-
-if [[ $PRETTY_NAME == *"Fedora"* ]]; then
-  ${LINUX_PACKAGES}/dnf-packages.sh
 fi
 
 cp ${BUILD_FROM_SOURCE_PACKAGES_LICENCES} /root/BUILD_FROM_SOURCE_PACKAGES_LICENCES

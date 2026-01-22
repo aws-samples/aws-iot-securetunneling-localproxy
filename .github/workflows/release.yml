@@ -16,12 +16,10 @@ env:
   ECR_BASE_UBI8: aws-iot-securetunneling-localproxy/ubi8-base
   ECR_BASE_AMAZONLINUX: aws-iot-securetunneling-localproxy/amazonlinux-base
   ECR_BASE_DEBIAN: aws-iot-securetunneling-localproxy/debian-base
-  ECR_BASE_FEDORA: aws-iot-securetunneling-localproxy/fedora-base
   ECR_RELEASE_UBUNTU: aws-iot-securetunneling-localproxy/ubuntu-bin
   ECR_RELEASE_UBI8: aws-iot-securetunneling-localproxy/ubi8-bin
   ECR_RELEASE_AMAZONLINUX: aws-iot-securetunneling-localproxy/amazonlinux-bin
   ECR_RELEASE_DEBIAN: aws-iot-securetunneling-localproxy/debian-bin
-  ECR_RELEASE_FEDORA: aws-iot-securetunneling-localproxy/fedora-bin
 
 jobs:
   build-docker-image-ubuntu-amd64:
@@ -339,43 +337,6 @@ jobs:
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:arm64-${{ github.sha }}
             ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_DEBIAN }}:arm64-latest
           platforms: linux/arm64
-  # Note: Since we only build a single image for fedora (amd64) we can tag with 'latest' in this step
-  build-docker-image-fedora-amd64:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v5.1.1
-        with:
-          aws-access-key-id: ${{ secrets.ECR_USER_AWS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
-          aws-region: us-east-1
-      - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Build fedora Release Image
-        uses: docker/build-push-action@v4
-        with:
-          file: .github/docker-images/bin-images/fedora/Dockerfile
-          build-args: |
-            OS=fedora:latest
-            BASE_IMAGE=${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_BASE_FEDORA }}:amd64-latest
-          context: .
-          push: true
-          tags: |
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:amd64-${{ github.sha }}
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:amd64-latest
-            ${{ env.ECR_ACCOUNT_URL }}/${{ env.ECR_RELEASE_FEDORA }}:latest
-          platforms: linux/amd64
   build-image-manifest-ubuntu:
     runs-on: ubuntu-latest
     needs:
