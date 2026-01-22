@@ -29,6 +29,7 @@
 
 #include "ConfigFile.h"
 #include "Version.h"
+#include "InputValidation.h"
 
 using std::uint16_t;
 using std::endl;
@@ -53,6 +54,7 @@ using logger = boost::log::sources::severity_logger<boost::log::trivial::severit
 
 namespace aws { namespace iot { namespace securedtunneling { namespace config_file {
     logger log;
+    namespace input_validation = aws::iot::securedtunneling::validation;
     /**
      * Check if given path is a valid directory
      * @param file_dir : directory file path
@@ -186,6 +188,7 @@ namespace aws { namespace iot { namespace securedtunneling { namespace config_fi
                  */
                 if (splitting_1st_res.size() == 1 && splitting_2rd_res.size() == 1) {
                     boost::trim(splitting_2rd_res[0]);
+                    input_validation::validate_destination_endpoint(splitting_2rd_res[0]);
                     serviceId_to_endpoint_mapping[""] = splitting_2rd_res[0];
                     return;
                 }
@@ -204,6 +207,13 @@ namespace aws { namespace iot { namespace securedtunneling { namespace config_fi
                         string("Wrong format for the port mappings: ") + res + string(" .Example: SSH1=5555");
                 throw std::runtime_error(error_message);
             }
+            
+            // Validate service ID format
+            input_validation::validate_service_id(service_id);
+
+            // Validate endpoint format and port
+            input_validation::validate_destination_endpoint(endpoint);
+            
             // Check if it's a duplicate mapping, ignore if it has been provided
             if (serviceId_to_endpoint_mapping.find(service_id) != serviceId_to_endpoint_mapping.end()) {
                 BOOST_LOG_SEV(log, warning) << "Duplicate mappings, ignore. This mapping already exists: " << service_id << " : "

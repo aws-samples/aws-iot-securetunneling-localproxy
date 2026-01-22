@@ -30,6 +30,7 @@
 #include "config/ConfigFile.h"
 #include "LocalproxyConfig.h"
 #include "./config/ConfigFile.h"
+#include "InputValidation.h"
 
 using std::uint16_t;
 using std::endl;
@@ -52,6 +53,7 @@ using aws::iot::securedtunneling::proxy_mode;
 using aws::iot::securedtunneling::get_region_endpoint;
 using aws::iot::securedtunneling::settings::apply_region_overrides;
 using aws::iot::securedtunneling::config_file::PrintVersion;
+namespace input_validation = aws::iot::securedtunneling::validation;
 
 char const * const ACCESS_TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_ACCESS_TOKEN";
 char const * const CLIENT_TOKEN_ENV_VARIABLE = "AWSIOT_TUNNEL_CLIENT_TOKEN";
@@ -193,8 +195,10 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     }
     else if (vm.count("export-default-settings"))
     {
+        string export_path = vm["export-default-settings"].as<string>();
+        input_validation::validate_path(export_path);
         aws::iot::securedtunneling::settings::apply_default_settings(settings);
-        boost::property_tree::json_parser::write_json(vm["export-default-settings"].as<string>(), settings, std::locale(), true);
+        boost::property_tree::json_parser::write_json(export_path, settings, std::locale(), true);
         return false;
     }
 
@@ -207,7 +211,9 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     //dont allow above settings to be impacted by configuration file or environment variable parsers
     if (vm.count("config"))
     {
-        store(parse_config_file(vm["config"].as<string>().c_str(), cliargs_desc), vm);
+        string config_path = vm["config"].as<string>();
+        input_validation::validate_path(config_path);
+        store(parse_config_file(config_path.c_str(), cliargs_desc), vm);
     }
     //either way, parse from environment
     store(parse_environment(cliargs_desc, 
@@ -227,8 +233,10 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     apply_region_overrides(settings);
     if (vm.count("settings-json"))
     {
-        BOOST_LOG_TRIVIAL(info) << "Using settings specified in file: " << vm["settings-json"].as<string>();
-        boost::property_tree::json_parser::read_json(vm["settings-json"].as<string>(), settings);
+        string settings_path = vm["settings-json"].as<string>();
+        input_validation::validate_path(settings_path);
+        BOOST_LOG_TRIVIAL(info) << "Using settings specified in file: " << settings_path;
+        boost::property_tree::json_parser::read_json(settings_path, settings);
     }
 
 
@@ -243,11 +251,27 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     {
         BOOST_LOG_TRIVIAL(warning) << "Found access token supplied via CLI arg. Consider using environment variable " << ACCESS_TOKEN_ENV_VARIABLE << " instead";
     }
+    
+    // Validate access token
     cfg.access_token = vm["access-token"].as<string>();
+    input_validation::validate_access_token(cfg.access_token);
 
     if (vm.count("client-token") != 0)
     {
         cfg.client_token = vm["client-token"].as<string>();
+        input_validation::validate_client_token(cfg.client_token);
+    }
+
+    // Validate region if provided
+    if (vm.count("region"))
+    {
+        input_validation::validate_region(vm["region"].as<string>());
+    }
+
+    // Validate proxy endpoint if provided
+    if (vm.count("proxy-endpoint"))
+    {
+        input_validation::validate_endpoint(vm["proxy-endpoint"].as<string>());
     }
 
     string proxy_endpoint = vm.count("proxy-endpoint") == 1 ? vm["proxy-endpoint"].as<string>() :
@@ -408,6 +432,7 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     if (vm.count("config-dir"))
     {
         string config_dir = vm["config-dir"].as<string>();
+        input_validation::validate_path(config_dir);
         BOOST_LOG_TRIVIAL(debug) << "Detect port mapping configuration provided through configuration directory :" << config_dir;
         // Run validation against the input
         if (!is_valid_directory(config_dir)) {
@@ -420,6 +445,18 @@ bool process_cli(int argc, char ** argv, LocalproxyConfig &cfg, ptree &settings,
     {
         // read default directory, if no configuration directory is provided.
         cfg.config_files = get_all_files(get_default_port_mapping_dir());
+    }
+
+    // Validate bind address if provided
+    if (cfg.bind_address)
+    {
+        input_validation::validate_bind_address(cfg.bind_address.get());
+    }
+
+    // Validate capath if provided
+    if (cfg.additional_ssl_verify_path)
+    {
+        input_validation::validate_path(cfg.additional_ssl_verify_path.get());
     }
 
     if (cfg.mode == proxy_mode::SOURCE && cfg.config_files.empty() && cfg.serviceId_to_endpoint_map.empty())
