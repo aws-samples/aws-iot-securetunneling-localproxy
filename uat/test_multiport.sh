@@ -65,7 +65,7 @@ log_info "Multi-port tunnel opened: $TUNNEL_ID"
 
 # Start destination proxy with multiple service mappings
 AWSIOT_TUNNEL_ACCESS_TOKEN="$DEST_TOKEN" "$LOCALPROXY" \
-    -r "$REGION" -d "SSH1=localhost:22,HTTP1=localhost:80" -v 5 \
+    -r "$REGION" -d "SSH1=127.0.0.1:22,HTTP1=127.0.0.1:80" -v 5 \
     > "${LOG_DIR}/multiport_dest.log" 2>&1 &
 DEST_PID=$!
 
