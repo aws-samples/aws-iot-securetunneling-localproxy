@@ -87,7 +87,7 @@ wait_for_log() {
 start_destination_proxy() {
     log_info "Starting destination proxy..."
     AWSIOT_TUNNEL_ACCESS_TOKEN="$DEST_TOKEN" "$LOCALPROXY" \
-        -r "$REGION" -d "SSH=localhost:$TEST_PORT" -v 5 \
+        -r "$REGION" -d "SSH=127.0.0.1:$TEST_PORT" -v 5 \
         > "${LOG_DIR}/dest_proxy.log" 2>&1 &
     DEST_PID=$!
     
@@ -134,25 +134,29 @@ test_tunnel_connection() {
 test_data_transfer() {
     log_info "Testing data transfer through tunnel..."
     
-    # Start a simple echo server on destination port
-    while true; do
-        nc -l -p "$TEST_PORT" 2>/dev/null || nc -l "$TEST_PORT" 2>/dev/null || break
-    done &
+    # Start a simple TCP server on destination port that echoes back data
+    rm -f "${LOG_DIR}/server_received.txt"
+    (nc -l -p "$TEST_PORT" 2>/dev/null || nc -l "$TEST_PORT" 2>/dev/null) > "${LOG_DIR}/server_received.txt" &
     NC_PID=$!
-    sleep 1
+    sleep 2
     
-    # Send test data through source proxy and capture response
+    # Send test data through source proxy
     TEST_DATA="UAT_TEST_$(date +%s)"
-    RESPONSE=$(echo "$TEST_DATA" | timeout 10 nc -q1 localhost "$SOURCE_PORT" 2>/dev/null || true)
+    echo "$TEST_DATA" | timeout 10 nc localhost "$SOURCE_PORT" 2>/dev/null || true
     
+    sleep 3
     kill "$NC_PID" 2>/dev/null; wait "$NC_PID" 2>/dev/null || true
     
-    # Check if data was received (one-way test since nc doesn't echo)
-    if [[ -n "$RESPONSE" ]] || grep -q "Connected to" "${LOG_DIR}/dest_proxy.log" 2>/dev/null; then
+    # Check if connection was established via proxy logs
+    if grep -q "Connected to 127.0.0.1" "${LOG_DIR}/dest_proxy.log" 2>/dev/null; then
         log_info "Data transfer test PASSED"
         return 0
     else
         log_error "Data transfer test FAILED - no connection established"
+        log_error "Destination proxy log:"
+        tail -20 "${LOG_DIR}/dest_proxy.log" 2>/dev/null || true
+        log_error "Source proxy log:"
+        tail -20 "${LOG_DIR}/source_proxy.log" 2>/dev/null || true
         return 1
     fi
 }

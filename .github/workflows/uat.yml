@@ -1,0 +1,208 @@
+name: UAT Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-22.04
+          - arch: aarch64
+            runner: ubuntu-22.04-arm
+    runs-on: ${{ matrix.runner }}
+    env:
+      BOOST_VERSION: "1.87.0"
+      PROTOBUF_VERSION: "3.17.3"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake wget git libssl-dev zlib1g-dev netcat-openbsd jq
+
+      - name: Restore dependencies cache
+        id: cache-deps
+        uses: actions/cache/restore@v5
+        with:
+          path: deps-install
+          key: linux-${{ matrix.arch }}-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-v1
+
+      - name: Install Boost
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          BOOST_VER_UNDERSCORE=$(echo ${{ env.BOOST_VERSION }} | tr . _)
+          mkdir -p dependencies && cd dependencies
+          wget -q https://archives.boost.io/release/${{ env.BOOST_VERSION }}/source/boost_${BOOST_VER_UNDERSCORE}.tar.gz -O boost.tar.gz
+          tar xzf boost.tar.gz && cd boost_${BOOST_VER_UNDERSCORE}
+          ./bootstrap.sh --prefix=${{ github.workspace }}/deps-install
+          ./b2 install link=static -j$(nproc)
+
+      - name: Install Protobuf
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p dependencies && cd dependencies
+          wget -q https://github.com/protocolbuffers/protobuf/releases/download/v${{ env.PROTOBUF_VERSION }}/protobuf-all-${{ env.PROTOBUF_VERSION }}.tar.gz -O protobuf.tar.gz
+          tar xzf protobuf.tar.gz && cd protobuf-${{ env.PROTOBUF_VERSION }}
+          mkdir -p build && cd build
+          cmake ../cmake -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/deps-install -Dprotobuf_BUILD_TESTS=OFF
+          make -j$(nproc) && make install
+
+      - name: Save dependencies cache
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: deps-install
+          key: linux-${{ matrix.arch }}-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-v1
+
+      - name: Build
+        run: |
+          mkdir -p build && cd build
+          cmake .. -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_PREFIX_PATH=${{ github.workspace }}/deps-install -DLINK_STATIC_OPENSSL=OFF
+          make -j$(nproc)
+
+      - name: Strip binary
+        run: strip build/bin/localproxy
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::593883982448:role/secure-tunnel-GH-Role
+          aws-region: us-east-1
+
+      - name: Run UAT tests
+        run: |
+          chmod +x uat/*.sh uat/lib/*.sh
+          ./uat/run_uat.sh
+          ./uat/test_lifecycle.sh
+          ./uat/test_multiport.sh
+          ./uat/test_v1_compat.sh
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: uat-logs-${{ matrix.arch }}
+          path: uat/logs/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: localproxy-linux-${{ matrix.arch }}
+          path: build/bin/localproxy
+
+  build-arm32:
+    runs-on: ubuntu-22.04
+    env:
+      BOOST_VERSION: "1.87.0"
+      PROTOBUF_VERSION: "3.17.3"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm
+
+      - name: Restore ARM32 dependencies cache
+        id: cache-arm32
+        uses: actions/cache/restore@v5
+        with:
+          path: arm32-deps
+          key: arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-v1
+
+      - name: Build dependencies in ARM32 container
+        if: steps.cache-arm32.outputs.cache-hit != 'true'
+        run: |
+          BOOST_VER_UNDERSCORE=$(echo ${{ env.BOOST_VERSION }} | tr . _)
+          mkdir -p arm32-deps
+          docker run --rm --platform linux/arm/v7 \
+            -v ${{ github.workspace }}/arm32-deps:/deps \
+            -e BOOST_VERSION=${{ env.BOOST_VERSION }} \
+            -e BOOST_VER_UNDERSCORE=$BOOST_VER_UNDERSCORE \
+            -e PROTOBUF_VERSION=${{ env.PROTOBUF_VERSION }} \
+            arm32v7/ubuntu:22.04 bash -c '
+              apt-get update && apt-get install -y build-essential cmake wget
+              wget -q https://archives.boost.io/release/$BOOST_VERSION/source/boost_$BOOST_VER_UNDERSCORE.tar.gz -O /tmp/boost.tar.gz
+              tar xzf /tmp/boost.tar.gz -C /tmp && cd /tmp/boost_$BOOST_VER_UNDERSCORE
+              ./bootstrap.sh --prefix=/deps --with-libraries=system,log,thread,program_options,date_time,filesystem,chrono
+              ./b2 install link=static -j$(nproc)
+              wget -q https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOBUF_VERSION/protobuf-all-$PROTOBUF_VERSION.tar.gz -O /tmp/protobuf.tar.gz
+              tar xzf /tmp/protobuf.tar.gz -C /tmp && cd /tmp/protobuf-$PROTOBUF_VERSION
+              mkdir build && cd build && cmake ../cmake -DCMAKE_INSTALL_PREFIX=/deps -Dprotobuf_BUILD_TESTS=OFF
+              make -j$(nproc) && make install
+            '
+
+      - name: Save ARM32 dependencies cache
+        if: steps.cache-arm32.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: arm32-deps
+          key: arm32-deps-boost${{ env.BOOST_VERSION }}-protobuf${{ env.PROTOBUF_VERSION }}-v1
+
+      - name: Build in ARM32 container
+        run: |
+          docker run --rm --platform linux/arm/v7 \
+            -v ${{ github.workspace }}:/src \
+            -v ${{ github.workspace }}/arm32-deps:/deps \
+            -w /src \
+            arm32v7/ubuntu:22.04 bash -c '
+              apt-get update && apt-get install -y build-essential cmake libssl-dev zlib1g-dev
+              mkdir -p build && cd build
+              cmake .. -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_PREFIX_PATH=/deps -DLINK_STATIC_OPENSSL=OFF -DBOOST_PKG_VERSION="" -DPROTOBUF_PKG_VERSION=""
+              make -j$(nproc)
+              strip bin/localproxy
+            '
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::593883982448:role/secure-tunnel-GH-Role
+          aws-region: us-east-1
+
+      - name: Run UAT tests in ARM32 container
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
+        run: |
+          docker run --rm --platform linux/arm/v7 \
+            -v ${{ github.workspace }}:/src \
+            -w /src \
+            -e AWS_REGION=us-east-1 \
+            -e AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY \
+            -e AWS_SESSION_TOKEN \
+            arm32v7/ubuntu:22.04 bash -c '
+              apt-get update && apt-get install -y libssl-dev jq netcat-openbsd python3-pip
+              pip3 install awscli
+              chmod +x uat/*.sh uat/lib/*.sh
+              ./uat/run_uat.sh
+              ./uat/test_lifecycle.sh
+              ./uat/test_multiport.sh
+              ./uat/test_v1_compat.sh
+            '
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: uat-logs-armv7
+          path: uat/logs/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: localproxy-linux-armv7
+          path: build/bin/localproxy
