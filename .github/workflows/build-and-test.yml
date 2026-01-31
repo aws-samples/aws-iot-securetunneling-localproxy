@@ -1,4 +1,4 @@
-name: Build Multi-Platform Binaries
+name: Build and Test Multi-Platform
 
 on:
   push:
@@ -83,12 +83,6 @@ jobs:
 
       - name: Strip binary
         run: strip build/bin/localproxy
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: localproxy-linux-${{ matrix.arch }}
-          path: build/bin/localproxy
 
   build-linux-arm32:
     permissions:
@@ -186,12 +180,6 @@ jobs:
               apt-get update && apt-get install -y binutils
               strip build/bin/localproxy
             '
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: localproxy-linux-armv7
-          path: build/bin/localproxy
 
   build-macos:
     permissions:
