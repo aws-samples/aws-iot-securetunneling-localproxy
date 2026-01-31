@@ -955,7 +955,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                                                             request.set(CLIENT_TOKEN_HEADER, tac.adapter_config.client_token.c_str());
                                                         }
                                                         request.set(boost::beast::http::field::user_agent, user_agent_string);
-                                                        BOOST_LOG_SEV(log, trace) << "Web socket ugprade request(*not entirely final):\n" << get_token_filtered_request(request);
+                                                        BOOST_LOG_SEV(log, trace) << "Web socket upgrade request(*not entirely final):\n" << get_token_filtered_request(request);
                                                     },
                                                     on_websocket_handshake
                         );
@@ -1608,7 +1608,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
         bool tcp_adapter_proxy::parse_protobuf_and_consume_input(boost::beast::multi_buffer &message_buffer, size_t data_length, message &msg)
         {
-            //copy into a continguous buffer for simplified protobuf parsing
+            //copy into a contiguous buffer for simplified protobuf parsing
             message_parse_buffer.consume(message_parse_buffer.size());
             msg.Clear();
             boost::asio::buffer_copy(message_parse_buffer.prepare(data_length), message_buffer.data(), data_length);
@@ -1939,7 +1939,7 @@ namespace aws { namespace iot { namespace securedtunneling {
                     boost::system::error_code bind_ec;
                     server->acceptor_.open(results.begin()->endpoint().protocol());
                     if (port_to_connect)
-                    {   //if data port is 0 (means pick an empheral port), then don't set this option
+                    {   //if data port is 0 (means pick an ephemeral port), then don't set this option
                         server->acceptor_.set_option(reuse_addr_option);
                     }
                     server->acceptor_.bind(results.begin()->endpoint(), bind_ec);

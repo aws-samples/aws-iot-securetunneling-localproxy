@@ -65,7 +65,7 @@ namespace aws {
                 /**
                  * A async function that will be invoked internally once the the HTTP CONNECT request is sent, it is
                  * responsible for reading and parsing the response of the CONNECT request and handing back control the
-                 * the callback provided by the adapter consumer "on_tcp_tunnel" with the appropirate input based on
+                 * the callback provided by the adapter consumer "on_tcp_tunnel" with the appropriate input based on
                  * whether the TCP tunnel was established successfully or not.
                  *
                  * @param on_tcp_tunnel The callback that will be invoked once the tcp tunnel is established
