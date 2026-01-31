@@ -1,4 +1,4 @@
-name: UAT Tests
+name: UAT Tests and Release Artifacts
 
 on:
   push:
