@@ -94,7 +94,7 @@ void TestWebsocketServer::on_read_message(web_socket_stream &ws, message const &
     if(expect_messages.empty())
     {   //if not explicitly expecting something, ignore control messages, echo back data
             if (message.type() != Message_Type_DATA)
-            {   //control message recieved
+            {   //control message received
             }
             else if (message.type() == Message_Type_DATA)
             {
@@ -107,7 +107,7 @@ void TestWebsocketServer::on_read_message(web_socket_stream &ws, message const &
         expect_messages.pop();
         if(!expect_check(message))
         {
-            throw std::runtime_error((boost::format("Unexpected message type recievedi: Type: %1%; StreamId: %2%") % message.type() % message.streamid()).str());
+            throw std::runtime_error((boost::format("Unexpected message type received: Type: %1%; StreamId: %2%") % message.type() % message.streamid()).str());
         }
     }
 }

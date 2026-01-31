@@ -648,7 +648,7 @@ When a failure occurs while trying to connect to the service outside of an HTTP 
 Defines how long to wait before executing another retry to connect to the service in milliseconds.
 
 **tunneling.proxy.websocket.reconnect_on_data_error**
-Flag indicating whether or not to try to restablish connection to the service if an I/O, protocol handling, or message parsing errors occur.
+Flag indicating whether or not to try to re-establish connection to the service if an I/O, protocol handling, or message parsing errors occur.
 
 **tunneling.proxy.message.may_payload_size**
 Defines the maximum data size allowed to be carried via a single tunnel message. The current protocol has a maximum value of 63kb (64512 bytes). Any two active peers communicating over the same tunnel must set this to the same value.

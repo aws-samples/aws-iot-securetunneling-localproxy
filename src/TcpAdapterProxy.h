@@ -124,7 +124,7 @@ namespace aws { namespace iot { namespace securedtunneling {
             //flag set to true while web socket data is being drained
             //necessary for better TCP socket recovery rather than destroying
             //what's in the buffer
-            //flag neccessary to know on TCP resets whether or not web socket
+            //flag necessary to know on TCP resets whether or not web socket
             //has a current read (usually should, but may not if
             bool                                                    is_web_socket_reading;
             bool                                                    is_service_ids_received;
@@ -196,7 +196,7 @@ namespace aws { namespace iot { namespace securedtunneling {
         //handlers for messages during the web socket read loop return false
         //if the read loop should be stopped after processing the message.
         //This might happen due to tcp write buffer being full, or the processing
-        //requires some destructive actions before contructing a new TCP connection
+        //requires some destructive actions before constructing a new TCP connection
         //followed by data
         void on_web_socket_read(tcp_adapter_context &tac, boost::system::error_code const &ec, size_t bytes_read);
 
@@ -226,7 +226,7 @@ namespace aws { namespace iot { namespace securedtunneling {
 
         //returns a boolean that indicates if another tcp socket read's data can be put on the
         //web socket write buffer. It's a bit different from tcp write buffer space requirements
-        //because we can limit the amout of data we pull from a read, even a single byte means we
+        //because we can limit the amount of data we pull from a read, even a single byte means we
         //can perform the read.
         //Not setting up the read applies back pressure on the tcp socket
         bool wss_has_enough_write_buffer_space(boost::beast::multi_buffer const &buffer);
