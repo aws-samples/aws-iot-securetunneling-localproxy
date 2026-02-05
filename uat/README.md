@@ -86,7 +86,7 @@ AWS_REGION=us-west-2 THING_NAME=my-device ./run_uat.sh
 ./test_lifecycle.sh
 
 # SSH connectivity with password
-SSH_PASS=mypassword ./test_ssh_connectivity.sh
+SSH_PASS=password ./test_ssh_connectivity.sh
 
 # SSH connectivity with key
 SSH_KEY=~/.ssh/my_key SSH_USER=ubuntu ./test_ssh_connectivity.sh
