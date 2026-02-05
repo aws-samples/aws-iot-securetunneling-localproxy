@@ -29,6 +29,7 @@ nmake
 pkgs
 Rjnmc
 rootca
+shfmt
 sslv
 Uhdrl
 VQZH
