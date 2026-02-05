@@ -24,59 +24,77 @@ check_command sshpass
 check_localproxy "$LOCALPROXY"
 check_aws_credentials
 
-[[ -f "$SSH_KEY" ]] || { log_error "SSH key not found: $SSH_KEY"; exit 1; }
-[[ -n "$SSH_PASS" ]] || { log_error "SSH_PASS env var required for password test"; exit 1; }
+[[ -f "$SSH_KEY" ]] || {
+  log_error "SSH key not found: $SSH_KEY"
+  exit 1
+}
+[[ -n "$SSH_PASS" ]] || {
+  log_error "SSH_PASS env var required for password test"
+  exit 1
+}
 
 THING_CREATED=""
 TUNNEL_ID_KEY=""
 TUNNEL_ID_PASS=""
 
 cleanup() {
-    for pid_var in SOURCE_PID_KEY DEST_PID_KEY SOURCE_PID_PASS DEST_PID_PASS; do
-        pid="${!pid_var}"
-        [[ -n "$pid" ]] && kill "$pid" 2>/dev/null && wait "$pid" 2>/dev/null || true
-    done
-    for tid in "$TUNNEL_ID_KEY" "$TUNNEL_ID_PASS"; do
-        [[ -n "$tid" ]] && aws iotsecuretunneling close-tunnel --tunnel-id "$tid" --delete --region "$REGION" 2>/dev/null || true
-    done
-    [[ -n "$THING_CREATED" ]] && aws iot delete-thing --thing-name "$THING_NAME" --region "$REGION" 2>/dev/null && log_info "Deleted thing: $THING_NAME" || true
+  for pid_var in SOURCE_PID_KEY DEST_PID_KEY SOURCE_PID_PASS DEST_PID_PASS; do
+    pid="${!pid_var}"
+    [[ -n "$pid" ]] && kill "$pid" 2>/dev/null && wait "$pid" 2>/dev/null || true
+  done
+  for tid in "$TUNNEL_ID_KEY" "$TUNNEL_ID_PASS"; do
+    [[ -n "$tid" ]] && aws iotsecuretunneling close-tunnel --tunnel-id "$tid" --delete --region "$REGION" 2>/dev/null || true
+  done
+  [[ -n "$THING_CREATED" ]] && aws iot delete-thing --thing-name "$THING_NAME" --region "$REGION" 2>/dev/null && log_info "Deleted thing: $THING_NAME" || true
 }
 
 trap cleanup EXIT
 
 start_tunnel() {
-    local name="$1" src_port="$2" log_prefix="$3"
-    local tunnel_output tunnel_id src_token dst_token
+  local name="$1" src_port="$2" log_prefix="$3"
+  local tunnel_output tunnel_id src_token dst_token
 
-    tunnel_output=$(aws iotsecuretunneling open-tunnel \
-        --destination-config "thingName=$THING_NAME,services=SSH" \
-        --region "$REGION" --output json)
-    tunnel_id=$(echo "$tunnel_output" | jq -r '.tunnelId')
-    src_token=$(echo "$tunnel_output" | jq -r '.sourceAccessToken')
-    dst_token=$(echo "$tunnel_output" | jq -r '.destinationAccessToken')
+  tunnel_output=$(aws iotsecuretunneling open-tunnel \
+    --destination-config "thingName=$THING_NAME,services=SSH" \
+    --region "$REGION" --output json)
+  tunnel_id=$(echo "$tunnel_output" | jq -r '.tunnelId')
+  src_token=$(echo "$tunnel_output" | jq -r '.sourceAccessToken')
+  dst_token=$(echo "$tunnel_output" | jq -r '.destinationAccessToken')
 
-    [[ -z "$tunnel_id" || "$tunnel_id" == "null" ]] && { log_error "Failed to open $name tunnel"; return 1; }
-    log_info "$name tunnel opened: $tunnel_id" >&2
+  [[ -z "$tunnel_id" || "$tunnel_id" == "null" ]] && {
+    log_error "Failed to open $name tunnel"
+    return 1
+  }
+  log_info "$name tunnel opened: $tunnel_id" >&2
 
-    AWSIOT_TUNNEL_ACCESS_TOKEN="$dst_token" "$LOCALPROXY" \
-        -r "$REGION" -d "$SSH_HOST:$SSH_PORT" -v 5 > "${LOG_DIR}/${log_prefix}_dest.log" 2>&1 &
-    eval "${name^^}_DEST_PID=$!"
+  AWSIOT_TUNNEL_ACCESS_TOKEN="$dst_token" "$LOCALPROXY" \
+    -r "$REGION" -d "$SSH_HOST:$SSH_PORT" -v 5 >"${LOG_DIR}/${log_prefix}_dest.log" 2>&1 &
+  eval "${name^^}_DEST_PID=$!"
 
-    AWSIOT_TUNNEL_ACCESS_TOKEN="$src_token" "$LOCALPROXY" \
-        -r "$REGION" -s "$src_port" -b 127.0.0.1 -v 5 > "${LOG_DIR}/${log_prefix}_source.log" 2>&1 &
-    eval "${name^^}_SOURCE_PID=$!"
+  AWSIOT_TUNNEL_ACCESS_TOKEN="$src_token" "$LOCALPROXY" \
+    -r "$REGION" -s "$src_port" -b 127.0.0.1 -v 5 >"${LOG_DIR}/${log_prefix}_source.log" 2>&1 &
+  eval "${name^^}_SOURCE_PID=$!"
 
-    wait_for_log "${LOG_DIR}/${log_prefix}_dest.log" "Successfully established websocket connection" 15 || { log_error "$name dest proxy failed"; return 1; }
-    wait_for_log "${LOG_DIR}/${log_prefix}_source.log" "Successfully established websocket connection" 15 || { log_error "$name source proxy failed"; return 1; }
+  wait_for_log "${LOG_DIR}/${log_prefix}_dest.log" "Successfully established websocket connection" 15 || {
+    log_error "$name dest proxy failed"
+    return 1
+  }
+  wait_for_log "${LOG_DIR}/${log_prefix}_source.log" "Successfully established websocket connection" 15 || {
+    log_error "$name source proxy failed"
+    return 1
+  }
 
-    echo "$tunnel_id"
+  echo "$tunnel_id"
 }
 
 log_info "Testing SSH connectivity through tunnel..."
 
 # Create thing
 log_info "Creating IoT thing: $THING_NAME"
-aws iot create-thing --thing-name "$THING_NAME" --region "$REGION" >/dev/null || { log_error "Failed to create thing"; exit 1; }
+aws iot create-thing --thing-name "$THING_NAME" --region "$REGION" >/dev/null || {
+  log_error "Failed to create thing"
+  exit 1
+}
 THING_CREATED=1
 
 # Test 1: Key-based SSH
@@ -86,10 +104,10 @@ SOURCE_PID_KEY=$KEY_SOURCE_PID
 DEST_PID_KEY=$KEY_DEST_PID
 
 if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i "$SSH_KEY" -p "$SOURCE_PORT_KEY" "$SSH_USER@127.0.0.1" "echo SSH_KEY_SUCCESS" 2>/dev/null | grep -q "SSH_KEY_SUCCESS"; then
-    log_info "Key-based SSH test PASSED"
+  log_info "Key-based SSH test PASSED"
 else
-    log_error "Key-based SSH test FAILED"
-    exit 1
+  log_error "Key-based SSH test FAILED"
+  exit 1
 fi
 
 # Test 2: Password-based SSH
@@ -99,10 +117,10 @@ SOURCE_PID_PASS=$PASS_SOURCE_PID
 DEST_PID_PASS=$PASS_DEST_PID
 
 if sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o PreferredAuthentications=password -p "$SOURCE_PORT_PASS" "$SSH_USER@127.0.0.1" "echo SSH_PASS_SUCCESS" 2>/dev/null | grep -q "SSH_PASS_SUCCESS"; then
-    log_info "Password-based SSH test PASSED"
+  log_info "Password-based SSH test PASSED"
 else
-    log_error "Password-based SSH test FAILED"
-    exit 1
+  log_error "Password-based SSH test FAILED"
+  exit 1
 fi
 
 log_info "All SSH connectivity tests PASSED"
