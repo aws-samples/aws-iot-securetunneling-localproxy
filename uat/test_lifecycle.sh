@@ -17,8 +17,9 @@ THING_CREATED=""
 
 cleanup() {
   if [[ -n "$TUNNEL_ID" ]]; then
-    aws iotsecuretunneling close-tunnel --tunnel-id "$TUNNEL_ID" --region "$REGION" 2>/dev/null || log_error "Failed to close tunnel: $TUNNEL_ID"
-    aws iotsecuretunneling delete-tunnel --tunnel-id "$TUNNEL_ID" --region "$REGION" 2>/dev/null || log_error "Failed to delete tunnel: $TUNNEL_ID"
+    aws iotsecuretunneling close-tunnel --tunnel-id "$TUNNEL_ID" --delete --region "$REGION" 2>/dev/null \
+      && log_info "Deleted tunnel: $TUNNEL_ID" \
+      || log_error "Failed to close tunnel: $TUNNEL_ID"
   fi
 
   if [[ -n "$THING_CREATED" ]]; then
@@ -90,10 +91,5 @@ if [[ -n "$ROTATE_OUTPUT" ]]; then
 else
   log_info "Rotate token: SKIPPED (may require active connection)"
 fi
-
-# Test: Close tunnel
-aws iotsecuretunneling close-tunnel --tunnel-id "$TUNNEL_ID" --region "$REGION"
-TUNNEL_ID=""
-log_info "Close tunnel: PASSED"
 
 log_info "All lifecycle tests PASSED"
