@@ -16,24 +16,33 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 wait_for_log() {
-    local log_file="$1" pattern="$2" timeout="${3:-30}" elapsed=0
-    while [[ $elapsed -lt $timeout ]]; do
-        grep -q "$pattern" "$log_file" 2>/dev/null && return 0
-        sleep 1
-        elapsed=$((elapsed + 1))
-    done
-    return 1
+  local log_file="$1" pattern="$2" timeout="${3:-30}" elapsed=0
+  while [[ $elapsed -lt $timeout ]]; do
+    grep -q "$pattern" "$log_file" 2>/dev/null && return 0
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+  return 1
 }
 
 check_command() {
-    command -v "$1" >/dev/null || { log_error "$1 not found"; exit 1; }
+  command -v "$1" >/dev/null || {
+    log_error "$1 not found"
+    exit 1
+  }
 }
 
 check_localproxy() {
-    local path="$1"
-    [[ -x "$path" ]] || { log_error "localproxy binary not found at $path"; exit 1; }
+  local path="$1"
+  [[ -x "$path" ]] || {
+    log_error "localproxy binary not found at $path"
+    exit 1
+  }
 }
 
 check_aws_credentials() {
-    aws sts get-caller-identity >/dev/null || { log_error "AWS credentials not configured"; exit 1; }
+  aws sts get-caller-identity >/dev/null || {
+    log_error "AWS credentials not configured"
+    exit 1
+  }
 }
