@@ -22,10 +22,7 @@
     "checkers": {
       "all": true
     },
-    "cov-analyze-args": [
-      "--enable-constraint-fpp",
-      "--disable-parse-warnings"
-    ]
+    "cov-analyze-args": ["--enable-constraint-fpp", "--disable-parse-warnings"]
   },
   "format": {
     "html": {

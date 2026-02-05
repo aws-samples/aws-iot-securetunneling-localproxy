@@ -7,9 +7,9 @@ name: Base Image Builds
 
 on:
   push:
-    branches: ['base-images', 'docker-builds']
+    branches: ["base-images", "docker-builds"]
   pull_request:
-    branches: ['base-images', 'docker-builds']
+    branches: ["base-images", "docker-builds"]
     types: [opened, closed]
 
 env:
@@ -35,7 +35,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+        run:
+          aws ecr-public get-login-password --region us-east-1 | docker login
+          --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -69,7 +71,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+        run:
+          aws ecr-public get-login-password --region us-east-1 | docker login
+          --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -103,7 +107,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+        run:
+          aws ecr-public get-login-password --region us-east-1 | docker login
+          --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -137,7 +143,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+        run:
+          aws ecr-public get-login-password --region us-east-1 | docker login
+          --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -169,7 +177,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+        run:
+          aws ecr-public get-login-password --region us-east-1 | docker login
+          --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -201,7 +211,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+        run:
+          aws ecr-public get-login-password --region us-east-1 | docker login
+          --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -233,7 +245,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+        run:
+          aws ecr-public get-login-password --region us-east-1 | docker login
+          --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -265,7 +279,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+        run:
+          aws ecr-public get-login-password --region us-east-1 | docker login
+          --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -299,7 +315,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+        run:
+          aws ecr-public get-login-password --region us-east-1 | docker login
+          --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -333,7 +351,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Login to ECR
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
+        run:
+          aws ecr-public get-login-password --region us-east-1 | docker login
+          --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
         uses: actions/checkout@v2
         with:
