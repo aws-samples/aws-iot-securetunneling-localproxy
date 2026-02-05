@@ -11,11 +11,12 @@
     ({ lib, ... }:
       {
         systems = lib.systems.flakeExposed;
-        formatters = { llvmPackages, cmake-format, nodePackages, ... }:
+        formatters = { llvmPackages, cmake-format, nodePackages, shfmt, ... }:
           let
             fmt-cpp = "${llvmPackages.clang-unwrapped}/bin/clang-format -i";
             fmt-cmake = "${cmake-format}/bin/cmake-format -i";
             fmt-yaml = "${nodePackages.prettier}/bin/prettier --write --parser yaml";
+            fmt-sh = "${shfmt}/bin/shfmt -w";
           in
           {
             "*.cpp" = fmt-cpp;
@@ -23,6 +24,7 @@
             "*.hpp" = fmt-cpp;
             "CMakeLists.txt" = fmt-cmake;
             ".clang*" = fmt-yaml;
+            "*.sh" = fmt-sh;
           };
 
         checks.spelling = pkgs: ''
