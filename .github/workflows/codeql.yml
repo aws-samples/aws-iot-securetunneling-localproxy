@@ -2,11 +2,11 @@ name: "CodeQL C++ Build"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   schedule:
-    - cron: '33 8 * * 1' # Example: Run 8:33 UTC every Monday
+    - cron: "33 8 * * 1" # Example: Run 8:33 UTC every Monday
 
 jobs:
   analyze:
@@ -14,95 +14,95 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       security-events: write # required to upload CodeQL results
-      actions: read          # required for private repositories
-      contents: read         # required to check out the code
-      packages: read         # required to fetch internal or private CodeQL packs (if used)
+      actions: read # required for private repositories
+      contents: read # required to check out the code
+      packages: read # required to fetch internal or private CodeQL packs (if used)
 
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'c-cpp' ]
-        build-mode: [ 'manual' ] # Using manual build steps
+        language: ["c-cpp"]
+        build-mode: ["manual"] # Using manual build steps
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0 # Fetch all history
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history
 
-    # === Dependency Installation Steps ===
-    - name: Install apt-get dependencies
-      run: |
-        sudo apt-get update -y
-        sudo apt-get install -y \
-          build-essential \
-          git \
-          python3-dev \
-          wget \
-          tar \
-          zlib1g-dev \
-          libssl-dev \
-          openssl \
-          cmake
-        sudo apt-get clean -y
+      # === Dependency Installation Steps ===
+      - name: Install apt-get dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            build-essential \
+            git \
+            python3-dev \
+            wget \
+            tar \
+            zlib1g-dev \
+            libssl-dev \
+            openssl \
+            cmake
+          sudo apt-get clean -y
 
-    - name: Install boost (v1.87.0)
-      run: |
-        echo "Downloading Boost..."
-        wget https://sourceforge.net/projects/boost/files/boost/1.87.0/boost_1_87_0.tar.gz/download -O /tmp/boost_1_87_0.tar.gz
-        echo "Extracting Boost..."
-        tar xzvf /tmp/boost_1_87_0.tar.gz -C /tmp
-        cd /tmp/boost_1_87_0
-        echo "Bootstrapping Boost..."
-        ./bootstrap.sh --prefix=/usr/local
-        echo "Building and installing Boost..."
-        sudo ./b2 install link=static --prefix=/usr/local -j$(nproc)
-        cd ${{ github.workspace }}
-        sudo rm -rf /tmp/boost_1_87_0 /tmp/boost_1_87_0.tar.gz
+      - name: Install boost (v1.87.0)
+        run: |
+          echo "Downloading Boost..."
+          wget https://sourceforge.net/projects/boost/files/boost/1.87.0/boost_1_87_0.tar.gz/download -O /tmp/boost_1_87_0.tar.gz
+          echo "Extracting Boost..."
+          tar xzvf /tmp/boost_1_87_0.tar.gz -C /tmp
+          cd /tmp/boost_1_87_0
+          echo "Bootstrapping Boost..."
+          ./bootstrap.sh --prefix=/usr/local
+          echo "Building and installing Boost..."
+          sudo ./b2 install link=static --prefix=/usr/local -j$(nproc)
+          cd ${{ github.workspace }}
+          sudo rm -rf /tmp/boost_1_87_0 /tmp/boost_1_87_0.tar.gz
 
-    - name: Install protobuf (v3.17.3)
-      run: |
-        echo "Downloading Protobuf..."
-        wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf-all-3.17.3.tar.gz
-        echo "Extracting Protobuf..."
-        tar xzvf /tmp/protobuf-all-3.17.3.tar.gz -C /tmp
-        cd /tmp/protobuf-3.17.3
-        echo "Configuring Protobuf (CMake)..."
-        mkdir build_cmake
-        cd build_cmake
-        cmake ../cmake -DCMAKE_INSTALL_PREFIX=/usr/local -Dprotobuf_BUILD_TESTS=OFF
-        echo "Building Protobuf..."
-        make -j$(nproc)
-        echo "Installing Protobuf..."
-        sudo make install
-        cd ${{ github.workspace }}
-        rm -rf /tmp/protobuf-3.17.3 /tmp/protobuf-all-3.17.3.tar.gz
+      - name: Install protobuf (v3.17.3)
+        run: |
+          echo "Downloading Protobuf..."
+          wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf-all-3.17.3.tar.gz
+          echo "Extracting Protobuf..."
+          tar xzvf /tmp/protobuf-all-3.17.3.tar.gz -C /tmp
+          cd /tmp/protobuf-3.17.3
+          echo "Configuring Protobuf (CMake)..."
+          mkdir build_cmake
+          cd build_cmake
+          cmake ../cmake -DCMAKE_INSTALL_PREFIX=/usr/local -Dprotobuf_BUILD_TESTS=OFF
+          echo "Building Protobuf..."
+          make -j$(nproc)
+          echo "Installing Protobuf..."
+          sudo make install
+          cd ${{ github.workspace }}
+          rm -rf /tmp/protobuf-3.17.3 /tmp/protobuf-all-3.17.3.tar.gz
 
-    # --- Catch2 Installation Step Removed ---
+      # --- Catch2 Installation Step Removed ---
 
-    # Initialize CodeQL AFTER dependencies are installed and BEFORE the project build
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
-        # queries: security-extended,security-and-quality # Optional
+      # Initialize CodeQL AFTER dependencies are installed and BEFORE the project build
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # queries: security-extended,security-and-quality # Optional
 
-    # === Build Project Steps ===
-    - name: Build localproxy project
-      shell: bash
-      run: |
-        echo "Creating build directory for localproxy..."
-        mkdir build
-        cd build
-        echo "Configuring localproxy with CMake (tests disabled)..."
-        # Ensure BUILD_TESTS=OFF is used
-        cmake .. -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release
-        echo "Building localproxy with make..."
-        make -j$(nproc)
+      # === Build Project Steps ===
+      - name: Build localproxy project
+        shell: bash
+        run: |
+          echo "Creating build directory for localproxy..."
+          mkdir build
+          cd build
+          echo "Configuring localproxy with CMake (tests disabled)..."
+          # Ensure BUILD_TESTS=OFF is used
+          cmake .. -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release
+          echo "Building localproxy with make..."
+          make -j$(nproc)
 
-    # Perform the CodeQL analysis AFTER the build is complete
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{matrix.language}}"
+      # Perform the CodeQL analysis AFTER the build is complete
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
