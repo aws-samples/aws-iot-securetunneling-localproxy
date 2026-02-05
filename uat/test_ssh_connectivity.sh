@@ -43,7 +43,7 @@ cleanup() {
     [[ -n "$pid" ]] && kill "$pid" 2>/dev/null && wait "$pid" 2>/dev/null || true
   done
   for tid in "$TUNNEL_ID_KEY" "$TUNNEL_ID_PASS"; do
-    [[ -n "$tid" ]] && aws iotsecuretunneling close-tunnel --tunnel-id "$tid" --delete --region "$REGION" 2>/dev/null || true
+    [[ -n "$tid" ]] && aws iotsecuretunneling close-tunnel --tunnel-id "$tid" --delete --region "$REGION" 2>/dev/null && log_info "Deleted tunnel: $tid" || true
   done
   [[ -n "$THING_CREATED" ]] && aws iot delete-thing --thing-name "$THING_NAME" --region "$REGION" 2>/dev/null && log_info "Deleted thing: $THING_NAME" || true
 }
