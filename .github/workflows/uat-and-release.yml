@@ -32,7 +32,21 @@ jobs:
       - name: Install system dependencies
         run:
           sudo apt-get update && sudo apt-get install -y build-essential cmake
-          wget git libssl-dev zlib1g-dev netcat-openbsd jq
+          wget git libssl-dev zlib1g-dev netcat-openbsd jq sshpass
+          openssh-server
+
+      - name: Setup SSH server for UAT
+        run: |
+          sudo useradd -m -s /bin/bash testuser || true
+          echo "testuser:${{ secrets.UAT_SSH_PASS }}" | sudo chpasswd
+          sudo mkdir -p /home/testuser/.ssh
+          ssh-keygen -t rsa -N "" -f /tmp/uat_ssh_key
+          sudo cp /tmp/uat_ssh_key.pub /home/testuser/.ssh/authorized_keys
+          sudo chown -R testuser:testuser /home/testuser/.ssh
+          sudo chmod 700 /home/testuser/.ssh
+          sudo chmod 600 /home/testuser/.ssh/authorized_keys
+          echo "PasswordAuthentication yes" | sudo tee /etc/ssh/sshd_config.d/uat.conf
+          sudo systemctl restart ssh
 
       - name: Restore dependencies cache
         id: cache-deps
@@ -87,12 +101,17 @@ jobs:
           aws-region: us-east-1
 
       - name: Run UAT tests
+        env:
+          SSH_USER: testuser
+          SSH_KEY: /tmp/uat_ssh_key
+          SSH_PASS: ${{ secrets.UAT_SSH_PASS }}
         run: |
           chmod +x uat/*.sh uat/lib/*.sh
           ./uat/run_uat.sh
           ./uat/test_lifecycle.sh
           ./uat/test_multiport.sh
           ./uat/test_v1_compat.sh
+          ./uat/test_ssh_connectivity.sh
 
       - name: Upload logs
         if: always()
