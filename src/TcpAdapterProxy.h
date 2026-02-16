@@ -13,6 +13,7 @@
 #include "WebSocketStream.h"
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/local/stream_protocol.hpp>
 #include <boost/asio/ssl/host_name_verification.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/websocket.hpp>
@@ -447,6 +448,14 @@ namespace iot {
                 const uint32_t &connection_id,
                 const boost::system::error_code &ec,
                 tcp::resolver::results_type results
+            );
+
+            void async_connect_to_unix_socket(
+                tcp_adapter_context &tac,
+                std::shared_ptr<basic_retry_config> retry_config,
+                const std::string &service_id,
+                const uint32_t &connection_id,
+                const std::string &socket_path
             );
 
             bool process_incoming_websocket_buffer(

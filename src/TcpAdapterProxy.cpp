@@ -1,11 +1,13 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 #include "TcpAdapterProxy.h"
+#include "InputValidation.h"
 #include "ProxySettings.h"
 #include "WebProxyAdapter.h"
 #include "config/ConfigFile.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
+#include <boost/asio/local/stream_protocol.hpp>
 #include <boost/asio/ssl/host_name_verification.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/websocket.hpp>
@@ -20,6 +22,7 @@
 #include <functional>
 #include <openssl/opensslv.h>
 #include <set>
+#include <unistd.h> // for close() and unlink()
 
 namespace aws {
 namespace iot {
@@ -3147,6 +3150,89 @@ namespace iot {
             );
         }
 
+        void tcp_adapter_proxy::async_connect_to_unix_socket(
+            tcp_adapter_context &tac,
+            std::shared_ptr<basic_retry_config> retry_config,
+            const string &service_id,
+            const uint32_t &connection_id,
+            const std::string &socket_path
+        ) {
+            BOOST_LOG_SEV(log, trace)
+                << "Connecting to Unix domain socket: " << socket_path
+                << " for service id: " << service_id
+                << " connection id: " << connection_id;
+
+            tcp_client::pointer client
+                = tac.serviceId_to_tcp_client_map[service_id];
+            
+            // Create a Unix domain socket and connect
+            boost::asio::local::stream_protocol::socket unix_socket(tac.io_ctx);
+            boost::system::error_code connect_ec;
+            
+            try {
+                unix_socket.connect(
+                    boost::asio::local::stream_protocol::endpoint(socket_path),
+                    connect_ec
+                );
+                
+                if (connect_ec) {
+                    BOOST_LOG_SEV(log, error)
+                        << (boost::format(
+                                "Could not connect to Unix socket %1% -- %2%"
+                            )
+                            % socket_path % connect_ec.message())
+                               .str();
+                    basic_retry_execute(
+                        log, retry_config, [this, &tac, service_id]() {
+                            BOOST_LOG_SEV(log, trace)
+                                << "resetting stream for service id:"
+                                << service_id
+                                << ", then listen for stream start";
+                            async_send_stream_reset(tac, service_id);
+                            setup_tcp_socket(std::ref(tac), service_id);
+                        }
+                    );
+                } else {
+                    BOOST_LOG_SEV(log, info)
+                        << "Connected to Unix socket: " << socket_path;
+                    
+                    // Transfer the Unix socket to the TCP connection
+                    // Get the native file descriptor and assign it to the TCP socket
+                    int fd = unix_socket.release();
+                    boost::system::error_code assign_ec;
+                    client->connectionId_to_tcp_connection_map[connection_id]
+                        ->socket()
+                        .assign(boost::asio::ip::tcp::v4(), fd, assign_ec);
+                    
+                    if (assign_ec) {
+                        BOOST_LOG_SEV(log, error)
+                            << "Failed to assign Unix socket to TCP socket: "
+                            << assign_ec.message();
+                        ::close(fd);
+                        basic_retry_execute(
+                            log, retry_config, [this, &tac, service_id]() {
+                                async_send_stream_reset(tac, service_id);
+                                setup_tcp_socket(std::ref(tac), service_id);
+                            }
+                        );
+                    } else {
+                        async_setup_bidirectional_data_transfers(
+                            tac, service_id, connection_id
+                        );
+                    }
+                }
+            } catch (const std::exception &e) {
+                BOOST_LOG_SEV(log, error)
+                    << "Exception connecting to Unix socket: " << e.what();
+                basic_retry_execute(
+                    log, retry_config, [this, &tac, service_id]() {
+                        async_send_stream_reset(tac, service_id);
+                        setup_tcp_socket(std::ref(tac), service_id);
+                    }
+                );
+            }
+        }
+
         void tcp_adapter_proxy::async_resolve_destination_for_connect(
             tcp_adapter_context &tac,
             std::shared_ptr<basic_retry_config> retry_config,
@@ -3289,6 +3375,16 @@ namespace iot {
                         GET_SETTING(settings, WEB_SOCKET_WRITE_BUFFER_SIZE),
                         connection_id
                     );
+            }
+
+            // Check if endpoint is a Unix domain socket path (contains '/')
+            if (endpoint.find('/') != std::string::npos) {
+                BOOST_LOG_SEV(log, debug)
+                    << "Detected Unix domain socket path: " << endpoint;
+                async_connect_to_unix_socket(
+                    tac, retry_config, service_id, connection_id, endpoint
+                );
+                return;
             }
 
             if (tac.adapter_config.bind_address.has_value()) {

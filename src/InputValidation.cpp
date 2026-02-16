@@ -223,6 +223,13 @@ namespace iot {
                     return;
                 }
 
+                // Check if it's a Unix socket path (contains '/')
+                // Unix socket paths: /run/socket, ./socket, /tmp/sock
+                if (endpoint.find('/') != std::string::npos) {
+                    validate_path(endpoint);
+                    return;
+                }
+
                 // It's host:port or just host - validate the address part
                 validate_bind_address(endpoint);
 
