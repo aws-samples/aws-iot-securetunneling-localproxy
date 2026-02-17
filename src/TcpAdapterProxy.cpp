@@ -7,7 +7,10 @@
 #include "config/ConfigFile.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
+#ifndef _WIN32
 #include <boost/asio/local/stream_protocol.hpp>
+#include <unistd.h> // for close() and unlink()
+#endif
 #include <boost/asio/ssl/host_name_verification.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/websocket.hpp>
@@ -22,7 +25,6 @@
 #include <functional>
 #include <openssl/opensslv.h>
 #include <set>
-#include <unistd.h> // for close() and unlink()
 
 namespace aws {
 namespace iot {
@@ -3150,6 +3152,7 @@ namespace iot {
             );
         }
 
+#ifndef _WIN32
         void tcp_adapter_proxy::async_connect_to_unix_socket(
             tcp_adapter_context &tac,
             std::shared_ptr<basic_retry_config> retry_config,
@@ -3232,6 +3235,7 @@ namespace iot {
                 );
             }
         }
+#endif
 
         void tcp_adapter_proxy::async_resolve_destination_for_connect(
             tcp_adapter_context &tac,
@@ -3378,6 +3382,7 @@ namespace iot {
             }
 
             // Check if endpoint is a Unix domain socket path (contains '/')
+#ifndef _WIN32
             if (endpoint.find('/') != std::string::npos) {
                 BOOST_LOG_SEV(log, debug)
                     << "Detected Unix domain socket path: " << endpoint;
@@ -3386,6 +3391,17 @@ namespace iot {
                 );
                 return;
             }
+#else
+            // On Windows, reject Unix socket paths with a clear error
+            if (endpoint.find('/') != std::string::npos) {
+                BOOST_LOG_SEV(log, error)
+                    << "Unix domain sockets are not supported on Windows. "
+                    << "Path provided: " << endpoint;
+                throw std::runtime_error(
+                    "Unix domain sockets are not supported on Windows"
+                );
+            }
+#endif
 
             if (tac.adapter_config.bind_address.has_value()) {
                 BOOST_LOG_SEV(log, debug)

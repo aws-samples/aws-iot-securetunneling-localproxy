@@ -750,7 +750,8 @@ or 5555.
 - It follows format serviceId1=endpoint1, serviceId2=endpoint2, ...
 - Endpoint can be IP address:port, port, hostname:port, or a Unix domain socket path.
 - Unix domain socket paths are detected when the endpoint contains a '/' character
-  (e.g., /run/ssh-unix-local/socket, /tmp/app.sock, ./local.sock).
+  (e.g., /run/ssh-unix-local/socket, /tmp/app.sock, ./local.sock). Note: Unix domain
+  sockets are only supported on Unix/Linux/macOS platforms.
 - If only one port is needed to start local proxy, service ID is not needed. You
   can simply pass the port used, for example, 5555.
 - An item of the mapping SSH1=5555 means that local proxy will forward data
