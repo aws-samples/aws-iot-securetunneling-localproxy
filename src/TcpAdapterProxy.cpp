@@ -3167,17 +3167,17 @@ namespace iot {
 
             tcp_client::pointer client
                 = tac.serviceId_to_tcp_client_map[service_id];
-            
+
             // Create a Unix domain socket and connect
             boost::asio::local::stream_protocol::socket unix_socket(tac.io_ctx);
             boost::system::error_code connect_ec;
-            
+
             try {
                 unix_socket.connect(
                     boost::asio::local::stream_protocol::endpoint(socket_path),
                     connect_ec
                 );
-                
+
                 if (connect_ec) {
                     BOOST_LOG_SEV(log, error)
                         << (boost::format(
@@ -3198,15 +3198,16 @@ namespace iot {
                 } else {
                     BOOST_LOG_SEV(log, info)
                         << "Connected to Unix socket: " << socket_path;
-                    
+
                     // Transfer the Unix socket to the TCP connection
-                    // Get the native file descriptor and assign it to the TCP socket
+                    // Get the native file descriptor and assign it to the TCP
+                    // socket
                     int fd = unix_socket.release();
                     boost::system::error_code assign_ec;
                     client->connectionId_to_tcp_connection_map[connection_id]
                         ->socket()
                         .assign(boost::asio::ip::tcp::v4(), fd, assign_ec);
-                    
+
                     if (assign_ec) {
                         BOOST_LOG_SEV(log, error)
                             << "Failed to assign Unix socket to TCP socket: "

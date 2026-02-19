@@ -748,23 +748,26 @@ sets the mappings between port and service identifier. For example: SSH1=5555
 or 5555.
 
 - It follows format serviceId1=endpoint1, serviceId2=endpoint2, ...
-- Endpoint can be IP address:port, port, hostname:port, or a Unix domain socket path.
-- Unix domain socket paths are detected when the endpoint contains a '/' character
-  (e.g., /run/ssh-unix-local/socket, /tmp/app.sock, ./local.sock). Note: Unix domain
-  sockets are only supported on Unix/Linux/macOS platforms.
+- Endpoint can be IP address:port, port, hostname:port, or a Unix domain socket
+  path.
+- Unix domain socket paths are detected when the endpoint contains a '/'
+  character (e.g., /run/ssh-unix-local/socket, /tmp/app.sock, ./local.sock).
+  Note: Unix domain sockets are only supported on Unix/Linux/macOS platforms.
 - If only one port is needed to start local proxy, service ID is not needed. You
   can simply pass the port used, for example, 5555.
 - An item of the mapping SSH1=5555 means that local proxy will forward data
   received from the tunnel to TCP port 5555 for service ID SSH1.
-- An item of the mapping SSH1=/run/app.sock means that local proxy will forward data
-  received from the tunnel to the Unix domain socket at /run/app.sock for service ID SSH1.
+- An item of the mapping SSH1=/run/app.sock means that local proxy will forward
+  data received from the tunnel to the Unix domain socket at /run/app.sock for
+  service ID SSH1.
 - The value of service ID and how many service IDs are used needs to match with
   **services** in open tunnel call. For example:
   ```shell script
   aws iotsecuretunneling open-tunnel --destination-config thingName=foo,services=SSH1,SSH2
   ```
   Then to start local proxy in destination mode, need to use:
-  `-d SSH1=$port1,SSH2=$port2` or `-d SSH1=/path/to/socket1,SSH2=/path/to/socket2`
+  `-d SSH1=$port1,SSH2=$port2` or
+  `-d SSH1=/path/to/socket1,SSH2=/path/to/socket2`
 
 **-b/--local-bind-address [argvalue]** Specifies the local bind address (network
 interface) to use for listening for new connections when running the local proxy
