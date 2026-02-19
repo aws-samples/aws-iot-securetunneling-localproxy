@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   build:
+    if: github.repository == 'aws-samples/aws-iot-securetunneling-localproxy'
     strategy:
       matrix:
         include:
@@ -97,8 +98,9 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: arn:aws:iam::593883982448:role/secure-tunnel-GH-Role
-          aws-region: us-east-1
+          role-to-assume:
+            arn:aws:iam::${{ vars.AWS_ACCOUNT }}:role/${{ secrets.ROLE_NAME }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Run UAT tests
         env:
@@ -127,6 +129,7 @@ jobs:
           path: build/bin/localproxy
 
   build-arm32:
+    if: github.repository == 'aws-samples/aws-iot-securetunneling-localproxy'
     runs-on: ubuntu-22.04
     env:
       BOOST_VERSION: "1.87.0"
@@ -197,8 +200,9 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: arn:aws:iam::593883982448:role/secure-tunnel-GH-Role
-          aws-region: us-east-1
+          role-to-assume:
+            arn:aws:iam::${{ vars.AWS_ACCOUNT }}:role/${{ secrets.ROLE_NAME }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Run UAT tests in ARM32 container
         env:
@@ -209,7 +213,7 @@ jobs:
           docker run --rm --platform linux/arm/v7 \
             -v ${{ github.workspace }}:/src \
             -w /src \
-            -e AWS_REGION=us-east-1 \
+            -e AWS_REGION=${{ vars.AWS_REGION }} \
             -e AWS_ACCESS_KEY_ID \
             -e AWS_SECRET_ACCESS_KEY \
             -e AWS_SESSION_TOKEN \
