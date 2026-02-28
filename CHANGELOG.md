@@ -1,3 +1,23 @@
+## 2026-03-01
+
+### Changed
+
+- Update Boost library to 1.87
+
+### Fixed
+
+- Destination TCP retry loop now accepts both stream start and connection start
+  messages
+- Capped default retry count to 5
+- Socket close timing moved to after pending writes complete
+- Bus error from boost socket.shutdown on Darwin arm64
+- OpenSSL is now truly dynamic or static based on compile flag
+
+### Added
+
+- SSL host verification warning
+- Fixes for Windows build support
+
 ## 2019-12-07
 
 ### Changed
