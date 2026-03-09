@@ -3153,7 +3153,7 @@ namespace iot {
         }
 
 #ifndef _WIN32
-        void tcp_adapter_proxy::async_connect_to_unix_socket(
+        void tcp_adapter_proxy::connect_and_setup_unix_socket(
             tcp_adapter_context &tac,
             std::shared_ptr<basic_retry_config> retry_config,
             const string &service_id,
@@ -3387,7 +3387,7 @@ namespace iot {
             if (endpoint.find('/') != std::string::npos) {
                 BOOST_LOG_SEV(log, debug)
                     << "Detected Unix domain socket path: " << endpoint;
-                async_connect_to_unix_socket(
+                connect_and_setup_unix_socket(
                     tac, retry_config, service_id, connection_id, endpoint
                 );
                 return;

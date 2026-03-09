@@ -453,7 +453,7 @@ namespace iot {
             );
 
 #ifndef _WIN32
-            void async_connect_to_unix_socket(
+            void connect_and_setup_unix_socket(
                 tcp_adapter_context &tac,
                 std::shared_ptr<basic_retry_config> retry_config,
                 const std::string &service_id,
