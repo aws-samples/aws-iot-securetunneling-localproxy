@@ -51,3 +51,21 @@ jobs:
       - *checkout
       - *install_nix
       - run: nix build -L .#checks.x86_64-linux.${{ matrix.check }}
+  git-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: Checkout awslabs/git-secrets
+        uses: actions/checkout@v6
+        with:
+          repository: awslabs/git-secrets
+          ref: master
+          path: git-secrets
+      - name: Install git-secrets
+        run: cd git-secrets && sudo make install && cd ..
+      - name: Run git-secrets
+        run: |
+          git-secrets --register-aws
+          git-secrets --scan
