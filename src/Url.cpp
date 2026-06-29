@@ -75,9 +75,24 @@ void aws::iot::securedtunneling::url::parse(const string &url_s) {
     const size_t host_i = is_authN_included
         ? authentication_end_i + 1
         : protocol_end_i + protocol_end.size();
-    const size_t port_i = url_s.find(':', host_i);
-
-    host = get_substring(url_s, host_i, port_i);
+    size_t port_i;
+    if (host_i < url_s.length() && url_s[host_i] == '[') {
+        // IPv6 literal enclosed in brackets, e.g. [::1]:8080
+        const size_t bracket_end = url_s.find(']', host_i);
+        if (bracket_end == string::npos) {
+            throw invalid_argument(
+                "Invalid IPv6 address in URL: missing closing ']'"
+            );
+        }
+        host = get_substring(url_s, host_i + 1, bracket_end);
+        port_i = (bracket_end + 1 < url_s.length()
+                  && url_s[bracket_end + 1] == ':')
+            ? bracket_end + 1
+            : string::npos;
+    } else {
+        port_i = url_s.find(':', host_i);
+        host = get_substring(url_s, host_i, port_i);
+    }
 
     if (host.empty()) {
         throw invalid_argument("Missing HTTP host address");
@@ -86,7 +101,11 @@ void aws::iot::securedtunneling::url::parse(const string &url_s) {
     if (port_i != string::npos) {
         const string port_s = get_substring(url_s, port_i + 1, url_s.length());
         try {
-            port = static_cast<uint16_t>(stoi(port_s));
+            const int port_num = stoi(port_s);
+            if (port_num < 0 || port_num > 65535) {
+                throw out_of_range("Port number out of range [0, 65535]");
+            }
+            port = static_cast<uint16_t>(port_num);
         } catch (exception &e) {
             BOOST_LOG_TRIVIAL(fatal) << "Failed to parse the port";
             BOOST_LOG_TRIVIAL(fatal) << e.what();
@@ -106,6 +125,12 @@ string aws::iot::securedtunneling::url::url_decode(const string &url_s) {
                     int value = 0;
                     std::istringstream is(url_s.substr(i + 1, 2));
                     if (is >> std::hex >> value) {
+                        if (value == 0) {
+                            throw invalid_argument(
+                                "Invalid URL: encoded null byte (%00) is not "
+                                "allowed"
+                            );
+                        }
                         out += static_cast<char>(value);
                         i += 2;
                     } else {
