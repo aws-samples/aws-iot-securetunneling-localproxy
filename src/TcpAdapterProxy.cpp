@@ -2098,8 +2098,11 @@ namespace iot {
                     BOOST_LOG_SEV(log, warning)
                         << "Starting new stream for service id: " << service_id;
                     tac.serviceId_to_streamId_map[service_id] = stream_id;
-                    tac.serviceId_to_tcp_client_map[service_id]
-                        ->on_receive_stream_start();
+                    if (tac.serviceId_to_tcp_client_map[service_id]
+                            ->on_receive_stream_start) {
+                        tac.serviceId_to_tcp_client_map[service_id]
+                            ->on_receive_stream_start();
+                    }
                 } else if (tac.serviceId_to_streamId_map.at(service_id)
                            != message.streamid()) {
                     BOOST_LOG_SEV(log, warning)
@@ -2857,9 +2860,19 @@ namespace iot {
                 }
             }
 
-            // We are not currently writing, so send this immediately
-            data_message message_to_send
-                = tac.web_socket_outgoing_message_queue.front();
+            // We are not currently writing, so send this immediately.
+            // Read the front element under the queue mutex (push/pop are also
+            // synchronized on this mutex) and copy it out before releasing.
+            data_message message_to_send;
+            {
+                const std::lock_guard<std::mutex> lock(
+                    tac.web_socket_outgoing_message_queue_mutex
+                );
+                if (tac.web_socket_outgoing_message_queue.empty()) {
+                    return;
+                }
+                message_to_send = tac.web_socket_outgoing_message_queue.front();
+            }
 
             tac.wss->async_write(
                 message_to_send.first->data(),
@@ -2885,16 +2898,22 @@ namespace iot {
                         capture_after_send_message();
                     }
 
-                    const std::lock_guard<std::mutex> lock(
-                        tac.web_socket_outgoing_message_queue_mutex
-                    );
-                    tac.web_socket_outgoing_message_queue.pop();
-                    if (tac.web_socket_outgoing_message_queue.empty()) {
-                        BOOST_LOG_SEV(log, trace)
-                            << "web_socket_outgoing_message_queue is empty, no "
-                               "more messages to send.";
-                        return;
+                    {
+                        const std::lock_guard<std::mutex> lock(
+                            tac.web_socket_outgoing_message_queue_mutex
+                        );
+                        tac.web_socket_outgoing_message_queue.pop();
+                        if (tac.web_socket_outgoing_message_queue.empty()) {
+                            BOOST_LOG_SEV(log, trace)
+                                << "web_socket_outgoing_message_queue is "
+                                   "empty, no more messages to send.";
+                            return;
+                        }
                     }
+                    // Release the queue mutex before draining the next message:
+                    // async_send_message_to_web_socket re-acquires this same
+                    // (non-recursive) mutex to read front(), so holding it here
+                    // would self-deadlock the io_context thread.
                     async_send_message_to_web_socket(
                         tac, nullptr, service_id, connection_id
                     );
