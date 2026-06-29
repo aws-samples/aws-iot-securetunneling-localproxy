@@ -260,13 +260,17 @@ namespace iot {
                         GET_SETTING(settings, TCP_CONNECTION_RETRY_DELAY_MS),
                         nullptr
                     );
-                retry_config->operation = std::bind(
-                    &tcp_adapter_proxy::async_setup_source_tcp_socket_retry,
-                    this,
-                    std::ref(tac),
-                    retry_config,
-                    service_id
-                );
+                // Break shared_ptr self-cycle by capturing weak_ptr
+                std::weak_ptr<basic_retry_config> weak_retry_config
+                    = retry_config;
+                retry_config->operation
+                    = [this, &tac, weak_retry_config, service_id]() {
+                          if (auto rc = weak_retry_config.lock()) {
+                              async_setup_source_tcp_socket_retry(
+                                  tac, rc, service_id
+                              );
+                          }
+                      };
                 async_setup_source_tcp_socket_retry(
                     tac, retry_config, service_id
                 );
@@ -3046,15 +3050,20 @@ namespace iot {
             std::uint16_t local_port,
             bool is_first_connection
         ) {
-            retry_config->operation = std::bind(
-                &tcp_adapter_proxy::do_accept_tcp_connection,
-                this,
-                std::ref(tac),
-                retry_config,
-                service_id,
-                local_port,
-                is_first_connection
-            );
+            // Break shared_ptr self-cycle by capturing weak_ptr
+            std::weak_ptr<basic_retry_config> weak_retry_config = retry_config;
+            retry_config->operation = [this,
+                                       &tac,
+                                       weak_retry_config,
+                                       service_id,
+                                       local_port,
+                                       is_first_connection]() {
+                if (auto rc = weak_retry_config.lock()) {
+                    do_accept_tcp_connection(
+                        tac, rc, service_id, local_port, is_first_connection
+                    );
+                }
+            };
             tcp_server::pointer server
                 = tac.serviceId_to_tcp_server_map[service_id];
 
@@ -3355,15 +3364,20 @@ namespace iot {
                     GET_SETTING(settings, TCP_CONNECTION_RETRY_DELAY_MS),
                     nullptr
                 );
-            retry_config->operation = std::bind(
-                &tcp_adapter_proxy::async_setup_dest_tcp_socket_retry,
-                this,
-                std::ref(tac),
-                retry_config,
-                service_id,
-                connection_id,
-                is_first_connection
-            );
+            // Break shared_ptr self-cycle by capturing weak_ptr
+            std::weak_ptr<basic_retry_config> weak_retry_config = retry_config;
+            retry_config->operation = [this,
+                                       &tac,
+                                       weak_retry_config,
+                                       service_id,
+                                       connection_id,
+                                       is_first_connection]() {
+                if (auto rc = weak_retry_config.lock()) {
+                    async_setup_dest_tcp_socket_retry(
+                        tac, rc, service_id, connection_id, is_first_connection
+                    );
+                }
+            };
             async_setup_dest_tcp_socket_retry(
                 tac,
                 retry_config,
