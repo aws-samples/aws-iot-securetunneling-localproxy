@@ -7,6 +7,8 @@
 #include <boost/beast/http.hpp>
 #include <boost/log/sources/severity_feature.hpp>
 #include <boost/log/sources/severity_logger.hpp>
+#include <memory>
+#include <vector>
 
 namespace base64 = boost::beast::detail::base64;
 using boost::log::trivial::debug;
@@ -173,9 +175,9 @@ namespace iot {
         void WebProxyAdapter::on_http_connect_write() {
             BOOST_LOG_SEV(*log, trace)
                 << "Waiting for HTTP CONNECT response from the Web proxy";
-            char *response_buffer = new char[BUFFER_SIZE_IN_BYTES];
-            read_buffer
-                = boost::asio::buffer(response_buffer, BUFFER_SIZE_IN_BYTES);
+            auto response_buffer
+                = std::make_shared<std::vector<char>>(BUFFER_SIZE_IN_BYTES);
+            read_buffer = boost::asio::buffer(*response_buffer);
             auto on_read = [this, response_buffer](
                                const error_code &ec,
                                std::size_t bytes_transferred
@@ -189,6 +191,7 @@ namespace iot {
                             % ec.message())
                                .str();
                     (*on_tcp_tunnel)(WebProxyAdapterErrc::ServerError);
+                    return;
                 }
                 BOOST_LOG_SEV(*log, trace)
                     << "Parsing the HTTPS response from the Web proxy";
@@ -243,7 +246,6 @@ namespace iot {
                     (*on_tcp_tunnel)(WebProxyAdapterErrc::OtherHttpError);
                     break;
                 }
-                delete[] response_buffer;
             };
             // Initially I tried to use boost::beast::http::async_read, but for
             // some reason the beast implementation of that method disrupted the
