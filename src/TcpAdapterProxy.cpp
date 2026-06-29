@@ -2546,72 +2546,6 @@ namespace iot {
                         .str()
                 );
             }
-            static std::function<
-                void(const boost::system::error_code &, size_t)>
-                write_done;
-            write_done = [&, service_id, connection_id](
-                             const boost::system::error_code &ec,
-                             size_t bytes_written
-                         ) {
-                BOOST_LOG_SEV(log, trace)
-                    << "write done service id " << service_id
-                    << ", connection id: " << connection_id;
-                tcp_connection::pointer socket_write_connection
-                    = get_tcp_connection(tac, service_id, connection_id);
-                if (!socket_write_connection) {
-                    return;
-                }
-                socket_write_connection->is_tcp_socket_writing_ = false;
-                if (ec) {
-                    if (socket_write_connection->on_tcp_error) {
-                        socket_write_connection->on_tcp_error(ec);
-                        socket_write_connection->on_tcp_error = nullptr;
-                    } else {
-                        tcp_socket_error(tac, ec, service_id, connection_id);
-                    }
-                } else {
-                    BOOST_LOG_SEV(log, trace)
-                        << "Wrote " << bytes_written
-                        << " bytes to tcp socket with service id: "
-                        << service_id << ", connection_id: " << connection_id;
-                    bool had_space_before = tcp_has_enough_write_buffer_space(
-                        socket_write_connection
-                    );
-                    socket_write_connection->tcp_write_buffer_.consume(
-                        bytes_written
-                    );
-                    bool has_space_after = tcp_has_enough_write_buffer_space(
-                        socket_write_connection
-                    );
-                    if (!had_space_before && has_space_after) {
-                        BOOST_LOG_SEV(log, debug)
-                            << "Just cleared enough buffer space in tcp write "
-                               "buffer. Re-starting async web socket read loop";
-                        async_web_socket_read_loop(tac);
-                    }
-                    if (socket_write_connection->tcp_write_buffer_.size() > 0) {
-                        socket_write_connection->is_tcp_socket_writing_ = true;
-                        BOOST_LOG_SEV(log, debug) << "Write to tcp socket";
-                        socket_write_connection->socket_.async_write_some(
-                            socket_write_connection->tcp_write_buffer_.data(),
-                            write_done
-                        );
-                    } else {
-                        if (socket_write_connection
-                                ->on_tcp_write_buffer_drain_complete) {
-                            invoke_and_clear_handler(
-                                socket_write_connection
-                                    ->on_tcp_write_buffer_drain_complete
-                            );
-                        }
-                        BOOST_LOG_SEV(log, trace)
-                            << "TCP write buffer drain complete";
-                    }
-                    BOOST_LOG_SEV(log, trace)
-                        << "Done writing for: " << service_id
-                        << ", connection id: " << connection_id;
-                }
-            };
             if (connection->is_tcp_socket_writing_) {
                 BOOST_LOG_SEV(log, debug) << "TCP write buffer drain cannot be "
                                              "started while already writing";
@@ -2620,9 +2554,106 @@ namespace iot {
                     connection->on_tcp_write_buffer_drain_complete
                 );
             } else {
+                // Self-owning handler via shared_ptr: constructed only when an
+                // async write is actually initiated. The lambda captures the
+                // shared_ptr by value so the handler outlives
+                // async_tcp_write_buffer_drain's stack frame. The
+                // self-reference cycle (shared_ptr -> std::function -> captures
+                // shared_ptr) is broken on every terminal path by clearing the
+                // stored std::function, which drops the captured shared_ptr
+                // copy.
+                auto write_done = std::make_shared<std::function<
+                    void(const boost::system::error_code &, size_t)>>();
+                *write_done = [this,
+                               &tac,
+                               service_id,
+                               connection_id,
+                               write_done](
+                                  const boost::system::error_code &ec,
+                                  size_t bytes_written
+                              ) {
+                    BOOST_LOG_SEV(log, trace)
+                        << "write done service id " << service_id
+                        << ", connection id: " << connection_id;
+                    tcp_connection::pointer socket_write_connection
+                        = get_tcp_connection(tac, service_id, connection_id);
+                    if (!socket_write_connection) {
+                        // Terminal path: break self-reference cycle
+                        *write_done = nullptr;
+                        return;
+                    }
+                    socket_write_connection->is_tcp_socket_writing_ = false;
+                    if (ec) {
+                        if (socket_write_connection->on_tcp_error) {
+                            socket_write_connection->on_tcp_error(ec);
+                            socket_write_connection->on_tcp_error = nullptr;
+                        } else {
+                            tcp_socket_error(
+                                tac, ec, service_id, connection_id
+                            );
+                        }
+                        // Terminal path: break self-reference cycle
+                        *write_done = nullptr;
+                    } else {
+                        BOOST_LOG_SEV(log, trace)
+                            << "Wrote " << bytes_written
+                            << " bytes to tcp socket with service id: "
+                            << service_id
+                            << ", connection_id: " << connection_id;
+                        bool had_space_before
+                            = tcp_has_enough_write_buffer_space(
+                                socket_write_connection
+                            );
+                        socket_write_connection->tcp_write_buffer_.consume(
+                            bytes_written
+                        );
+                        bool has_space_after
+                            = tcp_has_enough_write_buffer_space(
+                                socket_write_connection
+                            );
+                        if (!had_space_before && has_space_after) {
+                            BOOST_LOG_SEV(log, debug)
+                                << "Just cleared enough buffer space in tcp "
+                                   "write "
+                                   "buffer. Re-starting async web socket read "
+                                   "loop";
+                            async_web_socket_read_loop(tac);
+                        }
+                        bool rearmed = false;
+                        if (socket_write_connection->tcp_write_buffer_.size()
+                            > 0) {
+                            socket_write_connection->is_tcp_socket_writing_
+                                = true;
+                            BOOST_LOG_SEV(log, debug) << "Write to tcp socket";
+                            socket_write_connection->socket_.async_write_some(
+                                socket_write_connection->tcp_write_buffer_
+                                    .data(),
+                                *write_done
+                            );
+                            rearmed = true;
+                        } else {
+                            if (socket_write_connection
+                                    ->on_tcp_write_buffer_drain_complete) {
+                                invoke_and_clear_handler(
+                                    socket_write_connection
+                                        ->on_tcp_write_buffer_drain_complete
+                                );
+                            }
+                            BOOST_LOG_SEV(log, trace)
+                                << "TCP write buffer drain complete";
+                        }
+                        BOOST_LOG_SEV(log, trace)
+                            << "Done writing for: " << service_id
+                            << ", connection id: " << connection_id;
+                        if (!rearmed) {
+                            // Terminal path: break self-reference cycle
+                            *write_done = nullptr;
+                        }
+                    }
+                };
                 connection->is_tcp_socket_writing_ = true;
                 connection->socket_.async_write_some(
-                    connection->tcp_write_buffer_.data(), write_done
+                    connection->tcp_write_buffer_.data(), *write_done
                 );
             }
         }
