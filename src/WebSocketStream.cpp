@@ -314,6 +314,18 @@ namespace iot {
             , socket { io_context }
             , log(log) {
             boost::system::error_code ec;
+            // Restrict to modern TLS: disable SSLv2/SSLv3/TLSv1.0/TLSv1.1
+            ssl_context.set_options(
+                ssl::context::default_workarounds | ssl::context::no_sslv2
+                    | ssl::context::no_sslv3 | ssl::context::no_tlsv1
+                    | ssl::context::no_tlsv1_1,
+                ec
+            );
+            if (ec) {
+                BOOST_LOG_SEV(*log, warning)
+                    << "Could not restrict TLS protocol versions: "
+                    << ec.message();
+            }
             ssl_context.set_default_verify_paths(ec);
             if (ec) {
                 BOOST_LOG_SEV(

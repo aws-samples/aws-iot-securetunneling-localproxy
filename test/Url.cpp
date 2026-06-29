@@ -42,6 +42,27 @@ namespace iot {
                 }
             }
 
+            TEST_CASE("Unit tests for Url.h-IPv6-cases") {
+                cout << "Unit test IPv6 cases for Url.h" << endl;
+                {
+                    aws::iot::securedtunneling::url url { "http://[::1]:8080" };
+                    REQUIRE(url.host == "::1");
+                    REQUIRE(url.port == 8080);
+                }
+                {
+                    aws::iot::securedtunneling::url url {
+                        "https://[2001:db8::1]:443"
+                    };
+                    REQUIRE(url.host == "2001:db8::1");
+                    REQUIRE(url.port == 443);
+                }
+                {
+                    // bracketed IPv6 literal with no explicit port
+                    aws::iot::securedtunneling::url url { "http://[fe80::1]" };
+                    REQUIRE(url.host == "fe80::1");
+                }
+            }
+
             TEST_CASE("Unit tests for Url-invalid-urls") {
                 cout << "Unit test invalid URLs for Url.h" << endl;
                 const vector<string> invalid_urls { "://server.com",
@@ -50,7 +71,10 @@ namespace iot {
                                                     "http://:@server.com:3128",
                                                     "http://:1@server.com:3128",
                                                     "http://1:@server.com:3128",
-                                                    "http://server.com:abs" };
+                                                    "http://server.com:abs",
+                                                    "http://server.com:70000",
+                                                    "http://server.com:99999",
+                                                    "http://[::1:8080" };
                 for (auto invalid_url : invalid_urls) {
                     REQUIRE_THROWS_AS(
                         [&]() {
@@ -79,7 +103,8 @@ namespace iot {
                 cout << "Unit tests for url_decode-invalid case" << endl;
                 const vector<string> invalid_url_codes { "%%",  "%",
                                                          "%gh", "%h1",
-                                                         "%x2", "121fad%1" };
+                                                         "%x2", "121fad%1",
+                                                         "%00", "abc%00def" };
                 for (const auto &invalid_url_code : invalid_url_codes) {
                     REQUIRE_THROWS_AS(
                         [&]() {

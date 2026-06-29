@@ -69,9 +69,12 @@ tuple<string, uint16_t> get_host_and_port(
             const string port = endpoint.substr(
                 position + 1, endpoint.length() - (position + 1)
             );
-            const auto portnum = static_cast<uint16_t>(stoi(port, &position));
+            const int portnum_int = stoi(port, &position);
             if (port.length() == 0 || position != port.length())
                 throw std::invalid_argument("");
+            if (portnum_int < 0 || portnum_int > 65535)
+                throw std::out_of_range("");
+            const auto portnum = static_cast<uint16_t>(portnum_int);
             return std::make_tuple(host, portnum);
         } else {
             if (position == endpoint.length() - 1)
@@ -79,6 +82,10 @@ tuple<string, uint16_t> get_host_and_port(
             return std::make_tuple(endpoint, default_port);
         }
     } catch (std::invalid_argument &) {
+        throw std::invalid_argument(
+            (boost::format("Invalid endpoint specified: %1%") % endpoint).str()
+        );
+    } catch (const std::out_of_range &) {
         throw std::invalid_argument(
             (boost::format("Invalid endpoint specified: %1%") % endpoint).str()
         );
