@@ -167,7 +167,7 @@ container.
   - Boost 1.87
   - Protobuf 3.17.x
   - zlib 1.12.13+
-  - OpenSSL 1.0+ OR OpenSSL 3
+  - OpenSSL 1.0.1+ OR OpenSSL 3 (must support TLS 1.2)
   - Catch2 test framework
 - Stage a dependency build directory and change directory into it:
   - `mkdir dependencies`
@@ -592,6 +592,13 @@ properly, Please refer to
 
 ### Security Considerations
 
+#### TLS protocol versions
+
+The local proxy negotiates **TLS 1.2 or higher** when connecting to the AWS IoT
+service and to a TLS web proxy. The obsolete SSLv2, SSLv3, TLS 1.0 and TLS 1.1
+protocols are explicitly disabled, so the OpenSSL build used must support TLS
+1.2 (OpenSSL 1.0.1 or later, or OpenSSL 3).
+
 #### Certificate setup
 
 A likely issue with the local proxy running on Windows or macOS systems is the
@@ -687,7 +694,9 @@ connect or as the listening address. If localhost resolves to '::1' then IPv6
 will be used.
 
 **Note:** Specifying any argument that normally accepts _address:port_ will not
-work correctly if _address_ is specified using an IPv6 address.
+work correctly if _address_ is specified using an IPv6 address. The one
+exception is the web proxy URL (for example the `HTTPS_PROXY` environment
+variable), which accepts a bracketed IPv6 literal such as `http://[::1]:8080`.
 
 **Note:** Systems that support both IPv4 and IPv6 may cause connectivity
 confusion if explicit address/port combinations are not used with the local
