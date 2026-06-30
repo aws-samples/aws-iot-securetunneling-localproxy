@@ -16,6 +16,7 @@ DWIN
 fasdbla
 gnueabihf
 hrfth
+infile
 iotsecuretunneling
 localproxy
 lpsettings
@@ -25,7 +26,10 @@ MVNKV
 mxyo
 Myho
 NASM
+ncat
 nmake
+nmap
+pids
 pkgs
 RAII
 Rjnmc
@@ -35,6 +39,7 @@ sslv
 stoi
 treefmt
 Uhdrl
+urandom
 VQZH
 Vugzrm
 xzvf

@@ -114,6 +114,7 @@ jobs:
           ./uat/run_uat.sh
           ./uat/test_lifecycle.sh
           ./uat/test_multiport.sh
+          ./uat/test_multiplex_integrity.sh
           ./uat/test_v1_compat.sh
           ./uat/test_ssh_connectivity.sh
 
@@ -228,6 +229,7 @@ jobs:
               ./uat/run_uat.sh
               ./uat/test_lifecycle.sh
               ./uat/test_multiport.sh
+              ./uat/test_multiplex_integrity.sh
               ./uat/test_v1_compat.sh
             '
 
