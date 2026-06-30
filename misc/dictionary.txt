@@ -27,10 +27,13 @@ Myho
 NASM
 nmake
 pkgs
+RAII
 Rjnmc
 rootca
 shfmt
 sslv
+stoi
+treefmt
 Uhdrl
 VQZH
 Vugzrm
