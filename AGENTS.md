@@ -13,10 +13,13 @@ overall contribution policy (issues, PRs, CLA).
 Before every commit:
 
 1. Make one focused, logical change.
-2. `nix fmt` — format the tree (must end clean / idempotent).
-3. Build and run the unit tests (see below); ensure they pass.
-4. Stage only the files for this change; write a clear message (see below).
-5. Never commit to `main`; never force-push a shared branch without
+2. Update the unit tests and UATs the change affects (see below).
+3. `nix fmt` — format the tree (must end clean / idempotent).
+4. Run the spelling check (see Spelling); add legitimate technical terms to
+   `misc/dictionary.txt` if flagged.
+5. Build and run the unit tests (see below); ensure they pass.
+6. Stage only the files for this change; write a clear message (see below).
+7. Never commit to `main`; never force-push a shared branch without
    coordinating.
 
 ---
@@ -37,6 +40,9 @@ Before every commit:
   Don't mix unrelated changes.
 - Keep the **tests** and **docs** for a change in the same commit as the change
   (e.g. URL-parsing tests live with the URL-parsing fix).
+- With each feature or fix, update the **unit tests** (`test/`, Catch2) and the
+  **UATs** (`uat/`) as needed so behavior stays covered: add cases for new
+  behavior and adjust existing ones instead of deleting them.
 - Keep **formatting** in the same commit as the code it applies to. Normally
   this is automatic: just run `nix fmt` _before_ committing. (Redistributing
   formatting across already-made commits is only needed if it was applied after
@@ -83,6 +89,9 @@ make -j"$(nproc)"
 - With `-DBUILD_TESTS=ON`, the Catch2 test binary is `build/bin/localproxytest`;
   run it to execute the unit suite. Ensure all tests pass before committing.
 - Build directories matching `*build*/` are git-ignored.
+- The end-to-end UATs live in `uat/` (see `uat/README.md`); run the relevant
+  scripts when a change affects tunnel/proxy behavior, and keep them current
+  with the feature.
 
 Relevant CMake options (top of `CMakeLists.txt`):
 
@@ -106,9 +115,24 @@ Relevant CMake options (top of `CMakeLists.txt`):
   run those tools. There are no committed wrapper scripts — run any such tools
   directly.
 
+## Spelling
+
+- A cspell spelling check runs in CI and can be run via the flake:
+  ```bash
+  nix build -L .#checks.<system>.spelling   # e.g. x86_64-linux, aarch64-linux
+  ```
+- It scans code, comments, and docs. If it flags a legitimate technical term
+  (tool name, CLI flag, identifier), add it to the allowlist
+  `misc/dictionary.txt` (kept sorted; cspell matches case-insensitively) rather
+  than rewording the term. Don't allowlist genuine misspellings — fix those
+  instead.
+
 ## Code conventions / gotchas
 
 - C++14. Preserve existing comments and `BOOST_LOG_SEV` logging statements.
+- Keep comments concise and logical: explain the _why_ (non-obvious intent,
+  invariants, lifetime/ownership, gotchas), not the obvious _what_. Prefer a
+  short comment over a verbose block, and don't restate the code.
 - Prefer RAII (`shared_ptr`/`unique_ptr`, `lock_guard`) over raw `new`/`delete`
   and manual unlocking.
 - **Boost.Asio handler lifetime:** async completion handlers must outlive the
@@ -126,7 +150,8 @@ Relevant CMake options (top of `CMakeLists.txt`):
 ## Do / don't
 
 - DO keep commits small, buildable, and individually reviewable.
-- DO run `nix fmt`, build, and tests before committing.
+- DO run `nix fmt`, the spelling check, build, and unit tests/UATs before
+  committing.
 - DON'T weaken or delete tests to make a build pass — fix the code.
 - DON'T commit to `main` or force-push shared branches without coordination.
 - DON'T strip comments/logging or expand a commit's scope beyond its stated fix.
