@@ -104,6 +104,11 @@ namespace iot {
                 // web_socket_data_write_buffer_ drain has completed
                 std::function<void()> on_web_socket_write_buffer_drain_complete
                     = nullptr;
+                // Chained async TCP write-buffer drain handler, owned by the
+                // connection so it is freed with it.
+                std::function<
+                    void(const boost::system::error_code &, std::size_t)>
+                    write_done = nullptr;
             };
         }
     }
