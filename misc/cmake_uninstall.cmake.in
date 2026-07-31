@@ -1,0 +1,28 @@
+# Removes every file recorded by the last `make install`.
+#
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if(NOT EXISTS "@CMAKE_BINARY_DIR@/install_manifest.txt")
+  message(
+    FATAL_ERROR
+      "Cannot find install manifest: @CMAKE_BINARY_DIR@/install_manifest.txt. Run the install target first."
+  )
+endif()
+
+file(READ "@CMAKE_BINARY_DIR@/install_manifest.txt" files)
+string(REGEX REPLACE "\n" ";" files "${files}")
+
+foreach(file ${files})
+  set(dest "$ENV{DESTDIR}${file}")
+  message(STATUS "Uninstalling ${dest}")
+  if(IS_SYMLINK "${dest}" OR EXISTS "${dest}")
+    execute_process(COMMAND @CMAKE_COMMAND@ -E remove "${dest}"
+                    RESULT_VARIABLE remove_result)
+    if(NOT remove_result EQUAL 0)
+      message(FATAL_ERROR "Failed to remove ${dest}")
+    endif()
+  else()
+    message(STATUS "File ${dest} does not exist.")
+  endif()
+endforeach()

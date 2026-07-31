@@ -2,7 +2,9 @@
 
 - Install visual studio 2017 ( Select Desktop development with c++ while
   installing ).
-- Install Cmake 3.16+ from https://www.cmake.org/download.
+- Install Cmake 3.16+ from https://www.cmake.org/download. (Use 3.19+ if you
+  want the build to fetch and compile Boost/Protobuf/Catch2 itself instead of
+  using the pre-installed copies below; see `docs/BUILD.md`.)
 - Install Strawberry Perl 5.30+ using link https://www.perl.org/get.html.
 - Install git using link https://git-scm.com/download/win
 - Install NASM using link https://www.nasm.us/
@@ -81,7 +83,10 @@
       based on
       [your OS from here](https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019),
       (e.g. 0x0A00 for Win10, 0x00602 for Win8). This value should be the same
-      value used to build the Boost libraries.
+      value used to build the Boost libraries. It now defaults to `0x0A00`
+      (Win10) and is validated to be a hex literal, so an omitted or malformed
+      value fails the configure instead of emitting a broken `_WIN32_WINNT`
+      define.
       - For visual studio 2022
 
       ```

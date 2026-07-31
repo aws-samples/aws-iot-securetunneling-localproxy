@@ -156,19 +156,35 @@ container.
 
 ## Building the local proxy from source
 
+See [docs/BUILD.md](docs/BUILD.md) for the complete build guide, including every
+CMake option, offline/air-gapped builds and cross-compilation. The essentials
+are below.
+
 ### Prerequisites
 
 - Minimum System Requirements: >8GB of disk space and >1GB of RAM. We
   recommended building elsewhere and importing the binary if your device does
   not meet these requirements.
 - C++ 14 compiler
-- CMake 3.6+
+- CMake 3.10+ to build against pre-installed dependencies; CMake 3.19+ to have
+  the build fetch and compile them for you (see
+  [Building without pre-installed dependencies](#building-without-pre-installed-dependencies)).
+  `./bootstrap-cmake.sh` will obtain a suitable CMake if yours is older.
 - Development libraries required:
   - Boost 1.87
   - Protobuf 3.17.x
-  - zlib 1.12.13+
+  - zlib 1.2.13+
   - OpenSSL 1.0.1+ OR OpenSSL 3 (must support TLS 1.2)
   - Catch2 test framework
+
+The pinned version, download URL and checksum of Boost, Protobuf and Catch2 all
+live in one place, [`fc_deps.json`](fc_deps.json); that file is the single
+source of truth if you want to change them. OpenSSL and zlib are intentionally
+not listed there and should always come from your platform package manager.
+
+If you would rather install the dependencies yourself, follow the five numbered
+sections below.
+
 - Stage a dependency build directory and change directory into it:
   - `mkdir dependencies`
   - `cd dependencies`
@@ -287,6 +303,37 @@ to ensure your platform is working properly. From here on, copy or distribute
 the _localproxy_ binary as you please. The same source code is used for both
 source mode and destination mode. Different binaries may be built if the source
 and destinations are on different platforms and/or architectures.
+
+Note that the test executable is only produced when tests are enabled:
+`cmake ../ -DBUILD_TESTS=ON`. You can run it directly as `./bin/localproxytest`,
+or through `ctest --test-dir build`.
+
+### Building without pre-installed dependencies
+
+If Boost, Protobuf or Catch2 are not installed, the build downloads the versions
+pinned in [`fc_deps.json`](fc_deps.json), verifies their checksums and compiles
+them as part of the build — you do not have to run the five dependency sections
+above. Only OpenSSL and zlib still need to come from your platform:
+
+    # Debian/Ubuntu
+    sudo apt install -y build-essential cmake git curl libssl-dev zlib1g-dev
+
+    mkdir build && cd build
+    cmake ../
+    make -j"$(nproc)"
+
+This is the default behavior: each dependency is probed for first, and only the
+missing ones are fetched. You can pin the behavior explicitly with
+`-DLOCALPROXY_DEP_MODE=system` (never fetch; fail if something is missing) or
+`-DLOCALPROXY_DEP_MODE=fetch` (always build from source, ignoring installed
+copies). Fetching requires CMake 3.19+; run `./bootstrap-cmake.sh` first if your
+CMake is older.
+
+Expect the first such build to download roughly 140 MB and take a couple of
+minutes longer than a build against pre-installed libraries. For offline or
+air-gapped builds, pre-fetch the source trees and point the build at them with
+`-DFETCHCONTENT_SOURCE_DIR_BOOST=...`; see
+[docs/BUILD.md](docs/BUILD.md#offline-vendored-and-air-gapped-builds).
 
 #### Harden your toolchain
 

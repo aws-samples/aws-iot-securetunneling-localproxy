@@ -1,0 +1,48 @@
+{
+  "boost": {
+    "version": "1.87.0",
+    "url": "https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.tar.gz",
+    "sha256": "78fbf579e3caf0f47517d3fb4d9301852c3154bfecdc5eeebd9b2b0292366f5b",
+    "find_package": "Boost",
+    "find_components": "chrono;date_time;filesystem;log;log_setup;program_options;system;thread",
+    "version_var": "BOOST_PKG_VERSION",
+    "libraries": "algorithm;asio;beast;chrono;config;date_time;endian;filesystem;format;lexical_cast;log;optional;phoenix;program_options;property_tree;regex;system;thread;uuid;variant",
+    "options": {
+      "BUILD_SHARED_LIBS": "OFF",
+      "BOOST_ENABLE_MPI": "OFF",
+      "BOOST_ENABLE_PYTHON": "OFF",
+      "BOOST_UUID_LINK_LIBATOMIC": "OFF",
+      "BOOST_INSTALL_LAYOUT": "system"
+    }
+  },
+  "protobuf": {
+    "version": "3.17.3",
+    "url": "https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz",
+    "sha256": "77ad26d3f65222fd96ccc18b055632b0bfedf295cb748b712a98ba1ac0b704b2",
+    "subdir": "cmake",
+    "find_package": "Protobuf",
+    "version_var": "PROTOBUF_PKG_VERSION",
+    "options": {
+      "protobuf_BUILD_TESTS": "OFF",
+      "protobuf_BUILD_CONFORMANCE": "OFF",
+      "protobuf_BUILD_EXAMPLES": "OFF",
+      "protobuf_BUILD_SHARED_LIBS": "OFF",
+      "protobuf_BUILD_PROTOC_BINARIES": "ON",
+      "protobuf_WITH_ZLIB": "OFF",
+      "protobuf_MSVC_STATIC_RUNTIME": "OFF"
+    }
+  },
+  "catch2": {
+    "version": "3.7.0",
+    "url": "https://github.com/catchorg/Catch2/archive/refs/tags/v3.7.0.tar.gz",
+    "sha256": "5b10cd536fa3818112a82820ce0787bd9f2a906c618429e7c4dea639983c8e88",
+    "find_package": "Catch2",
+    "find_version": "3",
+    "when": "BUILD_TESTS",
+    "options": {
+      "CATCH_INSTALL_DOCS": "OFF",
+      "CATCH_INSTALL_EXTRAS": "OFF",
+      "CATCH_BUILD_TESTING": "OFF"
+    }
+  }
+}
