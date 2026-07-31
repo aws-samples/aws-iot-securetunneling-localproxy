@@ -1,4 +1,20 @@
 {
+  "parse": {
+    "additional_commands": {
+      "localproxy_apply_options": { "pargs": 1 },
+      "localproxy_fetch": { "pargs": 1 },
+      "localproxy_load_manifest": { "pargs": 0 },
+      "localproxy_report_mode": { "pargs": 2 },
+      "localproxy_resolve_mode": { "pargs": 2 },
+      "localproxy_seed_version_cache": { "pargs": 0 },
+      "lp_add_dep_subdirectory": { "pargs": 2 },
+      "lp_boost_context_fix_vfp": { "pargs": 0 },
+      "lp_link_atomic": { "pargs": 1 },
+      "lp_mark_system_includes": { "pargs": 1 },
+      "lp_protobuf_generate_cpp": { "pargs": "*" },
+      "lp_static_lib_path": { "pargs": 2 }
+    }
+  },
   "format": {
     "autosort": true,
     "command_case": "lower"

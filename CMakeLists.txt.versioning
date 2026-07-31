@@ -9,20 +9,54 @@
 # that we see between the current revision and the latest Git tag. For more information on Semantic Versioning,
 # check out https://semver.org/ and for more information on Git tags, check out https://git-scm.com/book/en/v2/Git-Basics-Tagging
 
-cmake_minimum_required(VERSION 3.10)
+# Git refuses to operate on a repository owned by another uid, which is the case
+# for Docker builds over a COPY'd tree and for the bind-mounted ARM32 CI builds.
+# Pass safe.directory per invocation rather than mutating the user's global
+# gitconfig.
+set(GIT_SAFE_DIR_ARGS -c safe.directory=${CMAKE_CURRENT_SOURCE_DIR})
 
-# Marking Secure Tunneling Local Proxy directory safe
-execute_process(COMMAND git config --global --add safe.directory ${CMAKE_CURRENT_SOURCE_DIR})
+# The version file records the derived version so that builds from a source
+# archive (no .git directory) still produce a version string. It lives in the
+# build tree: configure must not write into the source tree.
+set(VERSION_CACHE_FILE ${CMAKE_BINARY_DIR}/.version)
 
 # Check to make sure we have Git info for this package
-execute_process(COMMAND git log --pretty=format:'%h' -n 1
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                OUTPUT_VARIABLE GIT_INFO)
+execute_process(
+  COMMAND ${GIT_EXECUTABLE} ${GIT_SAFE_DIR_ARGS} log --pretty=format:%h -n 1
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_INFO
+  OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 
-function (load_version_from_file)
-    # Git is not available (this is the case if the source is packaged as an archive), get version from file
-    file(STRINGS ${CMAKE_SOURCE_DIR}/.version ${PROJECT_NAME}_VERSION_LIST)
-    string(REPLACE "*" ";" ${PROJECT_NAME}_VERSION_LIST ${${PROJECT_NAME}_VERSION_LIST})
+# A macro, not a function: the variables it sets must land in the caller's scope
+# so that Version.h.in can substitute them.
+macro(load_version_from_file)
+  # Git is not available (this is the case if the source is packaged as an
+  # archive), get version from file
+  set(VERSION_FILE "")
+  foreach(CANDIDATE ${VERSION_CACHE_FILE} ${CMAKE_SOURCE_DIR}/.version)
+    if(VERSION_FILE STREQUAL "" AND EXISTS ${CANDIDATE})
+      set(VERSION_FILE ${CANDIDATE})
+    endif()
+  endforeach()
+
+  if(VERSION_FILE STREQUAL "")
+    # Neither git nor a cached version file is available. Degrade to a sentinel
+    # rather than hard-failing the configure.
+    set(${PROJECT_NAME}_VERSION_STRING_FULL "v0.0.0-unknown")
+    set(${PROJECT_NAME}_VERSION_STRING "v0.0.0")
+    set(${PROJECT_NAME}_VERSION_MAJOR 0)
+    set(${PROJECT_NAME}_VERSION_MINOR 0)
+    set(${PROJECT_NAME}_VERSION_PATCH 0)
+    set(${PROJECT_NAME}_VERSION_AHEAD 0)
+    set(${PROJECT_NAME}_VERSION_GIT_SHA "unknown")
+    message(
+      WARNING
+        "Could not determine AWS IoT Secure Tunneling Local Proxy version from git or from a .version file; using ${${PROJECT_NAME}_VERSION_STRING_FULL}"
+    )
+  else()
+    file(STRINGS ${VERSION_FILE} ${PROJECT_NAME}_VERSION_LIST)
+    string(REPLACE "*" ";" ${PROJECT_NAME}_VERSION_LIST
+                   ${${PROJECT_NAME}_VERSION_LIST})
     # Set partial versions
     list(GET ${PROJECT_NAME}_VERSION_LIST 0 ${PROJECT_NAME}_VERSION_STRING_FULL)
     list(GET ${PROJECT_NAME}_VERSION_LIST 1 ${PROJECT_NAME}_VERSION_STRING)
@@ -33,78 +67,100 @@ function (load_version_from_file)
     list(GET ${PROJECT_NAME}_VERSION_LIST 6 ${PROJECT_NAME}_VERSION_GIT_SHA)
     unset(${PROJECT_NAME}_VERSION_LIST)
 
-    message("-- Failed to infer patch version from git, loaded AWS IoT Secure Tunneling Local Proxy version from file: ${${PROJECT_NAME}_VERSION_STRING_FULL}")
-endfunction()
+    message(
+      "-- Failed to infer patch version from git, loaded AWS IoT Secure Tunneling Local Proxy version from file: ${${PROJECT_NAME}_VERSION_STRING_FULL}"
+    )
+  endif()
+endmacro()
 
-if (GIT_VERSION AND NOT ${GIT_INFO} STREQUAL "")
-    message("-- Using Git to calculate AWS IoT Secure Tunneling Local Proxy version information...")
+if(GIT_VERSION AND NOT "${GIT_INFO}" STREQUAL "")
+  message(
+    "-- Using Git to calculate AWS IoT Secure Tunneling Local Proxy version information..."
+  )
 
-    # Get last tag from git - this only matches tags starting with v, so we ignore non-versioning tags
-    execute_process(COMMAND ${GIT_EXECUTABLE} describe --abbrev=0 --tags --match "v[0-9]*"
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE ${PROJECT_NAME}_VERSION_STRING
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        RESULT_VARIABLE exit)
+  # Get last tag from git - this only matches tags starting with v, so we ignore
+  # non-versioning tags
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} ${GIT_SAFE_DIR_ARGS} describe --abbrev=0 --tags
+            --match "v[0-9]*"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE ${PROJECT_NAME}_VERSION_STRING
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE exit)
 
-    if (NOT exit EQUAL 0)
-        load_version_from_file()
-        return()
-    endif()
-
-    # Determine how many commits since last tag
-    execute_process(COMMAND ${GIT_EXECUTABLE} rev-list ${${PROJECT_NAME}_VERSION_STRING}..HEAD --count
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE ${PROJECT_NAME}_VERSION_AHEAD
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        RESULT_VARIABLE exit)
-
-    if (NOT exit EQUAL 0)
-        load_version_from_file()
-        return()
-    endif()
-
-    # Get current commit SHA from git
-    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE ${PROJECT_NAME}_VERSION_GIT_SHA
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        RESULT_VARIABLE exit)
-
-    if (NOT exit EQUAL 0)
-        load_version_from_file()
-        return()
-    endif()
-
-    # Collect the partial versions into a list
-    string(REGEX MATCHALL "[0-9]+" ${PROJECT_NAME}_PARTIAL_VERSION_LIST
-        ${${PROJECT_NAME}_VERSION_STRING})
-
-    # Set the version numbers
-    list(GET ${PROJECT_NAME}_PARTIAL_VERSION_LIST
-        0 ${PROJECT_NAME}_VERSION_MAJOR)
-    list(GET ${PROJECT_NAME}_PARTIAL_VERSION_LIST
-        1 ${PROJECT_NAME}_VERSION_MINOR)
-    set(${PROJECT_NAME}_VERSION_PATCH ${${PROJECT_NAME}_VERSION_AHEAD})
-
-    # Unset the list
-    unset(${PROJECT_NAME}_PARTIAL_VERSION_LIST)
-
-    # Set full project version string
-    set(${PROJECT_NAME}_VERSION_STRING_FULL
-            v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}-${${PROJECT_NAME}_VERSION_GIT_SHA})
-
-
-    message("-- Generated AWS IoT Secure Tunneling Local Proxy version: ${${PROJECT_NAME}_VERSION_STRING_FULL}")
-    # Save version to file (which will be used when Git is not available
-    # or VERSION_UPDATE_FROM_GIT is disabled)
-    file(WRITE ${CMAKE_SOURCE_DIR}/.version ${${PROJECT_NAME}_VERSION_STRING_FULL}
-        "*" ${${PROJECT_NAME}_VERSION_STRING}
-        "*" ${${PROJECT_NAME}_VERSION_MAJOR}
-        "*" ${${PROJECT_NAME}_VERSION_MINOR}
-        "*" ${${PROJECT_NAME}_VERSION_PATCH}
-        "*" ${${PROJECT_NAME}_VERSION_AHEAD}
-        "*" ${${PROJECT_NAME}_VERSION_GIT_SHA})
-
-    # exit from cmake processing
+  if(NOT exit EQUAL 0)
+    load_version_from_file()
     return()
+  endif()
+
+  # Determine how many commits since last tag
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} ${GIT_SAFE_DIR_ARGS} rev-list
+            ${${PROJECT_NAME}_VERSION_STRING}..HEAD --count
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE ${PROJECT_NAME}_VERSION_AHEAD
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE exit)
+
+  if(NOT exit EQUAL 0)
+    load_version_from_file()
+    return()
+  endif()
+
+  # Get current commit SHA from git
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} ${GIT_SAFE_DIR_ARGS} rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE ${PROJECT_NAME}_VERSION_GIT_SHA
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE exit)
+
+  if(NOT exit EQUAL 0)
+    load_version_from_file()
+    return()
+  endif()
+
+  # Collect the partial versions into a list
+  string(REGEX MATCHALL "[0-9]+" ${PROJECT_NAME}_PARTIAL_VERSION_LIST
+               ${${PROJECT_NAME}_VERSION_STRING})
+
+  # Set the version numbers
+  list(GET ${PROJECT_NAME}_PARTIAL_VERSION_LIST 0 ${PROJECT_NAME}_VERSION_MAJOR)
+  list(GET ${PROJECT_NAME}_PARTIAL_VERSION_LIST 1 ${PROJECT_NAME}_VERSION_MINOR)
+  set(${PROJECT_NAME}_VERSION_PATCH ${${PROJECT_NAME}_VERSION_AHEAD})
+
+  # Unset the list
+  unset(${PROJECT_NAME}_PARTIAL_VERSION_LIST)
+
+  # Set full project version string
+  set(${PROJECT_NAME}_VERSION_STRING_FULL
+      v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}-${${PROJECT_NAME}_VERSION_GIT_SHA}
+  )
+
+  message(
+    "-- Generated AWS IoT Secure Tunneling Local Proxy version: ${${PROJECT_NAME}_VERSION_STRING_FULL}"
+  )
+  # Save version to file (which will be used when Git is not available or
+  # VERSION_UPDATE_FROM_GIT is disabled)
+  file(
+    WRITE ${VERSION_CACHE_FILE}
+    ${${PROJECT_NAME}_VERSION_STRING_FULL}
+    "*"
+    ${${PROJECT_NAME}_VERSION_STRING}
+    "*"
+    ${${PROJECT_NAME}_VERSION_MAJOR}
+    "*"
+    ${${PROJECT_NAME}_VERSION_MINOR}
+    "*"
+    ${${PROJECT_NAME}_VERSION_PATCH}
+    "*"
+    ${${PROJECT_NAME}_VERSION_AHEAD}
+    "*"
+    ${${PROJECT_NAME}_VERSION_GIT_SHA})
+
+  # exit from cmake processing
+  return()
 endif()
+
+# GIT_VERSION=OFF, or git is unavailable: fall back to the cached version file.
+load_version_from_file()

@@ -9,5 +9,11 @@
     }
   ],
   "dictionaries": ["project"],
-  "ignorePaths": ["**/CMakeLists.txt"]
+  "ignorePaths": [
+    "**/CMakeLists.txt",
+    "CMakeLists.txt.versioning",
+    "**/*.cmake",
+    "**/*.cmake.in",
+    "fc_deps.json"
+  ]
 }

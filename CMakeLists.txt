@@ -1,18 +1,82 @@
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10...3.30)
 
 set(AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME localproxy)
+# Unused; retained because it is part of the historical variable surface.
 set(AWS_TUNNEL_LOCAL_PROXY_LIB_NAME lproxy)
 project(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} CXX)
+
+# ##############################################################################
+# Section : Options #
+# ##############################################################################
 
 option(BUILD_TESTS "Build tests" OFF)
 option(LINK_STATIC_OPENSSL "Use static openssl libs" ON)
 option(GIT_VERSION "Updates the version number using the Git commit history" ON)
 option(DISABLE_SSL_HOST_VERIFY_OPT
        "Disable the --no-ssl-host-verify option for production builds" OFF)
+
+# How dependencies declared in fc_deps.json are provided. `auto` probes for a
+# pre-installed copy first and only builds from source when it is missing, so
+# machines with the dependencies installed behave exactly as before.
+set(LOCALPROXY_DEP_MODE
+    "auto"
+    CACHE STRING "Dependency resolution: auto, system or fetch")
+set_property(CACHE LOCALPROXY_DEP_MODE PROPERTY STRINGS auto system fetch)
+
+# Per-dependency overrides of LOCALPROXY_DEP_MODE; empty means "inherit".
+set(LOCALPROXY_BOOST_SOURCE
+    ""
+    CACHE STRING "Override dependency mode for Boost")
+set(LOCALPROXY_PROTOBUF_SOURCE
+    ""
+    CACHE STRING "Override dependency mode for Protobuf")
+set(LOCALPROXY_CATCH2_SOURCE
+    ""
+    CACHE STRING "Override dependency mode for Catch2")
+
+set(LOCALPROXY_LINK_ATOMIC
+    "auto"
+    CACHE STRING "Link libatomic: auto (probe), ON or OFF")
+set_property(CACHE LOCALPROXY_LINK_ATOMIC PROPERTY STRINGS auto ON OFF)
+
+set(LOCALPROXY_PROTOC_EXECUTABLE
+    ""
+    CACHE FILEPATH "Host protoc to use for codegen when cross-compiling")
+
+# Windows API level. Must match the value Boost was built with, otherwise the
+# Boost.Asio/Beast ABI does not line up.
+set(WIN32_WINNT
+    "0x0A00"
+    CACHE STRING "Value of _WIN32_WINNT to compile against (Windows only)")
+
+# windows-localproxy-build.md documents -DBUILD_TESTING; keep BUILD_TESTS as the
+# primary name (all automation passes it) but honour the canonical CTest one
+# too.
+if(BUILD_TESTS AND NOT DEFINED BUILD_TESTING)
+  set(BUILD_TESTING ON)
+endif()
+
 if(BUILD_TESTS)
   set(AWS_TUNNEL_LOCAL_PROXY_TEST_NAME localproxytest)
+  # NOTE: this re-project() call changes PROJECT_NAME to localproxytest for the
+  # rest of the file, and src/Version.h.in double-indirects through
+  # ${${PROJECT_NAME}_VERSION_STRING_FULL}. The versioning module below runs
+  # after it, so both agree -- do not reorder these.
   project(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} CXX)
 endif(BUILD_TESTS)
+
+# ##############################################################################
+# Section : Disable in-source builds #
+# ##############################################################################
+# Checked before the versioning module runs, so that a rejected in-source build
+# has no side effects.
+
+if(${PROJECT_SOURCE_DIR} STREQUAL ${PROJECT_BINARY_DIR})
+  message(
+    FATAL_ERROR
+      "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt and CMakeFiles folder."
+  )
+endif()
 
 # ##############################################################################
 # Generate Version Information from Git #
@@ -24,25 +88,31 @@ include(CMakeLists.txt.versioning)
 configure_file("src/Version.h.in" "${PROJECT_BINARY_DIR}/Version.h")
 
 # ##############################################################################
-# Section : Disable in-source builds #
-# ##############################################################################
-
-if(${PROJECT_SOURCE_DIR} STREQUAL ${PROJECT_BINARY_DIR})
-  message(
-    FATAL_ERROR
-      "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt and CMakeFiles folder."
-  )
-endif()
-
-# ##############################################################################
 # Section : Common Build setttings #
 # ##############################################################################
-# Set required compiler standard to standard c++11. Disable extensions.
+# Set required compiler standard to standard c++14. Disable extensions.
 set(CMAKE_CXX_STANDARD 14) # C++14
 set(CMAKE_CXX_STANDARD_REQUIRED ON) # ...is required...
-set(CMAKE_CXX_EXTENSIONS OFF) # ...without compiler extensions like gnu++11
+set(CMAKE_CXX_EXTENSIONS OFF) # ...without compiler extensions like gnu++14
 
+# Kept as a literal `bin`: Dockerfiles, CI artifact paths and the uat/ harness
+# all hard-code <build-dir>/bin/localproxy.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Makes the shipped .clang-tidy usable, and keeps clangd working.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_COLOR_DIAGNOSTICS ON)
+# NOTE: do NOT unset CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES here. That list is
+# what stops `include_directories(SYSTEM ...)` from emitting `-isystem` for a
+# directory the compiler already searches implicitly. Distro-packaged Boost and
+# Protobuf live in /usr/include, so unsetting it yields `-isystem /usr/include`,
+# which reorders the search path ahead of libstdc++'s own directories and breaks
+# `#include_next` ("fatal error: stdlib.h: No such file or directory") in every
+# translation unit.
+
+# Reproducible builds; set before any dependency sub-build so it inherits them.
+set(ENV{SOURCE_DATE_EPOCH} "0")
+set(ENV{ZERO_AR_DATE} "1")
 
 # Configure Compiler flags
 if(UNIX OR APPLE)
@@ -62,6 +132,10 @@ elseif(WIN32 OR MSVC)
         "${CUSTOM_COMPILER_FLAGS} /D_AWSIOT_TUNNELING_DISABLE_NO_SSL_HOST_VERIFY"
     )
   endif()
+  if(NOT WIN32_WINNT MATCHES "^0[xX][0-9A-Fa-f]+$")
+    message(FATAL_ERROR "WIN32_WINNT must be a hexadecimal Windows API version"
+                        " such as 0x0A00, got '${WIN32_WINNT}'.")
+  endif()
   add_definitions(-D_WIN32_WINNT=${WIN32_WINNT})
 endif()
 
@@ -71,101 +145,45 @@ endif()
 find_package(Threads)
 
 # ##############################################################################
+# Section : Dependencies #
+# ##############################################################################
+# fc_deps.json is the single source of truth for the pinned version, URL and
+# SHA256 of Boost, Protobuf and Catch2. OpenSSL and zlib intentionally stay
+# system-provided; see cmake/LocalproxyOpenSSL.cmake.
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+include(LocalproxyUtil)
+include(LocalproxyDeps)
+
+localproxy_load_manifest()
+localproxy_seed_version_cache()
+
+# Cross-compilation relies on find_package resolving everything out of the
+# sysroot (CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY), so do not fetch by default.
+if(CMAKE_CROSSCOMPILING AND LOCALPROXY_DEP_MODE STREQUAL "auto")
+  set(LOCALPROXY_DEP_MODE "system")
+  message(
+    STATUS "localproxy: cross-compiling, defaulting dependencies to system mode"
+  )
+endif()
+
+include(LocalproxyProtobuf)
+include(LocalproxyOpenSSL)
+include(LocalproxyCatch2)
+include(LocalproxyBoost)
+
+# ##############################################################################
 # Generate protobuf files               #
 # ##############################################################################
-set_property(
-  GLOBAL PROPERTY PROTOBUF_USE_STATIC_LIBS ON) # this flag doesn't actually seem
-                                               # to work yet but it's documented
-set(PROTOBUF_PKG_VERSION
-    "3.17.3"
-    CACHE STRING "")
-find_package(Protobuf ${PROTOBUF_PKG_VERSION} REQUIRED)
-string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX}
-               Protobuf_LITE_STATIC_LIBRARY ${Protobuf_LITE_LIBRARY})
-include_directories(SYSTEM ${Protobuf_INCLUDE_DIRS})
-
-include_directories(${CMAKE_CURRENT_BINARY_DIR}) # needed to include generated
-                                                 # protobuf headers
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
-                      ${PROJECT_SOURCE_DIR}/resources/Message.proto)
-
-# ##############################################################################
-# OpenSSL dependency                    #
-# ##############################################################################
-if(LINK_STATIC_OPENSSL)
-  set(OPENSSL_USE_STATIC_LIBS TRUE)
-else()
-  set(OPENSSL_USE_STATIC_LIBS FALSE)
-endif()
-find_package(OpenSSL REQUIRED)
-
-if(LINK_STATIC_OPENSSL)
-  include_directories(${OPENSSL_INCLUDE_DIR})
-
-  # Check SSL library location
-  get_target_property(SSL_LOCATION OpenSSL::SSL IMPORTED_LOCATION)
-  if(SSL_LOCATION STREQUAL "SSL_LOCATION-NOTFOUND")
-    get_target_property(SSL_LOCATION OpenSSL::SSL IMPORTED_LOCATION_RELEASE)
-    if(SSL_LOCATION STREQUAL "SSL_LOCATION-NOTFOUND")
-      message(FATAL_ERROR "Could not find OpenSSL SSL library location")
-    endif()
-  endif()
-
-  # Check Crypto library location
-  get_target_property(CRYPTO_LOCATION OpenSSL::Crypto IMPORTED_LOCATION)
-  if(CRYPTO_LOCATION STREQUAL "CRYPTO_LOCATION-NOTFOUND")
-    get_target_property(CRYPTO_LOCATION OpenSSL::Crypto
-                        IMPORTED_LOCATION_RELEASE)
-    if(CRYPTO_LOCATION STREQUAL "CRYPTO_LOCATION-NOTFOUND")
-      message(FATAL_ERROR "Could not find OpenSSL Crypto library location")
-    endif()
-  endif()
-
-  string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX}
-                 OpenSSL_STATIC_SSL_LIBRARY ${SSL_LOCATION})
-  string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX}
-                 OpenSSL_STATIC_CRYPTO_LIBRARY ${CRYPTO_LOCATION})
-endif()
-
-# ##############################################################################
-# Test framework dependency             #
-# ##############################################################################
-# probably comment out for cross compiler as Catch2 is really just a header
-# library
-if(BUILD_TESTS)
-  find_package(Catch2 3 REQUIRED)
-endif(BUILD_TESTS)
-
-# ##############################################################################
-# Boost dependencies                    #
-# ##############################################################################
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_DEBUG_RUNTIME OFF)
-# set_property(GLOBAL PROPERTY Boost_USE_MULTITHREADED ON)
-set(BOOST_PKG_VERSION
-    "1.87.0"
-    CACHE STRING "")
-find_package(
-  Boost ${BOOST_PKG_VERSION} REQUIRED
-  COMPONENTS system
-             log
-             log_setup
-             thread
-             program_options
-             date_time
-             filesystem
-             chrono)
-include_directories(${Boost_INCLUDE_DIRS})
-foreach(BOOST_LIB ${Boost_LIBRARIES})
-  string(REPLACE ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX}
-                 BOOST_STATIC_LIB ${BOOST_LIB})
-  list(APPEND Boost_STATIC_LIBRARIES ${BOOST_STATIC_LIB})
-endforeach()
+# needed to include generated protobuf headers
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+lp_protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                         ${PROJECT_SOURCE_DIR}/resources/Message.proto)
 
 # ##############################################################################
 # Target : Build aws-tunnel-local-proxy #
 # ##############################################################################
-file(GLOB ALL_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
 set(UTIL_SOURCE
@@ -183,43 +201,35 @@ set(MAIN_SOURCES ${PROJECT_SOURCE_DIR}/src/main.cpp ${CORE_SOURCES}
                  ${UTIL_SOURCE})
 add_executable(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${MAIN_SOURCES})
 
+# CORE_SOURCES and UTIL_SOURCE are deliberately compiled a second time for the
+# test binary rather than shared through an object/static library: the test
+# build defines _AWSIOT_TUNNELING_NO_SSL, which swaps the websocket stream from
+# TLS to plain TCP. Sharing compiled objects between the two targets would
+# silently strip TLS from the production binary.
 if(BUILD_TESTS)
-  file(GLOB TEST_CODE ${PROJECT_SOURCE_DIR}/test/*.cpp)
+  file(GLOB TEST_CODE CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/test/*.cpp)
   set(TEST_SOURCES ${TEST_CODE} ${CORE_SOURCES} ${UTIL_SOURCE})
   add_executable(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${TEST_SOURCES})
   target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME}
-                        Catch2::Catch2WithMain)
+                        ${LOCALPROXY_CATCH2_LINK})
+  # The shared sources appear in both targets with different flags; keep only
+  # the production entries in compile_commands.json so tooling picks the right
+  # one.
+  set_target_properties(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME}
+                        PROPERTIES EXPORT_COMPILE_COMMANDS OFF)
 endif(BUILD_TESTS)
-
-# libatomic ensured for all platforms except OSX and WINDOWS
-if(NOT APPLE
-   AND NOT MSVC
-   AND NOT BUILD_TESTS)
-  target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} atomic)
-elseif(
-  NOT APPLE
-  AND NOT MSVC
-  AND BUILD_TESTS)
-  target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} atomic)
-  target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} atomic)
-endif()
 
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME}
                       ${CMAKE_THREAD_LIBS_INIT})
-if(LINK_STATIC_OPENSSL)
-  target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME}
-                        ${OpenSSL_STATIC_SSL_LIBRARY})
-  target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME}
-                        ${OpenSSL_STATIC_CRYPTO_LIBRARY})
-else()
-  target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} OpenSSL::SSL)
-  target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} OpenSSL::Crypto)
-endif()
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME}
-                      ${Boost_STATIC_LIBRARIES})
+                      ${LOCALPROXY_OPENSSL_LINK})
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME}
-                      ${Protobuf_LITE_STATIC_LIBRARY})
+                      ${LOCALPROXY_BOOST_LINK})
+target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME}
+                      ${LOCALPROXY_PROTOBUF_LINK})
 target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} ${CMAKE_DL_LIBS})
+# libatomic on every platform except OSX and WINDOWS, where it does not exist
+lp_link_atomic(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME})
 set_property(
   TARGET ${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME}
   APPEND_STRING
@@ -228,24 +238,41 @@ set_property(
 if(BUILD_TESTS)
   target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME}
                         ${CMAKE_THREAD_LIBS_INIT})
-  if(LINK_STATIC_OPENSSL)
-    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME}
-                          ${OpenSSL_STATIC_SSL_LIBRARY})
-    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME}
-                          ${OpenSSL_STATIC_CRYPTO_LIBRARY})
-  else()
-    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::SSL)
-    target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} OpenSSL::Crypto)
-  endif()
   target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME}
-                        ${Boost_STATIC_LIBRARIES})
+                        ${LOCALPROXY_OPENSSL_LINK})
   target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME}
-                        ${Protobuf_LITE_STATIC_LIBRARY})
+                        ${LOCALPROXY_BOOST_LINK})
+  target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME}
+                        ${LOCALPROXY_PROTOBUF_LINK})
   target_link_libraries(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME} ${CMAKE_DL_LIBS})
+  lp_link_atomic(${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME})
   set_property(
     TARGET ${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME}
     APPEND_STRING
     PROPERTY COMPILE_FLAGS ${TEST_COMPILER_FLAGS})
+
+  # Additive: CI and the docs still invoke bin/localproxytest directly.
+  include(CTest)
+  add_test(
+    NAME ${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME}
+    COMMAND
+      ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${AWS_TUNNEL_LOCAL_PROXY_TEST_NAME})
 endif(BUILD_TESTS)
 
-install(TARGETS ${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} DESTINATION "bin")
+# ##############################################################################
+# Section : Install #
+# ##############################################################################
+include(GNUInstallDirs)
+install(TARGETS ${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME}
+        DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+if(NOT TARGET uninstall)
+  configure_file(
+    "${CMAKE_CURRENT_LIST_DIR}/misc/cmake_uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/misc/cmake_uninstall.cmake" IMMEDIATE @ONLY)
+  add_custom_target(
+    uninstall
+    COMMAND ${CMAKE_COMMAND} -P
+            "${CMAKE_CURRENT_BINARY_DIR}/misc/cmake_uninstall.cmake"
+    COMMENT "Removing files listed in install_manifest.txt")
+endif()

@@ -46,41 +46,15 @@ jobs:
             cmake
           sudo apt-get clean -y
 
-      - name: Install boost (v1.87.0)
-        run: |
-          echo "Downloading Boost..."
-          wget https://sourceforge.net/projects/boost/files/boost/1.87.0/boost_1_87_0.tar.gz/download -O /tmp/boost_1_87_0.tar.gz
-          echo "Extracting Boost..."
-          tar xzvf /tmp/boost_1_87_0.tar.gz -C /tmp
-          cd /tmp/boost_1_87_0
-          echo "Bootstrapping Boost..."
-          ./bootstrap.sh --prefix=/usr/local
-          echo "Building and installing Boost..."
-          sudo ./b2 install link=static --prefix=/usr/local -j$(nproc)
-          cd ${{ github.workspace }}
-          sudo rm -rf /tmp/boost_1_87_0 /tmp/boost_1_87_0.tar.gz
+      # Boost and Protobuf come from the versions pinned in fc_deps.json,
+      # resolved by CMake's FetchContent during the build step below.
+      - name: Cache fetched dependency sources
+        uses: actions/cache@v5
+        with:
+          path: build/_deps/downloads
+          key: codeql-fcdeps-${{ hashFiles('fc_deps.json') }}-v1
 
-      - name: Install protobuf (v3.17.3)
-        run: |
-          echo "Downloading Protobuf..."
-          wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O /tmp/protobuf-all-3.17.3.tar.gz
-          echo "Extracting Protobuf..."
-          tar xzvf /tmp/protobuf-all-3.17.3.tar.gz -C /tmp
-          cd /tmp/protobuf-3.17.3
-          echo "Configuring Protobuf (CMake)..."
-          mkdir build_cmake
-          cd build_cmake
-          cmake ../cmake -DCMAKE_INSTALL_PREFIX=/usr/local -Dprotobuf_BUILD_TESTS=OFF
-          echo "Building Protobuf..."
-          make -j$(nproc)
-          echo "Installing Protobuf..."
-          sudo make install
-          cd ${{ github.workspace }}
-          rm -rf /tmp/protobuf-3.17.3 /tmp/protobuf-all-3.17.3.tar.gz
-
-      # --- Catch2 Installation Step Removed ---
-
-      # Initialize CodeQL AFTER dependencies are installed and BEFORE the project build
+      # Initialize CodeQL BEFORE the project build
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
@@ -97,7 +71,7 @@ jobs:
           cd build
           echo "Configuring localproxy with CMake (tests disabled)..."
           # Ensure BUILD_TESTS=OFF is used
-          cmake .. -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake .. -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DLOCALPROXY_DEP_MODE=fetch
           echo "Building localproxy with make..."
           make -j$(nproc)
 

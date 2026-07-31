@@ -76,8 +76,8 @@ Examples from history:
 
 ## Build & test
 
-The project builds with CMake + make (see `README.md` for full dependency setup:
-Boost 1.87, Protobuf 3.17.x, zlib, OpenSSL, Catch2). From the repo root:
+The project builds with CMake + make (see `docs/BUILD.md` for the full guide).
+From the repo root:
 
 ```bash
 mkdir -p build && cd build
@@ -88,25 +88,41 @@ make -j"$(nproc)"
 - The proxy binary is produced at `build/bin/localproxy`.
 - With `-DBUILD_TESTS=ON`, the Catch2 test binary is `build/bin/localproxytest`;
   run it to execute the unit suite. Ensure all tests pass before committing.
+  `ctest --test-dir build` runs the same binary; CI invokes the path directly.
 - Build directories matching `*build*/` are git-ignored.
 - The end-to-end UATs live in `uat/` (see `uat/README.md`); run the relevant
   scripts when a change affects tunnel/proxy behavior, and keep them current
   with the feature.
 
-Relevant CMake options (top of `CMakeLists.txt`):
+Boost, Protobuf and Catch2 are resolved from the system when present and
+otherwise built from the versions pinned in `fc_deps.json` — that file is the
+**only** place to bump a dependency version. When you do bump one, also refresh
+`.github/docker-images/oss-compliance/build-from-source-packages/build-from-source-package-licenses.txt`
+and `THIRD_PARTY_LICENSES`, or the license manifests silently go stale. OpenSSL
+and zlib always come from the platform and are deliberately absent from the
+manifest.
+
+Relevant CMake options (top of `CMakeLists.txt`; full table in `docs/BUILD.md`):
 
 - `BUILD_TESTS` (default OFF) — build the Catch2 unit tests under `test/`.
 - `LINK_STATIC_OPENSSL` (default ON) — statically link OpenSSL.
 - `GIT_VERSION` (default ON) — derive the version from git history.
 - `DISABLE_SSL_HOST_VERIFY_OPT` (default OFF) — production builds may drop the
   `--no-ssl-host-verify` option.
+- `LOCALPROXY_DEP_MODE` (default `auto`) — `auto`, `system` or `fetch`.
+- `LOCALPROXY_{BOOST,PROTOBUF,CATCH2}_SOURCE` — per-dependency override.
+- `LOCALPROXY_LINK_ATOMIC` (default `auto`) — probe for, or force, `-latomic`.
 
 ## Formatting & config
 
 - Format with `nix fmt` before committing (treefmt via `flake.nix`: clang-format
-  for C/C++ using `.clang-format`, prettier for Markdown using
-  `prettierrc.yml`). A clean tree after `nix fmt` (no diff) is required; don't
-  hand-format against the style.
+  for C/C++ using `.clang-format`, cmake-format for `CMakeLists.txt`,
+  `CMakeLists.txt.versioning` and `cmake/*.cmake` using `.cmake-format.json`,
+  prettier for Markdown using `prettierrc.yml`). A clean tree after `nix fmt`
+  (no diff) is required; don't hand-format against the style.
+- If you add a CMake function, register its signature under
+  `parse.additional_commands` in `.cmake-format.json`, otherwise cmake-format
+  reflows every call site one argument per line.
 - If `nix` is not found, install Lix:
   ```bash
   curl -sSf -L https://install.lix.systems/lix | sh -s -- install
