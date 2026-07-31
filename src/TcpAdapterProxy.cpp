@@ -1034,10 +1034,10 @@ namespace iot {
             boost::beast::websocket::ping_data pd { payload };
             long long now_millis = 0;
             long long pong_millis = 0;
+            BOOST_LOG_SEV(log, trace)
+                << "handle_web_socket_control_message, message type: "
+                << static_cast<std::uint32_t>(ws_message_type);
             switch (ws_message_type) {
-                BOOST_LOG_SEV(log, trace)
-                    << "handle_web_socket_control_message, message type: "
-                    << static_cast<std::uint32_t>(ws_message_type);
             case boost::beast::websocket::frame_type::close:
                 BOOST_LOG_SEV(log, info)
                     << "Web socket close received. Code: "
