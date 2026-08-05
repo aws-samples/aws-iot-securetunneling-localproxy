@@ -11,11 +11,11 @@
     ({ lib, ... }:
       {
         systems = lib.systems.flakeExposed;
-        formatters = { llvmPackages, cmake-format, nodePackages, shfmt, ... }:
+        formatters = { llvmPackages, cmake-format, prettier, shfmt, ... }:
           let
             fmt-cpp = "${llvmPackages.clang-unwrapped}/bin/clang-format -i";
             fmt-cmake = "${cmake-format}/bin/cmake-format -i";
-            fmt-yaml = "${nodePackages.prettier}/bin/prettier --write --parser yaml";
+            fmt-yaml = "${prettier}/bin/prettier --write --parser yaml";
             fmt-sh = "${shfmt}/bin/shfmt -w";
           in
           {
@@ -31,7 +31,7 @@
 
         checks.spelling = pkgs: ''
           echo foo
-          ${pkgs.nodePackages.cspell}/bin/cspell "**" --quiet
+          ${pkgs.cspell}/bin/cspell "**" --quiet
           ${pkgs.coreutils}/bin/sort -cuf misc/dictionary.txt
         '';
 
