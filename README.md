@@ -766,6 +766,10 @@ specified in both the config file specification, and environment variables.
 **-h/--help** Will show a help message and a short guide to all of the available
 CLI arguments to the console and cause it to exit immediately
 
+**-V/--version** Will show the local proxy version and cause it to exit
+immediately. Note the capital **V**: the lowercase **-v** is **-v/--verbose**.
+No other arguments are required or validated when this option is given
+
 **-t/--access-token [argvalue]** Specifies the client access token to use when
 connecting to the service. We do not recommend using this option as the client
 access token will appear in shell history or in process listings that show full

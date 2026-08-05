@@ -59,6 +59,12 @@ const char *const REGION_ENV_VARIABLE = "AWSIOT_TUNNEL_REGION";
 const char *const WEB_PROXY_ENV_VARIABLE = "HTTPS_PROXY";
 const char *const web_proxy_env_variable = "https_proxy";
 
+// Marks a failure caused by how the proxy was invoked rather than by a runtime
+// fault, so main() can point the user at --help instead of only logging.
+struct usage_error : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
 tuple<string, uint16_t> get_host_and_port(
     const string &endpoint, uint16_t default_port
 ) {
@@ -202,7 +208,7 @@ bool process_cli(
     options_description cliargs_desc("Allowed options");
     cliargs_desc.add_options()
         ("help,h", "Show help message")
-        ("version", "Show current version of Local Proxy")
+        ("version,V", "Show current version of Local Proxy and exit")
         ("access-token,t", value<string>()->required(), "Client access token")
         ("client-token,i", value<string>(), "Optional Client Token")
         ("proxy-endpoint,e", value<string>(), "Endpoint of proxy server with port (if not default 443). Example: data.tunneling.iot.us-east-1.amazonaws.com:443")
@@ -224,8 +230,10 @@ bool process_cli(
         ;
     store(parse_command_line(argc, argv, cliargs_desc), vm);
 
+    // main() prints the version banner on every run, so --version only has to
+    // stop here rather than fall through into argument validation.
     if (vm.count("version")) {
-        PrintVersion();
+        return false;
     }
     if (vm.count("help")) {
         std::cerr << cliargs_desc << "\n";
@@ -277,16 +285,19 @@ bool process_cli(
         boost::property_tree::json_parser::read_json(settings_path, settings);
     }
 
+    // trigger validation of required options; this runs before the checks below
+    // so that a missing --access-token is reported as such instead of being
+    // masked by a complaint about --region/--proxy-endpoint
+    notify(vm);
+
     if (vm.count("region") + vm.count("proxy-endpoint") > 1
         || vm.count("region") + vm.count("proxy-endpoint") == 0) {
-        throw std::runtime_error(
+        throw usage_error(
             "Must specify one and only one of --region/-r or "
             "--proxy-endpoint/-e options"
         );
     }
 
-    // trigger validation of required options
-    notify(vm);
     if (token_cli_warning) {
         BOOST_LOG_TRIVIAL(warning)
             << "Found access token supplied via CLI arg. Consider using "
@@ -383,7 +394,7 @@ bool process_cli(
         string mode = vm["mode"].as<string>();
         if (mode != "src" && mode != "dst" && mode != "source"
             && mode != "destination") {
-            throw std::runtime_error(
+            throw usage_error(
                 "Mode value is wrong! Allowed values are: src, dst, source, "
                 "destination"
             );
@@ -421,25 +432,25 @@ bool process_cli(
      * in either source or destination mode: -s, -d or -m
      */
     if (vm.count("source-listen-port") + vm.count("destination-app") > 1) {
-        throw std::runtime_error(
+        throw usage_error(
             "Must specify one and only one of --source-listen-port/-s or "
             "--destination-app/-d"
         );
     } else if (vm.count("source-listen-port") + vm.count("destination-app")
                    + vm.count("mode")
                == 0) {
-        throw std::runtime_error(
+        throw usage_error(
             "Must specify one of --source-listen-port/-s or "
             "--destination-app/-d or --mode"
         );
     } else if (vm.count("source-listen-port") && vm.count("mode")
                && cfg.mode == proxy_mode::DESTINATION) {
-        throw std::runtime_error(
+        throw usage_error(
             "-s and --mode have mismatched mode. Mode is set to destination!"
         );
     } else if (vm.count("destination-app") && vm.count("mode")
                && cfg.mode == proxy_mode::SOURCE) {
-        throw std::runtime_error(
+        throw usage_error(
             "-s and --mode have mismatched mode. Mode is set to source!"
         );
     }
@@ -548,6 +559,15 @@ bool process_cli(
     return true;
 }
 
+// Report a bad invocation on stderr with a pointer to --help. Deliberately not
+// routed through Boost.Log: the CLI may have failed to parse before
+// init_logging() ran, and a usage message is not a runtime log record.
+int report_usage_error(const char *reason) {
+    std::cerr << reason << "\n"
+              << "Try 'localproxy --help' for a list of options.\n";
+    return EXIT_FAILURE;
+}
+
 int main(int argc, char **argv) {
     try {
         std::string version = PrintVersion();
@@ -562,6 +582,11 @@ int main(int argc, char **argv) {
             tcp_adapter_proxy proxy { settings, cfg };
             return proxy.run_proxy();
         }
+    } catch (usage_error &e) {
+        return report_usage_error(e.what());
+    } catch (boost::program_options::error &e) {
+        // Unknown option, missing option argument, missing required option
+        return report_usage_error(e.what());
     } catch (exception &e) {
         BOOST_LOG_TRIVIAL(fatal) << e.what();
         return EXIT_FAILURE;

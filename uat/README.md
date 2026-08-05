@@ -58,6 +58,7 @@ chmod +x *.sh
 | Script                        | Description                                                                                                                                                                                               |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `run_uat.sh`                  | Main E2E test: opens tunnel, starts both proxies, verifies connection                                                                                                                                     |
+| `test_cli_usage.sh`           | Tests CLI argument handling: `--help`/`-h` and `--version`/`-V` exit 0 immediately; bad invocations name the offending option and point at `--help`. Needs no AWS credentials                             |
 | `test_lifecycle.sh`           | Tests AWS API operations: open, describe, list, rotate, close                                                                                                                                             |
 | `test_v1_compat.sh`           | Tests V1 backward compatibility with `--destination-client-type V1`                                                                                                                                       |
 | `test_multiport.sh`           | Tests multi-port tunneling with multiple service IDs                                                                                                                                                      |
@@ -90,6 +91,9 @@ chmod +x *.sh
 
 ```bash
 
+# CLI argument handling only (no AWS credentials needed)
+./test_cli_usage.sh
+
 # With custom region and thing name
 AWS_REGION=us-west-2 THING_NAME=my-device ./run_uat.sh
 
@@ -118,6 +122,7 @@ test-specific prefixes:
 | Test Script                   | Log Files                                                                            |
 | ----------------------------- | ------------------------------------------------------------------------------------ |
 | `run_uat.sh`                  | `source_proxy.log`, `dest_proxy.log`                                                 |
+| `test_cli_usage.sh`           | `cli_usage.log`                                                                      |
 | `test_v1_compat.sh`           | `v1_source.log`                                                                      |
 | `test_multiport.sh`           | `multiport_source.log`, `multiport_dest.log`                                         |
 | `test_multiplex_integrity.sh` | `multiplex_source.log`, `multiplex_dest.log`                                         |
