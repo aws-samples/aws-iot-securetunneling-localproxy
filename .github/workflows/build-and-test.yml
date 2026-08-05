@@ -58,6 +58,14 @@ jobs:
       - name: Run tests
         run: ./build/bin/localproxytest
 
+      # src/main.cpp is not linked into the unit-test binary, so CLI argument
+      # handling is covered by this UAT instead. It needs no AWS credentials,
+      # which is why it runs here rather than in the UAT workflow.
+      - name: Run CLI argument tests
+        run: |
+          chmod +x uat/test_cli_usage.sh uat/lib/*.sh
+          ./uat/test_cli_usage.sh
+
       # protoc and other dependency tools must never land in build/bin: the
       # release Dockerfiles copy that directory wholesale.
       - name: Assert build/bin holds only the localproxy binaries
