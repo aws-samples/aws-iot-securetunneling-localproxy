@@ -56,23 +56,30 @@ trailing period**, under ~70 characters.
 ```
 <Imperative subject, e.g. "Fix double callback and buffer leak in WebProxyAdapter">
 
-<One-line statement of the problem / context.>
+<One or two lines: the problem, and why it matters.>
 
 - Short bullet per distinct point: the reason (why) and the idea (how).
-
-Tests: <one line, if tests were added/changed>
-Docs:  <one line, if docs were added/changed>
 ```
 
 - Subject says _what_ changes; body says _why_ and _the idea_. Keep it terse.
-- Use bullets for multiple points; a single `Fix:` line is fine for simple
-  changes.
+- **Be concise.** Two or three bullets is usually the whole body; if you are
+  writing a fourth, check whether it restates the subject, narrates the process,
+  or describes something the diff already shows. A one-line body, or a single
+  `Fix:` line, is fine for a simple change.
+- Don't add `Tests:`/`Docs:` trailers, or any other line that just names the
+  kind of change — the subject and the diff already say that. Mention tests or
+  docs only when the reader needs a fact that is not evident from the diff.
 - Reference symbols/files in `code font` where it aids clarity.
+- Describe the final state, not how you got there. No "first tried X", no
+  "renamed again", no apologies for earlier commits on the branch. While the
+  branch is unpushed, squash follow-up fixes into the commit they belong to and
+  write the message as if it had been one commit all along.
 
 Examples from history:
 
 - `Add AF_UNIX support for destination (-d) mode`
 - `Fix editor-config errors`
+- `Split the README into topic-based docs under docs/`
 
 ## Build & test
 
