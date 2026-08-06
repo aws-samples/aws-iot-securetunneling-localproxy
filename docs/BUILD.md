@@ -111,6 +111,8 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=<tc> -DLOCALPROXY_DEP_MODE=fetch \
 
 ## Configuration flags
 
+### Project options — what gets built and how
+
 | Flag                          | Default  | Effect                                                                            |
 | ----------------------------- | -------- | --------------------------------------------------------------------------------- |
 | `BUILD_TESTS`                 | `OFF`    | Build the Catch2 unit tests in `test/` as `bin/localproxytest`.                   |
@@ -120,6 +122,8 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=<tc> -DLOCALPROXY_DEP_MODE=fetch \
 | `BOOST_PKG_VERSION`           | manifest | Version passed to `find_package(Boost)`. Empty disables the version check.        |
 | `PROTOBUF_PKG_VERSION`        | manifest | Version passed to `find_package(Protobuf)`. Empty disables the version check.     |
 | `WIN32_WINNT`                 | `0x0A00` | Value of `_WIN32_WINNT`; must match the value Boost was built with. Windows only. |
+
+### Dependency resolution — where Boost, Protobuf and Catch2 come from
 
 | Flag                                              | Default | Effect                                              |
 | ------------------------------------------------- | ------- | --------------------------------------------------- |
