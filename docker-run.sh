@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo This script is deprecated, please refer to the Docker Images section of the README for the recommended method of pulling and running images from ECR.
+echo This script is deprecated, please refer to docs/DOCKER.md for the recommended method of pulling and running images from ECR.
 
 while getopts p: flag; do
   case "${flag}" in
