@@ -58,6 +58,7 @@ stoi
 subdir
 treefmt
 Uhdrl
+unpushed
 unrecognised
 urandom
 VQZH
