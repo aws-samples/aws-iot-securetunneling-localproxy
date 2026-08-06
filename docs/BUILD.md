@@ -13,6 +13,12 @@ So on a machine that already has Boost, Protobuf and Catch2 installed, nothing
 has changed — `cmake .. && make` behaves exactly as it always has. On a bare
 machine, the same command now works, because the missing pieces are fetched.
 
+If you would rather install the dependencies by hand — or must build in `system`
+mode — follow [DEPENDENCIES.md](DEPENDENCIES.md). To build on Windows, follow
+[windows-localproxy-build.md](../windows-localproxy-build.md) instead. To skip
+building altogether, use the prebuilt container images described in
+[DOCKER.md](DOCKER.md).
+
 ---
 
 ## Dependency manifest
@@ -105,13 +111,20 @@ normally and follow `windows-localproxy-build.md`.
 ## Building
 
 ```bash
+git clone https://github.com/aws-samples/aws-iot-securetunneling-localproxy
+cd aws-iot-securetunneling-localproxy
 mkdir -p build && cd build
 cmake ..
 make -j"$(nproc)"
 ```
 
 Outputs land at `build/bin/localproxy` and, with `-DBUILD_TESTS=ON`,
-`build/bin/localproxytest`. Run the unit suite either way:
+`build/bin/localproxytest`. From here on, copy or distribute the _localproxy_
+binary as you please. The same source code is used for both source mode and
+destination mode; different binaries may be built if the source and destinations
+are on different platforms and/or architectures.
+
+Run the unit suite either way:
 
 ```bash
 ./bin/localproxytest      # what CI does
@@ -125,6 +138,35 @@ in `install_manifest.txt`.
 
 In-source builds are rejected; always configure into a separate directory. Any
 directory matching `*build*/` is git-ignored.
+
+### Building without pre-installed dependencies
+
+If Boost, Protobuf or Catch2 are not installed, the build downloads the versions
+pinned in [`fc_deps.json`](../fc_deps.json), verifies their checksums and
+compiles them as part of the build — you do not have to follow
+[DEPENDENCIES.md](DEPENDENCIES.md) at all. Only OpenSSL and zlib still need to
+come from your platform:
+
+```bash
+# Debian/Ubuntu
+sudo apt install -y build-essential cmake git curl libssl-dev zlib1g-dev
+
+mkdir build && cd build
+cmake ../
+make -j"$(nproc)"
+```
+
+This is the default (`auto`) behavior: each dependency is probed for first, and
+only the missing ones are fetched. You can pin the behavior explicitly with
+`-DLOCALPROXY_DEP_MODE=system` (never fetch; fail if something is missing) or
+`-DLOCALPROXY_DEP_MODE=fetch` (always build from source, ignoring installed
+copies). Fetching requires CMake 3.19+; run `./bootstrap-cmake.sh` first if your
+CMake is older.
+
+Expect the first such build to download roughly 140 MB and take a couple of
+minutes longer than a build against pre-installed libraries. For offline or
+air-gapped builds see
+[Offline, vendored and air-gapped builds](#offline-vendored-and-air-gapped-builds).
 
 ---
 
@@ -160,6 +202,9 @@ Standard CMake variables (`CMAKE_BUILD_TYPE`, `CMAKE_PREFIX_PATH`,
 no default `CMAKE_BUILD_TYPE`: optimization comes from the hard-coded `-O2` in
 the project's own compiler flags.
 
+We also recommend enabling your compiler's security features — see
+[Harden your toolchain](SECURITY.md#harden-your-toolchain).
+
 ---
 
 ## Offline, vendored and air-gapped builds
@@ -183,15 +228,50 @@ This is also how a Nix derivation or a CI cache should feed the build.
 
 Cross builds default to `system` mode, because a toolchain file typically sets
 `CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY` and expects every dependency to resolve
-out of the sysroot:
+out of the sysroot. The general steps are:
+
+1. Acquire cross-compiler toolchain for your target platform
+1. Create and configure system root (sysroot) for your target platform
+1. Build and install dependencies into the sysroot of the target platform
+   1. Consult each dependency's documentation for guidance on how to cross
+      compile
+1. Build the local proxy
+1. Run the test executable (also built for your platform)
+
+CMake can perform cross-compilation builds when it is given a toolchain file.
+Here is an example filename: `raspberry_pi_3_b_plus.cmake.tc`
+
+```cmake
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+
+set(CMAKE_SYSROOT /home/fedora/cross_builds/sysroots/arm-unknown-linux-gnueabihf)
+
+set(tools /home/fedora/x-tools/arm-unknown-linux-gnueabihf)
+set(CMAKE_C_COMPILER ${tools}/bin/arm-unknown-linux-gnueabihf-gcc)
+set(CMAKE_CXX_COMPILER ${tools}/bin/arm-unknown-linux-gnueabihf-g++)
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+```
+
+Then, from a build directory:
 
 ```bash
 cmake ../ -DCMAKE_TOOLCHAIN_FILE=raspberry_pi_3_b_plus.cmake.tc
 make
 ```
 
-See `example/crosscompile/raspberry_pi_3_b_plus.cmake.tc` for a worked example
-and the README for the full walkthrough.
+See `example/crosscompile/raspberry_pi_3_b_plus.cmake.tc` for a worked example.
+
+Helpful links:
+
+- https://crosstool-ng.github.io/ — crosstool-NG makes it convenient to build a
+  toolchain, acquire and configure a system root
+- https://wiki.osdev.org/Target_Triplet — Consult this to understand your
+  platform triplet
 
 `fetch` mode can be combined with cross-compilation, but code generation needs a
 `protoc` that runs on the **host** while the runtime library is built for the
