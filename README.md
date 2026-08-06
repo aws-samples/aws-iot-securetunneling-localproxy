@@ -42,6 +42,17 @@ Boost, Protobuf and Catch2 are fetched automatically when they are not
 installed; only OpenSSL and zlib are never fetched for you. See
 [docs/BUILD.md](docs/BUILD.md).
 
+Either way — including when you download a prebuilt binary from the GitHub
+releases — each host that runs `localproxy` needs these present:
+
+```bash
+# Debian/Ubuntu
+sudo apt install -y libssl3 zlib1g libstdc++6
+
+# Fedora/Amazon Linux/RHEL
+sudo dnf install -y openssl-libs zlib libstdc++
+```
+
 Then start one local proxy at each end of the tunnel, using the matching access
 token from `OpenTunnel`:
 
@@ -53,7 +64,8 @@ token from `OpenTunnel`:
 ./localproxy -r us-east-1 -s 5555 -t <source_client_access_token>
 ```
 
-[docs/RUNNING.md](docs/RUNNING.md) explains both modes in full.
+[docs/RUNNING.md](docs/RUNNING.md) explains both modes in full, including the
+[runtime dependencies](docs/RUNNING.md#runtime-dependencies).
 
 ## Documentation
 

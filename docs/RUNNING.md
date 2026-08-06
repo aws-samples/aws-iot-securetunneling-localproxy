@@ -14,6 +14,33 @@ For every available option see [CONFIGURATION.md](CONFIGURATION.md); for
 multiplexing several streams over one tunnel see
 [MULTIPLEXING.md](MULTIPLEXING.md).
 
+## Runtime dependencies
+
+A local proxy built the recommended way (`-DLINK_STATIC_OPENSSL=OFF`, see
+[BUILD.md](BUILD.md#building)) loads OpenSSL, zlib and libstdc++ from the
+platform at run time. **This includes the prebuilt binaries attached to the
+GitHub releases and workflow runs** (`localproxy-linux-x86_64`, `-aarch64`,
+`-armv7`), which are built with `-DLINK_STATIC_OPENSSL=OFF` — downloading one
+does not spare you these packages.
+
+Install these on every host that runs the binary:
+
+```bash
+# Debian/Ubuntu
+sudo apt install -y libssl3 zlib1g libstdc++6
+
+# Fedora/Amazon Linux/RHEL
+sudo dnf install -y openssl-libs zlib libstdc++
+```
+
+| Dependency      | Minimum version                       |
+| --------------- | ------------------------------------- |
+| OpenSSL         | 1.0.1 (3.x for the released binaries) |
+| zlib            | 1.2.13                                |
+| glibc           | 2.35 for the released binaries        |
+| libstdc++       | GCC 11 for the released binaries      |
+| CA certificates | any current bundle                    |
+
 ## Terms
 
 **V1 local proxy:** local proxy uses Sec-WebSocket-Protocol
