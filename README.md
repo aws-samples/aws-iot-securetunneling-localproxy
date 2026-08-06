@@ -34,7 +34,7 @@ Other architectures, macOS notes and base images are covered in
 
 ```bash
 mkdir -p build && cd build
-cmake ../
+cmake ../ -DLINK_STATIC_OPENSSL=OFF
 make -j"$(nproc)"
 ```
 

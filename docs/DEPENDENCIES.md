@@ -104,26 +104,27 @@ https://wiki.openssl.org/index.php/Compilation_and_Installation
 
 ### Static vs. dynamic linking of OpenSSL
 
-In the `CMakeLists.txt`, we provide a parameter `-DLINK_STATIC_OPENSSL` which by
-default is set to ON (static linking). You may link against shared libraries on
-your system by setting the value to OFF:
+`-DLINK_STATIC_OPENSSL` selects how OpenSSL is linked. It defaults to `ON`
+(static), but we recommend `OFF` so the proxy picks up your platform's OpenSSL
+security updates without being rebuilt:
 
-**Static OpenSSL (default):**
-
-```bash
-cmake ../
-make
-```
-
-**Dynamic OpenSSL:**
+**Dynamic OpenSSL (recommended):**
 
 ```bash
 cmake ../ -DLINK_STATIC_OPENSSL=OFF
 make
 ```
 
-Choosing to use dynamic linking is completely optional depending on your own
-operational requirements.
+**Static OpenSSL (the build default):**
+
+```bash
+cmake ../
+make
+```
+
+Static linking makes sense when you need a self-contained binary to copy onto a
+host that has no matching `libssl` — at the cost of owning OpenSSL patching
+yourself.
 
 ## 5. Catch2 test framework
 
