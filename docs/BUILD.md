@@ -43,9 +43,14 @@ make -C build -j"$(nproc)"
 git clone https://github.com/aws-samples/aws-iot-securetunneling-localproxy
 cd aws-iot-securetunneling-localproxy
 mkdir -p build && cd build
-cmake ..
+cmake .. -DLINK_STATIC_OPENSSL=OFF
 make -j"$(nproc)"
 ```
+
+`-DLINK_STATIC_OPENSSL=OFF` links OpenSSL dynamically, so platform security
+updates apply without rebuilding the proxy. The build's own default is `ON`
+(static); prefer that only when you need a self-contained binary for a host with
+no matching `libssl`.
 
 Outputs land at `build/bin/localproxy` and, with `-DBUILD_TESTS=ON`,
 `build/bin/localproxytest`. Run the unit suite either way:
@@ -71,7 +76,7 @@ Install only OpenSSL and zlib, then build normally:
 sudo apt install -y build-essential cmake git curl libssl-dev zlib1g-dev
 
 mkdir build && cd build
-cmake ..
+cmake .. -DLINK_STATIC_OPENSSL=OFF
 make -j"$(nproc)"
 ```
 
@@ -84,6 +89,7 @@ access at configure time:
 
 ```bash
 cmake .. \
+  -DLINK_STATIC_OPENSSL=OFF \
   -DFETCHCONTENT_FULLY_DISCONNECTED=ON \
   -DFETCHCONTENT_SOURCE_DIR_BOOST=/opt/src/boost-1.87.0 \
   -DFETCHCONTENT_SOURCE_DIR_PROTOBUF=/opt/src/protobuf-3.17.3 \
@@ -97,7 +103,8 @@ sysroot. Supply a toolchain file — see
 `example/crosscompile/raspberry_pi_3_b_plus.cmake.tc`:
 
 ```bash
-cmake .. -DCMAKE_TOOLCHAIN_FILE=raspberry_pi_3_b_plus.cmake.tc
+cmake .. -DCMAKE_TOOLCHAIN_FILE=raspberry_pi_3_b_plus.cmake.tc \
+         -DLINK_STATIC_OPENSSL=OFF
 make -j"$(nproc)"
 ```
 
@@ -116,7 +123,7 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=<tc> -DLOCALPROXY_DEP_MODE=fetch \
 | Flag                          | Default  | Effect                                                                            |
 | ----------------------------- | -------- | --------------------------------------------------------------------------------- |
 | `BUILD_TESTS`                 | `OFF`    | Build the Catch2 unit tests in `test/` as `bin/localproxytest`.                   |
-| `LINK_STATIC_OPENSSL`         | `ON`     | Statically link OpenSSL. `OFF` links the shared libraries instead.                |
+| `LINK_STATIC_OPENSSL`         | `ON`     | Statically link OpenSSL. `OFF` (recommended) links the platform's shared libs.    |
 | `GIT_VERSION`                 | `ON`     | Derive the version string from git history.                                       |
 | `DISABLE_SSL_HOST_VERIFY_OPT` | `OFF`    | Compile out the `--no-ssl-host-verify` CLI option, for production builds.         |
 | `BOOST_PKG_VERSION`           | manifest | Version passed to `find_package(Boost)`. Empty disables the version check.        |
