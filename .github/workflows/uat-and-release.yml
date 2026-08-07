@@ -60,7 +60,7 @@ jobs:
       - name: Build
         run: |
           mkdir -p build && cd build
-          cmake .. -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=MinSizeRel -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch
+          cmake .. -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=MinSizeRel -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch -DLOCALPROXY_RELEASE=ON
           make -j$(nproc)
 
       - name: Strip binary
@@ -131,7 +131,7 @@ jobs:
             arm32v7/ubuntu:22.04 bash -c '
               apt-get update && apt-get install -y build-essential cmake git curl libssl-dev zlib1g-dev
               mkdir -p build && cd build
-              cmake .. -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=MinSizeRel -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch
+              cmake .. -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=MinSizeRel -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch -DLOCALPROXY_RELEASE=ON
               make -j$(nproc)
               strip bin/localproxy
             '
