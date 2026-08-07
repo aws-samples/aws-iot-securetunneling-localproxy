@@ -41,15 +41,15 @@ jobs:
           aws ecr-public get-login-password --region us-east-1 | docker login
           --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build Ubuntu Release Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: .github/docker-images/bin-images/debian-ubuntu/Dockerfile
           build-args: |
@@ -81,15 +81,15 @@ jobs:
           aws ecr-public get-login-password --region us-east-1 | docker login
           --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build Ubuntu Release Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: .github/docker-images/bin-images/debian-ubuntu/Dockerfile
           build-args: |
@@ -121,15 +121,15 @@ jobs:
           aws ecr-public get-login-password --region us-east-1 | docker login
           --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build ubuntu Release Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: .github/docker-images/bin-images/debian-ubuntu/Dockerfile
           build-args: |
@@ -161,15 +161,15 @@ jobs:
           aws ecr-public get-login-password --region us-east-1 | docker login
           --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build ubi8 Release Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: .github/docker-images/bin-images/ubi8/Dockerfile
           build-args: |
@@ -201,15 +201,15 @@ jobs:
           aws ecr-public get-login-password --region us-east-1 | docker login
           --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build ubi8 Release Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: .github/docker-images/bin-images/ubi8/Dockerfile
           build-args: |
@@ -241,15 +241,15 @@ jobs:
           aws ecr-public get-login-password --region us-east-1 | docker login
           --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build amazonlinux Release Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: .github/docker-images/bin-images/amazonlinux/Dockerfile
           build-args: |
@@ -281,15 +281,15 @@ jobs:
           aws ecr-public get-login-password --region us-east-1 | docker login
           --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build amazonlinux Release Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: .github/docker-images/bin-images/amazonlinux/Dockerfile
           build-args: |
@@ -321,15 +321,15 @@ jobs:
           aws ecr-public get-login-password --region us-east-1 | docker login
           --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build debian Release Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: .github/docker-images/bin-images/debian-ubuntu/Dockerfile
           build-args: |
@@ -361,15 +361,15 @@ jobs:
           aws ecr-public get-login-password --region us-east-1 | docker login
           --username AWS --password-stdin ${{ env.ECR_ACCOUNT_URL }}
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build debian Release Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: .github/docker-images/bin-images/debian-ubuntu/Dockerfile
           build-args: |
@@ -398,7 +398,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.ECR_USER_AWS_KEY_SECRET }}
           aws-region: us-east-1
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Login to ECR
         run:
           aws ecr-public get-login-password --region us-east-1 | docker login

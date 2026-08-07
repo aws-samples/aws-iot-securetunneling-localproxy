@@ -24,7 +24,7 @@ jobs:
       checks: ${{ steps.list-checks.outputs.checks }}
     steps:
       - &checkout
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           filter: "tree:0"
@@ -54,11 +54,11 @@ jobs:
   git-secrets:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Checkout awslabs/git-secrets
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: awslabs/git-secrets
           ref: master

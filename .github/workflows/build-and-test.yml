@@ -28,7 +28,7 @@ jobs:
             runner: ubuntu-22.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -43,7 +43,7 @@ jobs:
       # Actions cache budget. cmake/LocalproxyDeps.cmake pins the download
       # location so this path does not depend on FetchContent internals.
       - name: Cache fetched dependency sources
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: build/_deps/downloads
           key:
@@ -85,12 +85,12 @@ jobs:
       contents: read
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: arm
 
@@ -98,7 +98,7 @@ jobs:
       # download staging dirs are cached. Keyed on fc_deps.json alone: the
       # manifest is the only place the versions live.
       - name: Cache fetched dependency sources
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: build/_deps/downloads
           key: arm32-fcdeps-${{ hashFiles('fc_deps.json') }}-v1
@@ -140,7 +140,7 @@ jobs:
       contents: read
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -148,7 +148,7 @@ jobs:
         run: brew install cmake openssl@3 zlib
 
       - name: Cache fetched dependency sources
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: build/_deps/downloads
           key: macos-arm64-fcdeps-${{ hashFiles('fc_deps.json') }}-v1
@@ -169,7 +169,7 @@ jobs:
       # xattr -d com.apple.quarantine localproxy-macos-arm64
       # Or right-click the binary and select "Open" to bypass Gatekeeper
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: localproxy-macos-arm64
           path: build/bin/localproxy
@@ -187,7 +187,7 @@ jobs:
       OPENSSL_VERSION: "3.0.12"
       ZLIB_VERSION: "1.2.13"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -198,7 +198,7 @@ jobs:
 
       - name: Restore Windows dependencies cache
         id: cache-windows-deps
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ${{ env.DEPS_DIR }}
           key:
@@ -206,7 +206,7 @@ jobs:
             env.ZLIB_VERSION }}-v1
 
       - name: Cache fetched dependency sources
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: build/_deps/downloads
           key: windows-fcdeps-${{ hashFiles('fc_deps.json') }}-v1
@@ -238,7 +238,7 @@ jobs:
 
       - name: Save Windows dependencies cache
         if: steps.cache-windows-deps.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: ${{ env.DEPS_DIR }}
           key:
@@ -260,7 +260,7 @@ jobs:
         run: .\build\bin\Release\localproxytest.exe
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: localproxy-windows-x64
           path: build/bin/Release/localproxy.exe
