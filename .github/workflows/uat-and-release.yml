@@ -25,7 +25,7 @@ jobs:
             runner: ubuntu-22.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -51,7 +51,7 @@ jobs:
       # Dependencies come from the versions pinned in fc_deps.json; only the
       # download staging dirs are cached, keyed on the manifest alone.
       - name: Cache fetched dependency sources
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: build/_deps/downloads
           key:
@@ -66,7 +66,7 @@ jobs:
       - name: Strip binary
         run: strip build/bin/localproxy
 
-      - uses: aws-actions/configure-aws-credentials@v5
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume:
             arn:aws:iam::${{ vars.AWS_ACCOUNT }}:role/${{ secrets.ROLE_NAME }}
@@ -88,13 +88,13 @@ jobs:
 
       - name: Upload logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: uat-logs-${{ matrix.arch }}
           path: uat/logs/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: localproxy-linux-${{ matrix.arch }}
           path: build/bin/localproxy
@@ -105,12 +105,12 @@ jobs:
       github.event.pull_request.head.repo.fork != true
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: arm
 
@@ -118,7 +118,7 @@ jobs:
       # dirs are cached. Keyed on fc_deps.json alone: the manifest is the only
       # place the dependency versions live.
       - name: Cache fetched dependency sources
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: build/_deps/downloads
           key: arm32-fcdeps-${{ hashFiles('fc_deps.json') }}-v1
@@ -136,7 +136,7 @@ jobs:
               strip bin/localproxy
             '
 
-      - uses: aws-actions/configure-aws-credentials@v5
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume:
             arn:aws:iam::${{ vars.AWS_ACCOUNT }}:role/${{ secrets.ROLE_NAME }}
@@ -168,13 +168,13 @@ jobs:
 
       - name: Upload logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: uat-logs-armv7
           path: uat/logs/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: localproxy-linux-armv7
           path: build/bin/localproxy
