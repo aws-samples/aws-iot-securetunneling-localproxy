@@ -11,7 +11,7 @@ project(${AWS_TUNNEL_LOCAL_PROXY_TARGET_NAME} CXX)
 
 option(BUILD_TESTS "Build tests" OFF)
 option(LINK_STATIC_OPENSSL "Use static openssl libs" ON)
-option(GIT_VERSION "Updates the version number using the Git commit history" ON)
+option(LOCALPROXY_RELEASE "Build as release version without git hash" OFF)
 option(DISABLE_SSL_HOST_VERIFY_OPT
        "Disable the --no-ssl-host-verify option for production builds" OFF)
 
@@ -76,10 +76,33 @@ if(${PROJECT_SOURCE_DIR} STREQUAL ${PROJECT_BINARY_DIR})
 endif()
 
 # ##############################################################################
-# Generate Version Information from Git #
+# Generate Version Information #
 # ##############################################################################
+file(READ version LP_VERSION)
+string(STRIP "${LP_VERSION}" LP_VERSION)
+
 find_package(Git)
-include(CMakeLists.txt.versioning)
+
+if(NOT LOCALPROXY_RELEASE)
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} -c safe.directory=${CMAKE_SOURCE_DIR} rev-parse
+            --short=7 HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT
+    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+endif()
+
+set(${PROJECT_NAME}_VERSION_STRING "v${LP_VERSION}")
+if(GIT_COMMIT)
+  set(${PROJECT_NAME}_VERSION_STRING_FULL "v${LP_VERSION}+${GIT_COMMIT}")
+else()
+  set(${PROJECT_NAME}_VERSION_STRING_FULL "v${LP_VERSION}")
+endif()
+
+message(
+  "-- AWS IoT Secure Tunneling Local Proxy version: ${${PROJECT_NAME}_VERSION_STRING_FULL}"
+)
+
 # Now we inject the version information into a header that is accessible from
 # the local proxy executable
 configure_file("src/Version.h.in" "${PROJECT_BINARY_DIR}/Version.h")

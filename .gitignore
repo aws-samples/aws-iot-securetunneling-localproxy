@@ -4,7 +4,6 @@
 .vscode/
 logs/
 compile_commands.json
-.version
 
 # nix build result symlinks
 result
