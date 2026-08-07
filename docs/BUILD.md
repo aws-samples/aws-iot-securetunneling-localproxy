@@ -1,15 +1,5 @@
 # Building the local proxy
 
-CMake resolves each dependency by probing for an installed copy first and
-fetching the version pinned in [`fc_deps.json`](../fc_deps.json) only if it is
-missing. So `cmake .. && make` works both on a machine that already has the
-libraries and on a bare one.
-
-To install the dependencies by hand instead, see
-[DEPENDENCIES.md](DEPENDENCIES.md). For Windows, see
-[windows-localproxy-build.md](../windows-localproxy-build.md). To skip building
-altogether, use the prebuilt images in [DOCKER.md](DOCKER.md).
-
 ## Requirements
 
 | Tool / library | Version                                                    |
@@ -24,16 +14,27 @@ altogether, use the prebuilt images in [DOCKER.md](DOCKER.md).
 
 You also need `make`, `git` and `curl`.
 
-Bump a fetched version in `fc_deps.json`; it is the single source of truth.
-OpenSSL and zlib are deliberately absent from it: OpenSSL has no CMake build and
-the proxy must use the platform's root CAs, and zlib is only a transitive
-requirement (`protobuf_WITH_ZLIB=OFF` in `fetch` mode).
+## Building method
+
+There are two ways to build the project one is through installing the
+dependencies system wide and second is auto fetched by CMake.
+
+It is recommended to use `-DLOCALPROXY_DEP_MODE=fetch` but if not mentioned then
+it will auto select a method for you. For more info see
+[DEPENDENCIES.md](DEPENDENCIES.md).
+
+For Windows, see [windows-localproxy-build.md](windows-localproxy-build.md).
+
+And to skip building altogether, use the prebuilt images in
+[DOCKER.md](DOCKER.md) or the release artifacts from
+[Github release](https://github.com/aws-samples/aws-iot-securetunneling-localproxy/releases)
+if available.
 
 If your CMake is too old to fetch, `./bootstrap-cmake.sh` downloads a pinned one
 into `build/cmake/` and configures with it, passing extra arguments through:
 
 ```bash
-./bootstrap-cmake.sh -DBUILD_TESTS=ON
+./bootstrap-cmake.sh -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF
 make -C build -j"$(nproc)"
 ```
 
@@ -147,15 +148,7 @@ default `CMAKE_BUILD_TYPE`: optimization comes from the project's hard-coded
 `-O2`. We also recommend enabling your compiler's security features — see
 [Harden your toolchain](SECURITY.md#harden-your-toolchain).
 
-## Tooling
-
-`build/compile_commands.json` is always generated for `clang-tidy`, `clangd` and
-IWYU, with the test target excluded so each translation unit appears once.
-Coverity uses the same build directory (`cmake -B build && coverity scan`,
-driven by `coverity.json`). `nix fmt` formats the tree and CI requires it to be
-clean — see [AGENTS.md](../AGENTS.md).
-
-## Editing `fc_deps.json`
+## Editing Notes for `fc_deps.json`
 
 - **Boost's URL must stay the GitHub `-cmake` release asset.** The
   `archives.boost.io` tarball has no root `CMakeLists.txt`, and Boost's git

@@ -38,7 +38,7 @@ case "${os}" in
     ;;
   *)
     echo "Bootstrap script does not support OS: ${os}." >&2
-    echo "On Windows, install CMake from https://cmake.org/download/ and see windows-localproxy-build.md." >&2
+    echo "On Windows, install CMake from https://cmake.org/download/ and see docs/windows-localproxy-build.md." >&2
     exit 1
     ;;
 esac
