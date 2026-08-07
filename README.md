@@ -77,8 +77,8 @@ Getting the local proxy:
   offline builds, cross-compilation, static analysis.
   - **[docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)** — installing the
     dependencies yourself, instead of letting the build fetch them.
-  - **[windows-localproxy-build.md](windows-localproxy-build.md)** — building on
-    Windows.
+  - **[windows-localproxy-build.md](docs/windows-localproxy-build.md)** —
+    building on Windows.
 
 Using the local proxy:
 
@@ -96,8 +96,9 @@ Using the local proxy:
 
 Protocol and project:
 
-- **[V1](V1WebSocketProtocolGuide.md) / [V2](V2WebSocketProtocolGuide.md) /
-  [V3](V3WebSocketProtocolGuide.md) WebSocket protocol guides** — the wire
+- **[V1](docs/V1WebSocketProtocolGuide.md) /
+  [V2](docs/V2WebSocketProtocolGuide.md) /
+  [V3](docs/V3WebSocketProtocolGuide.md) WebSocket protocol guides** — the wire
   protocol, for implementing your own client.
 - **[CHANGELOG.md](CHANGELOG.md)** — release history.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — issues, pull requests, CLA;

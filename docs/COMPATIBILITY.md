@@ -6,9 +6,9 @@ speaks determines whether you need to pass `--destination-client-type`, and
 which features are available.
 
 The wire protocols themselves are documented in
-[V1WebSocketProtocolGuide.md](../V1WebSocketProtocolGuide.md),
-[V2WebSocketProtocolGuide.md](../V2WebSocketProtocolGuide.md) and
-[V3WebSocketProtocolGuide.md](../V3WebSocketProtocolGuide.md).
+[V1WebSocketProtocolGuide.md](V1WebSocketProtocolGuide.md),
+[V2WebSocketProtocolGuide.md](V2WebSocketProtocolGuide.md) and
+[V3WebSocketProtocolGuide.md](V3WebSocketProtocolGuide.md).
 
 ---
 

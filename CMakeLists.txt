@@ -49,9 +49,6 @@ set(WIN32_WINNT
     "0x0A00"
     CACHE STRING "Value of _WIN32_WINNT to compile against (Windows only)")
 
-# windows-localproxy-build.md documents -DBUILD_TESTING; keep BUILD_TESTS as the
-# primary name (all automation passes it) but honour the canonical CTest one
-# too.
 if(BUILD_TESTS AND NOT DEFINED BUILD_TESTING)
   set(BUILD_TESTING ON)
 endif()
