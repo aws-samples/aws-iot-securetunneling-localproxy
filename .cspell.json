@@ -11,7 +11,6 @@
   "dictionaries": ["project"],
   "ignorePaths": [
     "**/CMakeLists.txt",
-    "CMakeLists.txt.versioning",
     "**/*.cmake",
     "**/*.cmake.in",
     "fc_deps.json"

@@ -23,7 +23,6 @@
             "*.h" = fmt-cpp;
             "*.hpp" = fmt-cpp;
             "CMakeLists.txt" = fmt-cmake;
-            "CMakeLists.txt.versioning" = fmt-cmake;
             "*.cmake" = fmt-cmake;
             ".clang*" = fmt-yaml;
             "*.sh" = fmt-sh;

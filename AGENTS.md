@@ -113,7 +113,8 @@ Relevant CMake options (top of `CMakeLists.txt`; full table in `docs/BUILD.md`):
 
 - `BUILD_TESTS` (default OFF) — build the Catch2 unit tests under `test/`.
 - `LINK_STATIC_OPENSSL` (default ON) — statically link OpenSSL.
-- `GIT_VERSION` (default ON) — derive the version from git history.
+- `LOCALPROXY_RELEASE` (default OFF) — omit the git hash; the `version` file at
+  the repo root is the single source of truth.
 - `DISABLE_SSL_HOST_VERIFY_OPT` (default OFF) — production builds may drop the
   `--no-ssl-host-verify` option.
 - `LOCALPROXY_DEP_MODE` (default `auto`) — `auto`, `system` or `fetch`.
@@ -124,9 +125,9 @@ Relevant CMake options (top of `CMakeLists.txt`; full table in `docs/BUILD.md`):
 
 - Format with `nix fmt` before committing (treefmt via `flake.nix`: clang-format
   for C/C++ using `.clang-format`, cmake-format for `CMakeLists.txt`,
-  `CMakeLists.txt.versioning` and `cmake/*.cmake` using `.cmake-format.json`,
-  prettier for Markdown using `prettierrc.yml`). A clean tree after `nix fmt`
-  (no diff) is required; don't hand-format against the style.
+  `cmake/*.cmake` using `.cmake-format.json`, prettier for Markdown using
+  `prettierrc.yml`). A clean tree after `nix fmt` (no diff) is required; don't
+  hand-format against the style.
 - If you add a CMake function, register its signature under
   `parse.additional_commands` in `.cmake-format.json`, otherwise cmake-format
   reflows every call site one argument per line.

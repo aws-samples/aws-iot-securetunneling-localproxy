@@ -125,7 +125,7 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=<tc> -DLOCALPROXY_DEP_MODE=fetch \
 | ----------------------------- | -------- | --------------------------------------------------------------------------------- |
 | `BUILD_TESTS`                 | `OFF`    | Build the Catch2 unit tests in `test/` as `bin/localproxytest`.                   |
 | `LINK_STATIC_OPENSSL`         | `ON`     | Statically link OpenSSL. `OFF` (recommended) links the platform's shared libs.    |
-| `GIT_VERSION`                 | `ON`     | Derive the version string from git history.                                       |
+| `LOCALPROXY_RELEASE`          | `OFF`    | Build as a release version, omitting the git hash from the version string.        |
 | `DISABLE_SSL_HOST_VERIFY_OPT` | `OFF`    | Compile out the `--no-ssl-host-verify` CLI option, for production builds.         |
 | `BOOST_PKG_VERSION`           | manifest | Version passed to `find_package(Boost)`. Empty disables the version check.        |
 | `PROTOBUF_PKG_VERSION`        | manifest | Version passed to `find_package(Protobuf)`. Empty disables the version check.     |
