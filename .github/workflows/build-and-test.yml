@@ -156,7 +156,7 @@ jobs:
       - name: Build
         run: |
           mkdir -p build && cd build
-          cmake .. -DBUILD_TESTS=ON -DCMAKE_PREFIX_PATH="$(brew --prefix openssl@3)" -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch
+          cmake .. -DBUILD_TESTS=ON -DCMAKE_PREFIX_PATH="$(brew --prefix openssl@3)" -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch -DLOCALPROXY_RELEASE=ON
           make -j$(sysctl -n hw.ncpu)
 
       - name: Run tests
@@ -250,7 +250,7 @@ jobs:
           mkdir build
           cd build
           $prefixPath = "$env:DEPS_DIR\openssl;$env:DEPS_DIR\zlib"
-          cmake -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON -DLOCALPROXY_DEP_MODE=fetch "-DCMAKE_PREFIX_PATH=$prefixPath" -G "Visual Studio 17 2022" -A x64 ..
+          cmake -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF -DWIN32_WINNT=0x0A00 -DBoost_USE_STATIC_LIBS=ON -DLOCALPROXY_DEP_MODE=fetch -DLOCALPROXY_RELEASE=ON "-DCMAKE_PREFIX_PATH=$prefixPath" -G "Visual Studio 17 2022" -A x64 ..
           msbuild localproxy.vcxproj -p:Configuration=Release
 
       - name: Build tests
