@@ -89,31 +89,85 @@ jobs:
         with:
           fetch-depth: 0
 
+      # QEMU only runs the arm32 test binary; the build is a cross-compile.
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
         with:
           platforms: arm
 
-      # Cross-building Boost and Protobuf under QEMU is slow, so the FetchContent
-      # download staging dirs are cached. Keyed on fc_deps.json alone: the
-      # manifest is the only place the versions live.
+      - name: Install armhf cross toolchain and multiarch sysroot
+        run: |
+          sudo dpkg --add-architecture armhf
+          # The runner's sources use "deb mirror+file:...", not an http URL, so match any
+          # scheme: left unscoped, armhf 404s on the amd64-only mirrors and apt fails.
+          for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+            [ -e "$f" ] || continue
+            sudo sed -i -E '/^deb .*arch=/! { s|^deb \[([^]]*)\] (\S+)|deb [arch=amd64 \1] \2|; t; s|^deb (\S+)|deb [arch=amd64] \1|; }' "$f"
+          done
+          # armhf is served from ports.ubuntu.com, not archive.ubuntu.com.
+          sudo tee /etc/apt/sources.list.d/armhf-ports.list >/dev/null <<'PORTS'
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted universe multiverse
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted universe multiverse
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy-security main restricted universe multiverse
+          PORTS
+          sudo apt-get update
+          sudo apt-get install -y crossbuild-essential-armhf cmake git curl unzip libssl-dev:armhf zlib1g-dev:armhf
+
+      # Generated .pb.h has a PROTOBUF_MIN_PROTOC_VERSION guard, so the host protoc must
+      # match fc_deps.json; Ubuntu's 3.12.4 would #error against the pinned 3.17.3.
+      - name: Install host protoc matching fc_deps.json
+        run: |
+          VER=$(jq -r .protobuf.version fc_deps.json)
+          echo "Installing host protoc $VER"
+          curl -fsSL -o /tmp/protoc.zip \
+            "https://github.com/protocolbuffers/protobuf/releases/download/v$VER/protoc-$VER-linux-x86_64.zip"
+          # unzip drops the execute bit; restore it before the smoke test (else exit 126).
+          sudo unzip -o /tmp/protoc.zip -d /usr/local 'bin/protoc' 'include/*'
+          sudo chmod +x /usr/local/bin/protoc
+          protoc --version
+
+      - name: Write armhf multiarch toolchain file
+        run: |
+          cat > /tmp/armhf-multiarch.cmake <<'TOOLCHAIN'
+          set(CMAKE_SYSTEM_NAME      Linux)
+          set(CMAKE_SYSTEM_PROCESSOR arm)
+
+          set(CMAKE_C_COMPILER   arm-linux-gnueabihf-gcc)
+          set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
+
+          # No CMAKE_SYSROOT: multiarch puts armhf under the host root, and the cross gcc's
+          # auto-detected CMAKE_LIBRARY_ARCHITECTURE steers find_package(OpenSSL) to it.
+
+          # BOTH, not ONLY: there is no sysroot tree, so ONLY would hide /usr/include.
+          set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+          set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
+          set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
+          set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
+
+          set(ENV{PKG_CONFIG_LIBDIR} /usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig)
+          TOOLCHAIN
+
+      # Cached FetchContent downloads, keyed on the manifest that pins the versions.
       - name: Cache fetched dependency sources
         uses: actions/cache@v6
         with:
           path: build/_deps/downloads
           key: arm32-fcdeps-${{ hashFiles('fc_deps.json') }}-v1
 
-      - name: Build in ARM32 container
+      # Cross builds default to `system` dep mode, so `fetch` is explicit.
+      # LOCALPROXY_PROTOC_EXECUTABLE is mandatory: codegen needs a host protoc.
+      - name: Cross-compile arm32 binary and tests
         run: |
-          docker run --rm --platform linux/arm/v7 \
-            -v ${{ github.workspace }}:/src \
-            -w /src \
-            arm32v7/ubuntu:22.04 bash -c '
-              apt-get update && apt-get install -y build-essential cmake git curl libssl-dev zlib1g-dev
-              mkdir -p build && cd build
-              cmake .. -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch
-              make -j$(nproc)
-            '
+          mkdir -p build && cd build
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=/tmp/armhf-multiarch.cmake -DBUILD_TESTS=ON -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch -DLOCALPROXY_PROTOC_EXECUTABLE=/usr/local/bin/protoc
+          make -j"$(nproc)"
+
+      # Assert both are 32-bit ARM so a silent host-native build cannot pass.
+      - name: Verify binaries are 32-bit ARM
+        run: |
+          file build/bin/localproxy build/bin/localproxytest
+          file build/bin/localproxy     | grep -q 'ELF 32-bit LSB.*ARM'
+          file build/bin/localproxytest | grep -q 'ELF 32-bit LSB.*ARM'
 
       - name: Run tests in ARM32 container
         run: |
@@ -125,15 +179,8 @@ jobs:
               ./build/bin/localproxytest
             '
 
-      - name: Strip binary in ARM32 container
-        run: |
-          docker run --rm --platform linux/arm/v7 \
-            -v ${{ github.workspace }}:/src \
-            -w /src \
-            arm32v7/ubuntu:22.04 bash -c '
-              apt-get update && apt-get install -y binutils
-              strip build/bin/localproxy
-            '
+      - name: Strip binary
+        run: arm-linux-gnueabihf-strip build/bin/localproxy
 
   build-macos:
     permissions:
