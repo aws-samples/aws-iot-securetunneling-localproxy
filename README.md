@@ -79,6 +79,8 @@ Getting the local proxy:
     dependencies yourself, instead of letting the build fetch them.
   - **[windows-localproxy-build.md](docs/windows-localproxy-build.md)** —
     building on Windows.
+- **[docs/ZIG_BUILD.md](docs/ZIG_BUILD.md)** — the optional Zig build, which
+  cross-compiles every supported platform from a single host.
 
 Using the local proxy:
 

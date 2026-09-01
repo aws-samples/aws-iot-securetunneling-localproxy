@@ -8,3 +8,15 @@ compile_commands.json
 # nix build result symlinks
 result
 result-*
+
+# Zig build (see docs/ZIG_BUILD.md). zig-pkg/ is where Zig 0.16 unpacks the
+# fetched Boost/Protobuf/Catch2 packages; zig-out/ and .zig-cache/ are the
+# install prefix and the build cache. Message.pb.* and Version.h are generated
+# into the build cache, never into the source tree, but the CMake build can be
+# pointed at an in-tree binary directory, so ignore them here too.
+zig-out/
+.zig-cache/
+zig-pkg/
+Message.pb.h
+Message.pb.cc
+src/Version.h

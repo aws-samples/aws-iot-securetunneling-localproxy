@@ -12,6 +12,12 @@ max_line_length = 80
 [{*.{cpp,h,hpp}}]
 indent_size = 4
 
+# `zig fmt` is the authority for these files and is not configurable: it emits
+# 4-space indentation and does not wrap at 80.
+[*.{zig,zon}]
+indent_size = 4
+max_line_length = 100
+
 [*.md]
 trim_trailing_whitespace = false
 

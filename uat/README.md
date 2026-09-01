@@ -7,7 +7,9 @@ functionality.
 
 - AWS CLI configured with credentials
 - IAM permissions (see [Minimum IAM Permissions](#minimum-iam-permissions))
-- Built localproxy binary at `../build/bin/localproxy`
+- Built localproxy binary at `../build/bin/localproxy`, or any path exported as
+  `LOCALPROXY` (for example `LOCALPROXY=../zig-out/bin/localproxy` for a
+  [Zig build](../docs/ZIG_BUILD.md))
 - `jq` and `nc` (netcat) installed
 
 ## Minimum IAM Permissions

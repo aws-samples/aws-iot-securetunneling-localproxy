@@ -7,7 +7,7 @@ set -eo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/common.sh"
 
-LOCALPROXY="${SCRIPT_DIR}/../build/bin/localproxy"
+LOCALPROXY="${LOCALPROXY:-${SCRIPT_DIR}/../build/bin/localproxy}"
 REGION="${AWS_REGION:-us-east-1}"
 THING_NAME="uat-thing-$(date +%s)-$$"
 TEST_PORT="${TEST_PORT:-19999}"

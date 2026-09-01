@@ -1,0 +1,51 @@
+// Package manifest for the Zig build.
+//
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+//
+// The three dependencies below are the *same* tarballs and versions that
+// fc_deps.json pins for the CMake build; fc_deps.json remains the single place
+// a dependency version is decided, and this file must be updated to match when
+// one is bumped (the `hash` values are Zig package multihashes, not the
+// sha256 digests fc_deps.json records, so they cannot be copied across --
+// regenerate them with `zig fetch --save=<name> <url>`).
+//
+// All three are lazy: nothing is downloaded for a `-Ddep-mode=system` build,
+// and Catch2 is only fetched when `-Dtests` is passed, matching
+// fc_deps.json's `"when": "BUILD_TESTS"` gate on Catch2.
+.{
+    .name = .localproxy,
+    // Kept in step with the repo-root `version` file, which stays the single
+    // source of truth for the version the binary reports.
+    .version = "3.3.1",
+    .fingerprint = 0x1248d376e4e772c4,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .boost = .{
+            .url = "https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.tar.gz",
+            .hash = "N-V-__8AAI7gByBMAIbphDgfTi4QXnhiyNFLUVWRkOeVEFze",
+            .lazy = true,
+        },
+        .protobuf = .{
+            .url = "https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz",
+            .hash = "N-V-__8AAELu2gL596S3UIjbRw0SaCZk6b0-ZPAou8uQ9ReJ",
+            .lazy = true,
+        },
+        .catch2 = .{
+            .url = "https://github.com/catchorg/Catch2/archive/refs/tags/v3.7.0.tar.gz",
+            .hash = "N-V-__8AAM70gAAYc0FpDHn7DGui5DrTuIPU2yp5_sa8Zkik",
+            .lazy = true,
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "zig",
+        "src",
+        "test",
+        "resources",
+        "version",
+        "LICENSE",
+        "NOTICE",
+    },
+}
