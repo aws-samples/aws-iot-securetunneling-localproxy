@@ -13,10 +13,13 @@ result-*
 # fetched Boost/Protobuf/Catch2 packages; zig-out/ and .zig-cache/ are the
 # install prefix and the build cache. Message.pb.* and Version.h are generated
 # into the build cache, never into the source tree, but the CMake build can be
-# pointed at an in-tree binary directory, so ignore them here too.
+# pointed at an in-tree binary directory, so ignore them here too. Anchored to
+# the repo root: the checked-in resources/Message.proto has no generated
+# counterpart anywhere else, and an unanchored pattern would also hide a
+# same-named file in a subdirectory.
 zig-out/
 .zig-cache/
 zig-pkg/
-Message.pb.h
-Message.pb.cc
-src/Version.h
+/Message.pb.h
+/Message.pb.cc
+/src/Version.h

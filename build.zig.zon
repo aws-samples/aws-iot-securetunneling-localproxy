@@ -10,8 +10,9 @@
 // sha256 digests fc_deps.json records, so they cannot be copied across --
 // regenerate them with `zig fetch --save=<name> <url>`).
 //
-// All three are lazy: nothing is downloaded for a `-Ddep-mode=system` build,
-// and Catch2 is only fetched when `-Dtests` is passed, matching
+// All three are lazy: nothing is downloaded for a `-Ddep-mode=system` build --
+// including the protoc used for code generation, which comes from the system in
+// that mode -- and Catch2 is only fetched when `-Dtests` is passed, matching
 // fc_deps.json's `"when": "BUILD_TESTS"` gate on Catch2.
 .{
     .name = .localproxy,

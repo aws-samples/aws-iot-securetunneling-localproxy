@@ -17,10 +17,26 @@
 
 const std = @import("std");
 const cfg = @import("config.zig");
+const system = @import("system.zig");
+const targets = @import("targets.zig");
 
 /// Version pinned by fc_deps.json. Kept here so the -Dprotoc check and the
 /// documentation cannot drift from the tarball in build.zig.zon.
 pub const pinned_version = "3.17.3";
+
+/// The same version as google/protobuf/stubs/common.h's
+/// `#define GOOGLE_PROTOBUF_VERSION`, kept adjacent so the two cannot drift.
+const pinned_version_macro: u64 = 3017003;
+
+/// What a pre-installed protobuf has to satisfy before `auto` will use it.
+/// cmake/LocalproxyDeps.cmake probes with the pinned version for the same
+/// reason: an installed-but-too-old copy reported as found makes the real
+/// REQUIRED find_package hard-fail instead of falling back to fetching.
+const version_check = system.VersionCheck{
+    .header = "google/protobuf/stubs/common.h",
+    .macro = "GOOGLE_PROTOBUF_VERSION",
+    .minimum = pinned_version_macro,
+};
 
 /// cmake/libprotobuf-lite.cmake
 const lite_files = [_][]const u8{
@@ -212,10 +228,24 @@ pub const Protobuf = struct {
     lite: ?*std.Build.Step.Compile,
     /// src/ of the vendored tree, for -isystem on consumers.
     include_dir: ?std.Build.LazyPath,
+    /// Where the pre-installed protobuf was found; only set in `system` mode.
+    prefix: ?system.Prefix = null,
 
     pub fn apply(self: Protobuf, mod: *std.Build.Module) void {
         if (self.include_dir) |dir| mod.addSystemIncludePath(dir);
-        if (self.lite) |lib| mod.linkLibrary(lib) else mod.linkSystemLibrary("protobuf-lite", .{});
+        if (self.lite) |lib| {
+            mod.linkLibrary(lib);
+        } else {
+            // include_directories(SYSTEM ${Protobuf_INCLUDE_DIRS}) plus the
+            // library directory the probe actually matched -- detecting a
+            // protobuf under /usr/local and then omitting -isystem/-L for it
+            // would compile against whatever else is on the default path.
+            if (self.prefix) |p| {
+                p.applyInclude(mod);
+                p.applyLib(mod);
+            }
+            mod.linkSystemLibrary("protobuf-lite", .{});
+        }
     }
 };
 
@@ -227,15 +257,34 @@ fn applyProtobufDefines(mod: *std.Build.Module, target: std.Target) void {
     if (target.os.tag != .windows) mod.addCMacro("HAVE_PTHREAD", "1");
 }
 
-fn systemProtobufFound(b: *std.Build, target: std.Build.ResolvedTarget) bool {
-    if (target.result.os.tag != b.graph.host.result.os.tag or
-        target.result.cpu.arch != b.graph.host.result.cpu.arch) return false;
-    const io = b.graph.io;
-    for ([_][]const u8{ "/usr/include", "/usr/local/include", "/opt/homebrew/include" }) |prefix| {
-        if (cfg.pathExists(io, b.pathJoin(&.{ prefix, "google", "protobuf", "message_lite.h" })))
-            return true;
-    }
-    return false;
+/// Locate a pre-installed protobuf that this build may actually link, standing
+/// in for find_package(Protobuf <version>).
+///
+/// Returns null when the target is not the host (see system.isHost), when no
+/// prefix carries protobuf >= the pinned version, or when libprotobuf-lite is
+/// missing from that prefix.
+fn findSystemProtobuf(
+    b: *std.Build,
+    options: cfg.Options,
+    target: std.Build.ResolvedTarget,
+) ?system.Prefix {
+    return system.find(b, options, target, version_check, &.{"protobuf-lite"});
+}
+
+/// How protobuf will be provided for `target`, without building anything.
+///
+/// Exposed because the codegen step has to make the same decision: in system
+/// mode it must use the system protoc, as lp_protobuf_generate_cpp does.
+pub fn resolveMode(
+    b: *std.Build,
+    options: cfg.Options,
+    target: std.Build.ResolvedTarget,
+) cfg.DepMode {
+    return switch (options.resolveDep(options.protobuf_source)) {
+        .system => .system,
+        .fetch => .fetch,
+        .auto => if (findSystemProtobuf(b, options, target) != null) .system else .fetch,
+    };
 }
 
 /// protobuf-lite for `target`.
@@ -244,12 +293,31 @@ pub fn add(
     options: cfg.Options,
     target: std.Build.ResolvedTarget,
 ) ?Protobuf {
-    const mode: cfg.DepMode = switch (options.resolveDep(options.protobuf_source)) {
-        .system => .system,
-        .fetch => .fetch,
-        .auto => if (systemProtobufFound(b, target)) .system else .fetch,
+    const requested = options.resolveDep(options.protobuf_source);
+    const found = if (requested == .fetch) null else findSystemProtobuf(b, options, target);
+    switch (requested) {
+        // An explicit `system` that cannot be satisfied is a configuration
+        // error, exactly as find_package(Protobuf REQUIRED) is in the CMake
+        // build: it must not quietly fetch instead.
+        .system => if (found == null) cfg.fatal(
+            \\-Dprotobuf-source=system (or -Ddep-mode=system) was requested, but no usable
+            \\protobuf {s} was found for target '{s}'.
+            \\
+            \\A usable installation needs headers reporting GOOGLE_PROTOBUF_VERSION >= {d}
+            \\and libprotobuf-lite in the same library directory. Prefixes searched:
+            \\-Ddep-prefix entries, then /usr, /usr/local, /opt/homebrew.
+            \\
+            \\Add one with -Ddep-prefix=<dir>[,<dir>...], or build protobuf from the pinned
+            \\sources with -Dprotobuf-source=fetch.
+        , .{ pinned_version, targets.nameOf(b, target), pinned_version_macro }),
+        .fetch, .auto => {},
+    }
+    if (found) |prefix| return .{
+        .mode = .system,
+        .lite = null,
+        .include_dir = null,
+        .prefix = prefix,
     };
-    if (mode == .system) return .{ .mode = .system, .lite = null, .include_dir = null };
 
     const dep = b.lazyDependency("protobuf", .{}) orelse return null;
     const mod = b.createModule(.{
@@ -273,7 +341,7 @@ pub fn add(
     });
 
     return .{
-        .mode = mode,
+        .mode = .fetch,
         .lite = b.addLibrary(.{
             .name = "protobuf-lite",
             .root_module = mod,
@@ -332,15 +400,55 @@ fn hostProtoc(b: *std.Build, dep: *std.Build.Dependency) *std.Build.Step.Compile
     return b.addExecutable(.{ .name = "protoc", .root_module = mod });
 }
 
+/// Either a usable codegen step, or the message explaining what to supply.
+///
+/// Reported rather than fatal so that `zig build deps` and `zig build --help`
+/// keep working when codegen cannot be configured -- the same reasoning as
+/// zig/openssl.zig's Result.
+pub const Result = union(enum) {
+    ok: Generated,
+    missing: []const u8,
+};
+
 /// Run protoc over resources/Message.proto.
 ///
 /// Mirrors lp_protobuf_generate_cpp in cmake/LocalproxyProtobuf.cmake:
 /// `protoc --cpp_out <dir> -I <proto dir> <proto>`, with the output directory
 /// on the include path so sources can `#include "Message.pb.h"` unqualified
 /// (CMake achieves that with include_directories(${CMAKE_CURRENT_BINARY_DIR})).
-pub fn generate(b: *std.Build, options: cfg.Options) ?Generated {
+///
+/// Which protoc runs follows the resolved dependency mode, as it does there:
+/// system mode uses the system protoc (`protobuf_generate_cpp`), fetch mode the
+/// protoc built from the pinned sources (`protobuf::protoc`). Honoring the mode
+/// is what makes the "a -Ddep-mode=system build downloads nothing" promise in
+/// build.zig.zon and docs/ZIG_BUILD.md true: building the vendored protoc pulls
+/// the protobuf tarball down whatever the mode says.
+pub fn generate(
+    b: *std.Build,
+    options: cfg.Options,
+    target: std.Build.ResolvedTarget,
+) ?Result {
     const run = if (options.protoc) |path| blk: {
-        checkProtocVersion(b, path);
+        // -Dprotoc wins in either mode, mirroring LOCALPROXY_PROTOC_EXECUTABLE.
+        checkProtocVersion(b, path, pinned_version);
+        break :blk b.addSystemCommand(&.{path});
+    } else if (resolveMode(b, options, target) == .system) blk: {
+        const path = b.findProgram(&.{"protoc"}, &.{}) catch return .{ .missing = b.fmt(
+            \\a system protobuf was selected for target '{s}', but no `protoc` was found on
+            \\PATH.
+            \\
+            \\System mode generates Message.pb.cc with the system protoc, exactly as
+            \\lp_protobuf_generate_cpp does in cmake/LocalproxyProtobuf.cmake, so one is
+            \\required. Install the protobuf compiler package, pass an explicit
+            \\-Dprotoc=<path>, or build protobuf from the pinned sources with
+            \\-Dprotobuf-source=fetch.
+        , .{targets.nameOf(b, target)}) };
+        // Asserted to run, but not to be a particular version: the generated
+        // code is checked against the runtime it is compiled with, and in
+        // system mode both come from the same installation. find_package(Protobuf)
+        // constrains the installation rather than protoc separately for the
+        // same reason.
+        checkProtocVersion(b, path, null);
         break :blk b.addSystemCommand(&.{path});
     } else blk: {
         const dep = b.lazyDependency("protobuf", .{}) orelse return null;
@@ -356,27 +464,30 @@ pub fn generate(b: *std.Build, options: cfg.Options) ?Generated {
     run.addPrefixedDirectoryArg("-I", b.path("resources"));
     run.addFileArg(b.path("resources/Message.proto"));
 
-    return .{ .dir = out_dir, .source = out_dir.path(b, "Message.pb.cc") };
+    return .{ .ok = .{ .dir = out_dir, .source = out_dir.path(b, "Message.pb.cc") } };
 }
 
+/// Check that `path` runs, and -- when `required` is given -- that it reports
+/// that version.
 /// A user-supplied protoc must be 3.17.3: Message.pb.h asserts the generating
 /// protoc's version against the linked runtime at compile time, so a mismatch
 /// is a build error later and a confusing one. Fail here instead.
-fn checkProtocVersion(b: *std.Build, path: []const u8) void {
+fn checkProtocVersion(b: *std.Build, path: []const u8, required: ?[]const u8) void {
     // runAllowFail only writes out_code on failure and turns a non-zero exit
     // into an error, so there is nothing to check after a successful call.
     var code: u8 = 0;
     const stdout = b.runAllowFail(&.{ path, "--version" }, &code, .ignore) catch |err| cfg.fatal(
-        "-Dprotoc={s} could not be run ({s}, exit code {d})",
+        "protoc '{s}' could not be run ({s}, exit code {d})",
         .{ path, @errorName(err), code },
     );
+    const want = required orelse return;
     // Output looks like "libprotoc 3.17.3".
     const trimmed = std.mem.trim(u8, stdout, " \t\r\n");
-    if (std.mem.indexOf(u8, trimmed, pinned_version) == null) cfg.fatal(
+    if (std.mem.indexOf(u8, trimmed, want) == null) cfg.fatal(
         \\-Dprotoc={s} reports '{s}', but protobuf {s} is required.
         \\
         \\Message.pb.h embeds a protoc-version assertion that is checked against the
         \\linked protobuf-lite runtime, so the two must match. Omit -Dprotoc to build a
         \\matching protoc from the pinned sources.
-    , .{ path, trimmed, pinned_version });
+    , .{ path, trimmed, want });
 }

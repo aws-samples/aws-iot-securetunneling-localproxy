@@ -24,6 +24,10 @@ pub const Options = struct {
     boost_source: DepSource,
     protobuf_source: DepSource,
     catch2_source: DepSource,
+    /// Comma-separated extra prefixes searched before the conventional ones
+    /// when resolving a system Boost/Protobuf/Catch2. Stands in for
+    /// CMAKE_PREFIX_PATH, which find_package honors in the CMake build.
+    dep_prefixes: ?[]const u8,
     link_atomic: LinkAtomic,
     protoc: ?[]const u8,
     win32_winnt: []const u8,

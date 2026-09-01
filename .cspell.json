@@ -13,6 +13,9 @@
     "**/CMakeLists.txt",
     "**/*.cmake",
     "**/*.cmake.in",
-    "fc_deps.json"
+    "fc_deps.json",
+    "zig-out/**",
+    ".zig-cache/**",
+    "zig-pkg/**"
   ]
 }

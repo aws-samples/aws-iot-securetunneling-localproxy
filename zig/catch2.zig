@@ -20,16 +20,44 @@
 
 const std = @import("std");
 const cfg = @import("config.zig");
+const system = @import("system.zig");
+const targets = @import("targets.zig");
+
+/// Version pinned by fc_deps.json.
+pub const pinned_version = "3.7.0";
+
+/// The major version the test sources require, and the same constraint
+/// cmake/LocalproxyCatch2.cmake asserts with `find_package(Catch2 3 REQUIRED)`.
+const required_major: u64 = 3;
+
+const version_check = system.VersionCheck{
+    .header = "catch2/catch_version_macros.hpp",
+    .macro = "CATCH_VERSION_MAJOR",
+    .minimum = required_major,
+};
+
+/// The two compiled libraries behind Catch2::Catch2WithMain. Order is link
+/// order.
+const system_lib_names = [_][]const u8{ "Catch2Main", "Catch2" };
 
 pub const Catch2 = struct {
     lib: ?*std.Build.Step.Compile,
     include_dirs: []const std.Build.LazyPath,
+    /// Where the pre-installed Catch2 was found; only set in `system` mode.
+    prefix: ?system.Prefix = null,
 
     pub fn apply(self: Catch2, mod: *std.Build.Module) void {
         for (self.include_dirs) |dir| mod.addSystemIncludePath(dir);
         if (self.lib) |lib| mod.linkLibrary(lib) else {
-            mod.linkSystemLibrary("Catch2Main", .{});
-            mod.linkSystemLibrary("Catch2", .{});
+            // The prefix the probe matched has to reach the command line:
+            // detecting a Catch2 under /usr/local and then omitting -isystem/-L
+            // for it would compile against whatever else is on the default
+            // search path.
+            if (self.prefix) |p| {
+                p.applyInclude(mod);
+                p.applyLib(mod);
+            }
+            for (system_lib_names) |name| mod.linkSystemLibrary(name, .{});
         }
     }
 };
@@ -74,14 +102,20 @@ fn sources(b: *std.Build, dep: *std.Build.Dependency) []const []const u8 {
     return files.toOwnedSlice(b.allocator) catch @panic("OOM");
 }
 
-fn systemCatch2Found(b: *std.Build, target: std.Build.ResolvedTarget) bool {
-    if (target.result.os.tag != b.graph.host.result.os.tag or
-        target.result.cpu.arch != b.graph.host.result.cpu.arch) return false;
-    const io = b.graph.io;
-    for ([_][]const u8{ "/usr/include", "/usr/local/include", "/opt/homebrew/include" }) |prefix| {
-        if (cfg.pathExists(io, b.pathJoin(&.{ prefix, "catch2", "catch_all.hpp" }))) return true;
-    }
-    return false;
+/// Locate a pre-installed Catch2 that this build may actually link.
+///
+/// cmake/LocalproxyCatch2.cmake constrains the major version only --
+/// `find_package(Catch2 3 REQUIRED)`, whose comment explains why ("Catch2 v2 and
+/// v3 have incompatible headers and target names") -- so that is the constraint
+/// mirrored here rather than the pinned 3.7.0 patch level. Both compiled
+/// libraries behind Catch2::Catch2WithMain must be present, which is what makes
+/// a headers-only install fall through to fetch instead of failing at link.
+fn findSystemCatch2(
+    b: *std.Build,
+    options: cfg.Options,
+    target: std.Build.ResolvedTarget,
+) ?system.Prefix {
+    return system.find(b, options, target, version_check, &system_lib_names);
 }
 
 pub fn add(
@@ -89,12 +123,26 @@ pub fn add(
     options: cfg.Options,
     target: std.Build.ResolvedTarget,
 ) ?Catch2 {
-    const mode: cfg.DepMode = switch (options.resolveDep(options.catch2_source)) {
-        .system => .system,
-        .fetch => .fetch,
-        .auto => if (systemCatch2Found(b, target)) .system else .fetch,
-    };
-    if (mode == .system) return .{ .lib = null, .include_dirs = &.{} };
+    const requested = options.resolveDep(options.catch2_source);
+    const found = if (requested == .fetch) null else findSystemCatch2(b, options, target);
+    switch (requested) {
+        // An explicit `system` that cannot be satisfied is a configuration
+        // error, exactly as find_package(Catch2 3 REQUIRED) is in the CMake
+        // build: it must not quietly fetch instead.
+        .system => if (found == null) cfg.fatal(
+            \\-Dcatch2-source=system (or -Ddep-mode=system) was requested, but no usable
+            \\Catch2 v3 was found for target '{s}'.
+            \\
+            \\A usable installation needs headers reporting CATCH_VERSION_MAJOR {d} and both
+            \\libCatch2 and libCatch2Main in the same library directory. Prefixes searched:
+            \\-Ddep-prefix entries, then /usr, /usr/local, /opt/homebrew.
+            \\
+            \\Add one with -Ddep-prefix=<dir>[,<dir>...], or build Catch2 from the pinned
+            \\sources with -Dcatch2-source=fetch.
+        , .{ targets.nameOf(b, target), required_major }),
+        .fetch, .auto => {},
+    }
+    if (found) |prefix| return .{ .lib = null, .include_dirs = &.{}, .prefix = prefix };
 
     const dep = b.lazyDependency("catch2", .{}) orelse return null;
 

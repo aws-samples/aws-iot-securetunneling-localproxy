@@ -36,6 +36,7 @@ const cfg = @import("zig/config.zig");
 const targets = @import("zig/targets.zig");
 const version = @import("zig/version.zig");
 const openssl = @import("zig/openssl.zig");
+const system = @import("zig/system.zig");
 const boost = @import("zig/boost.zig");
 const protobuf = @import("zig/protobuf.zig");
 const catch2 = @import("zig/catch2.zig");
@@ -114,6 +115,14 @@ pub fn build(b: *std.Build) void {
             "catch2-source",
             "Override dependency mode for Catch2",
         ) orelse .inherit,
+        // Stands in for CMAKE_PREFIX_PATH, which find_package honors in the
+        // CMake build; the Zig build otherwise only knows the conventional
+        // prefixes.
+        .dep_prefixes = b.option(
+            []const u8,
+            "dep-prefix",
+            "Comma-separated prefixes searched first for a system Boost/Protobuf/Catch2",
+        ),
         // LOCALPROXY_LINK_ATOMIC
         .link_atomic = b.option(
             cfg.LinkAtomic,
@@ -160,15 +169,52 @@ pub fn build(b: *std.Build) void {
     // Version.h is target-independent, so generate it once.
     const version_dir = version.generate(b, options.release);
 
-    // Protobuf codegen runs once on the host and is shared by every target;
-    // generated C++ is target-independent.
-    const generated = protobuf.generate(b, options) orelse return;
-
     // -------- default target --------------------------------------------
+    // Resolved before codegen because which protoc runs depends on how the
+    // dependencies resolve for this target.
     const default_target = b.standardTargetOptions(.{});
     // Built once and shared with the `deps` step below, so asking for both in
     // one invocation does not compile Boost twice.
     const default_deps = addDeps(b, options, default_target) orelse return;
+
+    // -------- `zig build deps` ------------------------------------------
+    // Builds only the self-contained third-party libraries for the selected
+    // target. Useful in CI, and the one cross-target check that needs no
+    // OpenSSL sysroot. Registered before codegen so that it stays usable even
+    // when codegen cannot be configured.
+    const deps_step = b.step(
+        "deps",
+        "Build only the vendored third-party libraries for the selected target",
+    );
+    for (default_deps.boost.libs) |lib| deps_step.dependOn(&lib.step);
+    if (default_deps.protobuf.lite) |lib| deps_step.dependOn(&lib.step);
+    if (default_deps.catch2) |c2| {
+        if (c2.lib) |lib| deps_step.dependOn(&lib.step);
+    }
+    // In system mode there is nothing vendored to build. Say so when the step
+    // runs rather than exiting 0 with no output, which reads as a broken step.
+    if (deps_step.dependencies.items.len == 0) deps_step.dependOn(addNotice(
+        b,
+        "zig build deps: nothing to build -- Boost, Protobuf and Catch2 all resolved " ++
+            "to a pre-installed copy (see -Ddep-mode).",
+    ));
+
+    // Protobuf codegen runs once and is shared by every target; generated C++
+    // is target-independent.
+    const generated = switch (protobuf.generate(b, options, default_target) orelse return) {
+        .ok => |ok| ok,
+        // No usable protoc: every step that needs generated sources fails with
+        // the message, while `deps` above still works.
+        .missing => |message| {
+            b.getInstallStep().dependOn(&b.addFail(message).step);
+            b.step("test", "Build and run the Catch2 unit tests")
+                .dependOn(&b.addFail(message).step);
+            b.step("all", "Build every target in the cross-compilation matrix")
+                .dependOn(&b.addFail(message).step);
+            return;
+        },
+    };
+
     const default = addTarget(
         b,
         options,
@@ -178,10 +224,9 @@ pub fn build(b: *std.Build) void {
         default_deps,
     ) orelse return;
     switch (default) {
-        .built => |built| {
-            b.installArtifact(built.exe);
-            if (built.test_exe) |t| b.installArtifact(t);
-        },
+        // Only localproxy is installed. CMakeLists.txt's install() names it
+        // alone; localproxytest is built and run, never shipped.
+        .built => |built| b.installArtifact(built.exe),
         // No OpenSSL: the install (default) step fails with the message rather
         // than emitting a binary that cannot link. `zig build deps` below is
         // unaffected, which is what makes a cross build verifiable without a
@@ -197,7 +242,7 @@ pub fn build(b: *std.Build) void {
     switch (default) {
         .no_openssl => |message| test_step.dependOn(&b.addFail(message).step),
         .built => |built| if (built.test_exe) |t| {
-            if (isHostTarget(b, default_target)) {
+            if (system.isHost(b, default_target)) {
                 const run = b.addRunArtifact(t);
                 run.setEnvironmentVariable("SOURCE_DATE_EPOCH", "0");
                 run.setEnvironmentVariable("ZERO_AR_DATE", "1");
@@ -213,19 +258,18 @@ pub fn build(b: *std.Build) void {
         },
     }
 
-    // -------- `zig build deps` ------------------------------------------
-    // Builds only the self-contained third-party libraries for the selected
-    // target. Useful in CI, and the one cross-target check that needs no
-    // OpenSSL sysroot.
-    const deps_step = b.step(
-        "deps",
-        "Build only the vendored third-party libraries for the selected target",
-    );
-    for (default_deps.boost.libs) |lib| deps_step.dependOn(&lib.step);
-    if (default_deps.protobuf.lite) |lib| deps_step.dependOn(&lib.step);
-    if (default_deps.catch2) |c2| {
-        if (c2.lib) |lib| deps_step.dependOn(&lib.step);
-    }
+    // -------- `zig build test-build` ------------------------------------
+    // Unit tests for this build's own logic (target classification, prefix
+    // probing, library-directory ordering). Separate from `test`, which is the
+    // project's Catch2 suite.
+    const build_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("zig/tests.zig"),
+            .target = b.graph.host,
+        }),
+    });
+    b.step("test-build", "Run unit tests for the build logic in zig/")
+        .dependOn(&b.addRunArtifact(build_tests).step);
 
     // -------- `zig build all` -------------------------------------------
     // Every triple in the matrix, installed to zig-out/bin/<triple>/.
@@ -246,12 +290,10 @@ pub fn build(b: *std.Build) void {
                     .dest_dir = .{ .override = .{ .custom = dir } },
                 });
                 all_step.dependOn(&install.step);
-                if (ok.test_exe) |t| {
-                    const install_test = b.addInstallArtifact(t, .{
-                        .dest_dir = .{ .override = .{ .custom = dir } },
-                    });
-                    all_step.dependOn(&install_test.step);
-                }
+                // Built but not installed, matching CMakeLists.txt: building it
+                // is what verifies a cross `-Dtests` configuration, while
+                // install() ships localproxy alone.
+                if (ok.test_exe) |t| all_step.dependOn(&t.step);
             },
         }
     }
@@ -364,7 +406,7 @@ fn addTarget(
 ///
 /// CMakeLists.txt appends this exact string via COMPILE_FLAGS regardless of
 /// CMAKE_BUILD_TYPE, so -O2 is unconditional there and unconditional here.
-fn appFlags(b: *std.Build, is_test: bool) []const []const u8 {
+fn appFlags(b: *std.Build, target: std.Build.ResolvedTarget, is_test: bool) []const []const u8 {
     var flags = std.ArrayList([]const u8).empty;
     flags.appendSlice(b.allocator, &.{
         // CMAKE_CXX_STANDARD 14 + CMAKE_CXX_EXTENSIONS OFF: plain c++14, not
@@ -375,8 +417,13 @@ fn appFlags(b: *std.Build, is_test: bool) []const []const u8 {
         "-fPIE",
         "-fstack-protector-strong",
         "-Wall",
-        "-Werror",
     }) catch @panic("OOM");
+    // CMakeLists.txt's WIN32 branch uses /W4 with no /WX, i.e. warnings are not
+    // errors on Windows. Keep that: this is the one target with no CMake or CI
+    // precedent, so being stricter than CMake would mean failing a build the
+    // supported build would have let through.
+    if (target.result.os.tag != .windows)
+        flags.append(b.allocator, "-Werror") catch @panic("OOM");
     if (is_test) flags.append(b.allocator, "-D_AWSIOT_TUNNELING_NO_SSL") catch @panic("OOM");
     return flags.toOwnedSlice(b.allocator) catch @panic("OOM");
 }
@@ -423,7 +470,7 @@ fn appModule(
     if (options.no_ssl_host_verify_opt and !is_test)
         mod.addCMacro("_AWSIOT_TUNNELING_DISABLE_NO_SSL_HOST_VERIFY", "1");
 
-    const flags = appFlags(b, is_test);
+    const flags = appFlags(b, target, is_test);
     var sources = std.ArrayList([]const u8).empty;
     sources.appendSlice(b.allocator, &core_sources) catch @panic("OOM");
     sources.appendSlice(b.allocator, &util_sources) catch @panic("OOM");
@@ -505,10 +552,32 @@ fn shouldLinkAtomic(options: cfg.Options, target: std.Build.ResolvedTarget) bool
     return options.link_atomic == .on;
 }
 
-fn isHostTarget(b: *std.Build, target: std.Build.ResolvedTarget) bool {
-    const host = b.graph.host.result;
-    const t = target.result;
-    return t.cpu.arch == host.cpu.arch and t.os.tag == host.os.tag and t.abi == host.abi;
+/// A step that only prints a message when it runs.
+///
+/// Used where a step legitimately has nothing to do: succeeding silently is
+/// indistinguishable from a step that failed to be wired up, and there is no
+/// Step.Fail equivalent for a non-failing note.
+fn addNotice(b: *std.Build, message: []const u8) *std.Build.Step {
+    const Notice = struct {
+        step: std.Build.Step,
+        message: []const u8,
+
+        fn make(step: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void {
+            const self: *@This() = @fieldParentPtr("step", step);
+            std.debug.print("{s}\n", .{self.message});
+        }
+    };
+    const notice = b.allocator.create(Notice) catch @panic("OOM");
+    notice.* = .{
+        .step = std.Build.Step.init(.{
+            .id = .custom,
+            .name = "notice",
+            .owner = b,
+            .makeFn = Notice.make,
+        }),
+        .message = b.dupe(message),
+    };
+    return &notice.step;
 }
 
 fn isHexLiteral(value: []const u8) bool {

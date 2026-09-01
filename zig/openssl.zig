@@ -18,6 +18,7 @@
 
 const std = @import("std");
 const cfg = @import("config.zig");
+const system = @import("system.zig");
 const targets = @import("targets.zig");
 
 /// Prefixes probed for a native OpenSSL when neither -Dopenssl-include nor
@@ -43,23 +44,25 @@ pub const Resolved = struct {
 /// `x86-windows-gnu`, because that target is MinGW rather than MSVC.
 const static_archive_names = [2][]const u8{ "libssl.a", "libcrypto.a" };
 
-/// Candidate library subdirectories under a prefix, most specific first.
-fn libSubdirs(b: *std.Build, prefix: []const u8, target: std.Target) []const []const u8 {
-    const multiarch: ?[]const u8 = switch (target.cpu.arch) {
-        .x86_64 => "x86_64-linux-gnu",
-        .aarch64 => "aarch64-linux-gnu",
-        .arm => "arm-linux-gnueabihf",
-        else => null,
-    };
-    var list = std.ArrayList([]const u8).empty;
-    list.append(b.allocator, b.pathJoin(&.{ prefix, "lib64" })) catch @panic("OOM");
-    list.append(b.allocator, b.pathJoin(&.{ prefix, "lib" })) catch @panic("OOM");
-    if (target.os.tag == .linux and target.abi.isGnu()) {
-        if (multiarch) |m| {
-            list.append(b.allocator, b.pathJoin(&.{ prefix, "lib", m })) catch @panic("OOM");
+/// Does `dir` hold the OpenSSL libraries this build is going to link?
+///
+/// Merely existing is not enough. `/usr/lib` exists on every Linux
+/// distribution, so a probe that accepts the first directory it can `stat`
+/// latches onto it and never reaches `/usr/lib/<multiarch>`, which is where
+/// Debian and Ubuntu actually put libssl -- the default build then fails on the
+/// primary documented platform with `libssl-dev` correctly installed.
+fn holdsOpenssl(b: *std.Build, dir: []const u8, static: bool) bool {
+    const io = b.graph.io;
+    if (static) {
+        for (static_archive_names) |name| {
+            if (!cfg.pathExists(io, b.pathJoin(&.{ dir, name }))) return false;
         }
+        return true;
     }
-    return list.toOwnedSlice(b.allocator) catch @panic("OOM");
+    // Shared: accept whichever of .so/.dylib the platform uses. findLib also
+    // matches .a, which is harmless -- an archive-only directory is still the
+    // right answer for -Dopenssl-static=false if it is all there is.
+    return system.findLib(b, dir, "ssl") != null and system.findLib(b, dir, "crypto") != null;
 }
 
 /// Either a usable OpenSSL, or the message explaining what to supply.
@@ -82,13 +85,25 @@ pub fn resolve(
 ) Result {
     const io = b.graph.io;
     const triple = targets.nameOf(b, target);
-    const is_native = target.result.os.tag == b.graph.host.result.os.tag and
-        target.result.cpu.arch == b.graph.host.result.cpu.arch and
-        target.result.abi == b.graph.host.result.abi;
+    // Shared with the Boost/Protobuf/Catch2 probes: a pre-installed library is
+    // only valid for the exact configuration it was built for, glibc floor
+    // included. See system.isHost.
+    const is_native = system.isHost(b, target);
 
     // 1. Explicit flags always win, for native and cross alike.
     var include_dir = options.openssl_include;
     var lib_dir = options.openssl_libdir;
+
+    // Silent precedence between two ways of saying where OpenSSL is would hide
+    // a typo in either one, so refuse the combination rather than picking.
+    if (options.openssl_sysroots != null and (include_dir != null or lib_dir != null)) cfg.fatal(
+        \\-Dopenssl-sysroots cannot be combined with -Dopenssl-include or
+        \\-Dopenssl-libdir: they are two ways of saying where OpenSSL is, and honoring
+        \\one silently would hide a mistake in the other.
+        \\
+        \\Use -Dopenssl-sysroots=<dir> for a per-triple tree (<dir>/<triple>/{{include,lib}}),
+        \\or -Dopenssl-include/-Dopenssl-libdir for a single target.
+    , .{});
 
     // 2. A per-triple sysroot tree, so `zig build all` can serve every target
     //    from one option: <dir>/<triple>/include and <dir>/<triple>/lib.
@@ -98,9 +113,12 @@ pub fn resolve(
             const inc = b.pathJoin(&.{ base, "include" });
             if (cfg.pathExists(io, b.pathJoin(&.{ inc, "openssl", "opensslv.h" }))) {
                 include_dir = inc;
-                for ([_][]const u8{ "lib64", "lib" }) |sub| {
-                    const candidate = b.pathJoin(&.{ base, sub });
-                    if (cfg.pathExists(io, candidate)) {
+                // Same candidates and same verification as the native probe: a
+                // sysroot unpacked from a Debian/Ubuntu package keeps libssl in
+                // lib/<multiarch>, so the bare `lib` next to it is a directory
+                // that exists and holds nothing.
+                for (system.libDirs(b, base, target.result)) |candidate| {
+                    if (holdsOpenssl(b, candidate, options.openssl_static)) {
                         lib_dir = candidate;
                         break;
                     }
@@ -116,8 +134,12 @@ pub fn resolve(
             const inc = b.pathJoin(&.{ prefix, "include" });
             if (!cfg.pathExists(io, b.pathJoin(&.{ inc, "openssl", "opensslv.h" }))) continue;
             include_dir = inc;
-            for (libSubdirs(b, prefix, target.result)) |candidate| {
-                if (cfg.pathExists(io, candidate)) {
+            // system.libDirs puts lib/<multiarch> first; each candidate must
+            // actually hold libssl/libcrypto, so an empty lib64 (or a bare
+            // /usr/lib on a multiarch distribution) is skipped rather than
+            // accepted and then failed on at link time.
+            for (system.libDirs(b, prefix, target.result)) |candidate| {
+                if (holdsOpenssl(b, candidate, options.openssl_static)) {
                     lib_dir = candidate;
                     break;
                 }

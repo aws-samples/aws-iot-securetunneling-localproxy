@@ -28,7 +28,27 @@
 
 const std = @import("std");
 const cfg = @import("config.zig");
+const system = @import("system.zig");
 const targets = @import("targets.zig");
+
+/// Version pinned by fc_deps.json, and the same number as boost/version.hpp's
+/// `#define BOOST_VERSION`. Kept adjacent so the two cannot drift.
+pub const pinned_version = "1.87.0";
+const pinned_version_macro: u64 = 108700;
+
+/// What a pre-installed Boost has to satisfy before `auto` will use it.
+///
+/// cmake/LocalproxyDeps.cmake probes with the pinned version *and* the
+/// component list, and carries a comment explaining why: "a probe without them
+/// succeeds on a headers-only install whose compiled libraries are missing, and
+/// the real REQUIRED COMPONENTS call would then fail rather than fetching". The
+/// components asserted here are `system_lib_names`, i.e. exactly the libraries
+/// this build goes on to link.
+const version_check = system.VersionCheck{
+    .header = "boost/version.hpp",
+    .macro = "BOOST_VERSION",
+    .minimum = pinned_version_macro,
+};
 
 /// Compiled components requested by CMakeLists.txt, plus the transitives that
 /// Boost's own CMake would have pulled in. Order is link order.
@@ -51,6 +71,10 @@ const public_defines = [_][2][]const u8{
     // fetch path sets the same thing for MSVC; setting it unconditionally is
     // harmless on ELF/Mach-O and keeps the two builds aligned.
     .{ "BOOST_ALL_NO_LIB", "1" },
+    // One per compiled library, in the same order as the specs below. Boost's
+    // headers use these to select the static-link declarations (no dllimport,
+    // no auto-link) that match how this build produces every library.
+    .{ "BOOST_ATOMIC_STATIC_LINK", "1" },
     .{ "BOOST_CHRONO_STATIC_LINK", "1" },
     .{ "BOOST_CONTAINER_STATIC_LINK", "1" },
     .{ "BOOST_DATE_TIME_STATIC_LINK", "1" },
@@ -65,6 +89,8 @@ pub const Boost = struct {
     libs: []const *std.Build.Step.Compile,
     /// Every libs/<lib>/include directory, for -isystem on consumers.
     include_dirs: []const std.Build.LazyPath,
+    /// Where the pre-installed Boost was found; only set in `system` mode.
+    prefix: ?system.Prefix = null,
 
     /// Put Boost on a consuming module: headers as system includes so that our
     /// own -Wall -Werror translation units are not held responsible for
@@ -75,7 +101,17 @@ pub const Boost = struct {
         for (public_defines) |d| mod.addCMacro(d[0], d[1]);
         switch (self.mode) {
             .fetch, .auto => for (self.libs) |lib| mod.linkLibrary(lib),
-            .system => for (system_lib_names) |name| mod.linkSystemLibrary(name, .{}),
+            // The prefix that satisfied the probe has to go on the command
+            // line: detecting a Boost under /usr/local and then not passing
+            // -isystem/-L for it would compile against whatever else happens
+            // to be on the default search path.
+            .system => {
+                if (self.prefix) |p| {
+                    p.applyInclude(mod);
+                    p.applyLib(mod);
+                }
+                for (system_lib_names) |name| mod.linkSystemLibrary(name, .{});
+            },
         }
     }
 };
@@ -207,17 +243,28 @@ fn addLib(
     });
 }
 
-/// Standard prefixes probed in `auto` mode, standing in for
-/// find_package(Boost). Only consulted for a native build: a cross target must
-/// not be handed the host's headers.
-fn systemBoostFound(b: *std.Build, target: std.Build.ResolvedTarget) bool {
-    if (target.result.os.tag != b.graph.host.result.os.tag or
-        target.result.cpu.arch != b.graph.host.result.cpu.arch) return false;
-    const io = b.graph.io;
-    for ([_][]const u8{ "/usr/include", "/usr/local/include", "/opt/homebrew/include" }) |prefix| {
-        if (cfg.pathExists(io, b.pathJoin(&.{ prefix, "boost", "version.hpp" }))) return true;
+/// `lib<name>` for every entry of `system_lib_names`, for diagnostics.
+fn joinedLibNames() []const u8 {
+    comptime var out: []const u8 = "";
+    inline for (system_lib_names, 0..) |name, i| {
+        out = out ++ (if (i == 0) "" else ", ") ++ "lib" ++ name;
     }
-    return false;
+    return out;
+}
+
+/// Locate a pre-installed Boost that this build may actually link, standing in
+/// for find_package(Boost <version> COMPONENTS ...).
+///
+/// Returns null when the target is not the host (see system.isHost: a system
+/// library is only ever valid for the ABI it was built for), when no prefix
+/// carries Boost >= the pinned version, or when any component we link is
+/// missing from that prefix.
+fn findSystemBoost(
+    b: *std.Build,
+    options: cfg.Options,
+    target: std.Build.ResolvedTarget,
+) ?system.Prefix {
+    return system.find(b, options, target, version_check, &system_lib_names);
 }
 
 /// Build (or resolve) Boost for `target`.
@@ -230,13 +277,37 @@ pub fn add(
     target: std.Build.ResolvedTarget,
 ) ?Boost {
     // `auto` probes for a pre-installed Boost and only builds from source when
-    // it is missing, matching LOCALPROXY_DEP_MODE=auto.
-    const mode: cfg.DepMode = switch (options.resolveDep(options.boost_source)) {
-        .system => .system,
-        .fetch => .fetch,
-        .auto => if (systemBoostFound(b, target)) .system else .fetch,
+    // it is missing or unusable, matching LOCALPROXY_DEP_MODE=auto.
+    const requested = options.resolveDep(options.boost_source);
+    const found = if (requested == .fetch) null else findSystemBoost(b, options, target);
+    switch (requested) {
+        // An explicit `system` that cannot be satisfied is a configuration
+        // error, exactly as find_package(Boost ... REQUIRED) is in the CMake
+        // build: it must not quietly fetch instead.
+        .system => if (found == null) cfg.fatal(
+            \\-Dboost-source=system (or -Ddep-mode=system) was requested, but no usable
+            \\Boost {s} was found for target '{s}'.
+            \\
+            \\A usable installation needs headers reporting BOOST_VERSION >= {d} and all of
+            \\{s} in one library directory. Prefixes
+            \\searched: -Ddep-prefix entries, then /usr, /usr/local, /opt/homebrew.
+            \\
+            \\Add one with -Ddep-prefix=<dir>[,<dir>...], or build Boost from the pinned
+            \\sources with -Dboost-source=fetch.
+        , .{
+            pinned_version,
+            targets.nameOf(b, target),
+            pinned_version_macro,
+            comptime joinedLibNames(),
+        }),
+        .fetch, .auto => {},
+    }
+    if (found) |prefix| return .{
+        .mode = .system,
+        .libs = &.{},
+        .include_dirs = &.{},
+        .prefix = prefix,
     };
-    if (mode == .system) return .{ .mode = .system, .libs = &.{}, .include_dirs = &.{} };
 
     const dep = b.lazyDependency("boost", .{}) orelse return null;
     const include_dirs = includeDirs(b, dep);
@@ -248,6 +319,10 @@ pub fn add(
 
     // --- Boost.Atomic --------------------------------------------------
     {
+        // libs/atomic/CMakeLists.txt marks BOOST_ATOMIC_SOURCE private on every
+        // translation unit of the library, the SIMD ones included, and pairs it
+        // with the public BOOST_ATOMIC_STATIC_LINK above.
+        const atomic_defines = [_][2][]const u8{.{ "BOOST_ATOMIC_SOURCE", "1" }};
         var files = std.ArrayList([]const u8).empty;
         files.append(b.allocator, "src/lock_pool.cpp") catch @panic("OOM");
         if (is_windows) files.append(b.allocator, "src/wait_on_address.cpp") catch @panic("OOM");
@@ -255,6 +330,7 @@ pub fn add(
             .name = "boost_atomic",
             .dir = "atomic",
             .files = files.toOwnedSlice(b.allocator) catch @panic("OOM"),
+            .private_defines = &atomic_defines,
             .private_includes = &.{"src"},
         })) catch @panic("OOM");
 
@@ -265,6 +341,7 @@ pub fn add(
                 .name = "boost_atomic_sse2",
                 .dir = "atomic",
                 .files = &.{"src/find_address_sse2.cpp"},
+                .private_defines = &atomic_defines,
                 .private_includes = &.{"src"},
                 .x86_features = &.{ .sse, .sse2 },
             })) catch @panic("OOM");
@@ -272,6 +349,7 @@ pub fn add(
                 .name = "boost_atomic_sse41",
                 .dir = "atomic",
                 .files = &.{"src/find_address_sse41.cpp"},
+                .private_defines = &atomic_defines,
                 .private_includes = &.{"src"},
                 .x86_features = &.{ .sse, .sse2, .sse3, .ssse3, .sse4_1 },
             })) catch @panic("OOM");
@@ -577,7 +655,7 @@ pub fn add(
     }
 
     return .{
-        .mode = mode,
+        .mode = .fetch,
         .libs = libs.toOwnedSlice(b.allocator) catch @panic("OOM"),
         .include_dirs = include_dirs,
     };
